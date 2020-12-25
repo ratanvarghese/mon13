@@ -30,12 +30,19 @@ int mon13_compare(
 	return 0;
 }
 
-void mon13_iter_step(
+struct mon13_date mon13_add(
 	const struct mon13_cal* cal,
-	struct mon13_date* current,
-	const struct mon13_date step,
-	const bool skip_year_day,
-	const bool skip_leap_day
+	const struct mon13_date a,
+	const struct mon13_date b,
+	const bool skip_intercalary_day
 ) {
-	return;
+	struct mon13_date res;
+	return res;
+}
+
+int mon13_get_weekday(
+	const struct mon13_cal* cal,
+	const struct mon13_date d
+) {
+	return 0;
 }
