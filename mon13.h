@@ -23,6 +23,7 @@ struct mon13_cal {
 	const char* month_names[14];
 	const char* weekday_names[7];
 	const char* intercalary_day_names[2];
+	const char* cal_name;
 	const char* era_start_name;
 	const char* before_era_name;
 	const char* after_era_name;

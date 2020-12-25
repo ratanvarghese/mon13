@@ -14,6 +14,7 @@ struct mon13_cal mon13_gregorian = {
 		"Friday", "Saturday"
 	},
 	.intercalary_day_names = { NULL, NULL },
+	.cal_name = "Gregorian",
 	.era_start_name = NULL,
 	.before_era_name = "Before Common Era",
 	.after_era_name = "Common Era",
@@ -50,6 +51,7 @@ struct mon13_cal mon13_tranquility = {
 	.intercalary_day_names = {
 		"Aldrin Day", "Armstrong Day"
 	},
+	.cal_name = "Tranquility",
 	.era_start_name = "Moon Landing Day",
 	.before_era_name = "Before Tranquility",
 	.after_era_name = "After Tranquility",
@@ -86,6 +88,7 @@ struct mon13_cal mon13_international_fixed = {
 		"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday",
 		"Friday", "Saturday"
 	},
+	.cal_name = "International Fixed",
 	.era_start_name = NULL,
 	.before_era_name = "Before Common Era (IFC)",
 	.after_era_name = "Common Era (IFC)",
@@ -122,6 +125,7 @@ struct mon13_cal mon13_positivist = {
 		"Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
 		"Saturday", "Sunday"
 	},
+	.cal_name = "Positivist",
 	.era_start_name = NULL,
 	.before_era_name = "Before Revolution",
 	.after_era_name = "After Revolution",
@@ -158,6 +162,7 @@ struct mon13_cal mon13_world = {
 		"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday",
 		"Friday", "Saturday"
 	},
+	.cal_name = "World",
 	.era_start_name = NULL,
 	.before_era_name = "Before Common Era (WC)",
 	.after_era_name = "Common Era (WC)",
