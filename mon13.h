@@ -59,5 +59,8 @@ void mon13_iter_step(
 
 struct mon13_cal mon13_gregorian;
 struct mon13_cal mon13_tranquility;
+struct mon13_cal mon13_international_fixed;
+struct mon13_cal mon13_positivist;
+struct mon13_cal mon13_world;
 
 #endif //MON13_H
