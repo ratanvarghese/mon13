@@ -17,26 +17,53 @@ struct test_1c2d {
 };
 
 static struct mon13_cal* random_cal(struct theft* t) {
-	switch(theft_random_choice(t, 5)) {
-		case 0: return &mon13_gregorian;
-		case 1: return &mon13_tranquility;
-		case 2: return &mon13_international_fixed;
-		case 3: return &mon13_positivist;
-		case 4: return &mon13_world;
+	switch(theft_random_choice(t, 4)) {
+		case 0: return &mon13_tranquility;
+		case 1: return &mon13_international_fixed;
+		case 2: return &mon13_positivist;
+		case 3: return NULL;
 		default: return NULL;
 	}
 }
 
 static struct mon13_date random_date(struct theft* t, struct mon13_cal* c) {
 	struct mon13_date res;
-	int month_max = 0;
-	while(c->month_length[month_max] > 0 && month_max < 14) {
-		month_max++;
+	res.year = theft_random_choice(t, INT_MAX) + 1;
+	if(theft_random_choice(t, 2)) {
+		res.year = -res.year;
 	}
-
-	res.year = theft_random_choice(t, INT_MAX);
-	res.month = theft_random_choice(t, month_max-1)+1;
-	res.day = theft_random_choice(t, c->month_length[(res.month)-1])+1;
+	if(c == NULL) {
+		res.month = theft_random_choice(t, 12) + 1;
+		switch(res.month) {
+			case 2:
+				if ((res.year%4 == 0 && res.year%100 != 0) || res.year%400 == 0) {
+					res.day = theft_random_choice(t, 29) + 1;
+				}
+				else {
+					res.day = theft_random_choice(t, 28) + 1;
+				}
+				break;
+			case 4:
+			case 6:
+			case 9:
+			case 11:
+				res.day = theft_random_choice(t, 30) + 1; break;
+			default:
+				res.day = theft_random_choice(t, 31) + 1; break;
+		}
+	}
+	else {
+		res.month = theft_random_choice(t, 13 + 1);
+		if(res.month == 0) {
+			res.day = theft_random_choice(t, c->intercalary_day_count) + 1;
+			if(c->intercalary_days[res.day-1].flags & MON13_IC_ERA_START) {
+				res.year = 0;
+			}
+		}
+		else {
+			res.day = theft_random_choice(t, 28) + 1;
+		}
+	}
 	return res;
 }
 
@@ -46,9 +73,6 @@ enum theft_alloc_res alloc_1c1d(struct theft* t, void* data, void** instance) {
 		return THEFT_ALLOC_ERROR;
 	}
 	res->c = random_cal(t);
-	if(res->c == NULL) {
-		return THEFT_ALLOC_ERROR;
-	}
 	res->d = random_date(t, res->c);
 
 	*instance = res;
@@ -61,9 +85,6 @@ enum theft_alloc_res alloc_1c2d(struct theft* t, void* data, void** instance) {
 		return THEFT_ALLOC_ERROR;
 	}
 	res->c = random_cal(t);
-	if(res->c == NULL) {
-		return THEFT_ALLOC_ERROR;
-	}
 	res->d0 = random_date(t, res->c);
 	res->d1 = random_date(t, res->c);
 
@@ -74,17 +95,17 @@ enum theft_alloc_res alloc_1c2d(struct theft* t, void* data, void** instance) {
 void print_1c1d(FILE* f, const void* instance, void* env) {
 	const struct test_1c1d* input = instance;
 	const struct mon13_date d = input->d;
-	const char* name = input->c->cal_name;
-	fprintf(f, "(%d-%d-%d) %s", d.year, d.month, d.day, name);
+	const char* name = (input->c == NULL) ? "Gregorian" : input->c->cal_name;
+	fprintf(f, "(%d-%02d-%02d) %s", d.year, d.month, d.day, name);
 }
 
 void print_1c2d(FILE* f, const void* instance, void* env) {
 	const struct test_1c2d* input = instance;
 	const struct mon13_date d0 = input->d0;
 	const struct mon13_date d1 = input->d1;
-	const char* name = input->c->cal_name;
+	const char* name = (input->c == NULL) ? "Gregorian" : input->c->cal_name;
 	fprintf(
-		f, "(%d-%d-%d) (%d-%d-%d) %s",
+		f, "(%d-%02d-%02d) (%d-%02d-%02d) %s",
 		d0.year, d0.month, d0.day,
 		d1.year, d1.month, d1.day,
 		name
