@@ -7,14 +7,16 @@ enum mon13_validity mon13_bad_date(
 	const struct mon13_cal* cal,
 	const struct mon13_date d
 ) {
-	return MON13_VALID;
+	enum mon13_validity res;
+	return res;
 }
 
 bool mon13_is_leap_year(
 	const struct mon13_cal* cal,
-	const struct mon13_date d
+	int32_t year
 ) {
-	return false;
+	bool res;
+	return res;
 }
 
 struct mon13_date mon13_convert(
@@ -33,15 +35,17 @@ int mon13_fmt(
 	char* buf,
 	const size_t buflen
 ) {
-	return 0;
+	int res;
+	return res;
 }
 
 int mon13_compare(
 	const struct mon13_date* d0,
 	const struct mon13_date* d1,
-	const struct mon13_cal* cal
+	struct mon13_cal* cal
 ) {
-	return 0;
+	int res;
+	return res;
 }
 
 struct mon13_date mon13_add(
@@ -54,9 +58,10 @@ struct mon13_date mon13_add(
 	return res;
 }
 
-int mon13_get_weekday(
+int8_t mon13_get_weekday(
 	const struct mon13_cal* cal,
 	const struct mon13_date d
 ) {
-	return 0;
+	int res;
+	return res;
 }

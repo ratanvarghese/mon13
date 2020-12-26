@@ -5,6 +5,13 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+enum mon13_limits {
+	MON13_MONTH_PER_YEAR = 13,
+	MON13_DAY_PER_MONTH = 28,
+	MON13_DAY_PER_WEEK = 7,
+	MON13_GREGORIAN_MONTH_PER_YEAR = 12
+};
+
 enum mon13_ic_flags {
 	MON13_IC_NONE = 0,
 	MON13_IC_YEAR = 1 << 0,
@@ -58,7 +65,7 @@ enum mon13_validity mon13_bad_date(
 
 bool mon13_is_leap_year(
 	const struct mon13_cal* cal,
-	const struct mon13_date d
+	int32_t year
 );
 
 struct mon13_date mon13_convert(
@@ -78,7 +85,7 @@ int mon13_fmt(
 int mon13_compare(
 	const struct mon13_date* d0,
 	const struct mon13_date* d1,
-	const struct mon13_cal* cal
+	struct mon13_cal* cal
 );
 
 struct mon13_date mon13_add(
@@ -88,7 +95,7 @@ struct mon13_date mon13_add(
 	const bool skip_intercalary_day
 );
 
-int mon13_get_weekday(
+int8_t mon13_get_weekday(
 	const struct mon13_cal* cal,
 	const struct mon13_date d
 );
