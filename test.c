@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <limits.h>
 #include <stdbool.h>
 #include "theft.h"
@@ -90,6 +91,19 @@ static struct mon13_date random_date(struct theft* t, struct mon13_cal* c) {
 	return res;
 }
 
+enum theft_alloc_res alloc_leap_year(struct theft* t, void* data, void** instance) {
+	int32_t* res = malloc(sizeof(int32_t));
+	if(res == NULL) {
+		return THEFT_ALLOC_ERROR;
+	}
+	*res = theft_random_choice(t, INT_MAX);
+	*res -= *res % 4;
+	*res = (*res % 100 == 0 && *res % 400 != 0) ? (*res - 4) : *res;
+
+	*instance = res;
+	return THEFT_ALLOC_OK;
+}
+
 enum theft_alloc_res alloc_1c1d(struct theft* t, void* data, void** instance) {
 	struct test_1c1d* res = malloc(sizeof(struct test_1c1d));
 	if(res == NULL) {
@@ -168,6 +182,11 @@ enum theft_alloc_res alloc_qsort_r(struct theft* t, void* data, void** instance)
 }
 #endif
 
+void print_leap_year(FILE* f, const void* instance, void* env) {
+	const int32_t* input = instance;
+	fprintf(f, "%d", *input);
+}
+
 void print_1c1d(FILE* f, const void* instance, void* env) {
 	const struct test_1c1d* input = instance;
 	const struct mon13_date d = input->d;
@@ -223,6 +242,44 @@ enum theft_trial_res bad_date_day(struct theft* t, void* test_input) {
 	input->d.day += MON13_DAY_PER_MONTH;
 	if(mon13_bad_date(input->c, input->d)) {
 		return THEFT_TRIAL_PASS;
+	}
+	return THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res is_leap_year_gregorian(struct theft* t, void* test_input) {
+	int32_t* input = test_input;
+	return mon13_is_leap_year(NULL, *input) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res is_leap_year_gregorian_not(struct theft* t, void* test_input) {
+	int32_t* input = test_input;
+	*input = *input - 1;
+	return mon13_is_leap_year(NULL, *input) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res convert_leap_tranquility(struct theft* t, void* test_input) {
+	int32_t* input = test_input;
+	struct mon13_date d_in = {.year = *input, .month = 2, .day = 29};
+	struct mon13_date d_out = mon13_convert(NULL, &mon13_tranquility, d_in);
+	
+	int32_t tq_year = mon13_tranquility.era_start_gregorian.year;
+	if(d_in.year < tq_year && d_out.year != (d_in.year - tq_year - 1)) {
+		return THEFT_TRIAL_FAIL;
+	}
+	else if(d_in.year > tq_year && d_out.year != (d_in.year - tq_year)) {
+		return THEFT_TRIAL_FAIL;
+	}
+	else if(d_in.year == tq_year) {
+		return THEFT_TRIAL_SKIP;
+	}
+
+	for(int i = 0; i < mon13_tranquility.intercalary_day_count; i++) {
+		struct mon13_intercalary* ic = &(mon13_tranquility.intercalary_days[i]);
+		if(ic->flags & MON13_IC_LEAP) {
+			if(d_out.day == ic->day && d_out.month == ic->month) {
+				return THEFT_TRIAL_PASS;
+			}
+		}
 	}
 	return THEFT_TRIAL_FAIL;
 }
@@ -333,10 +390,30 @@ enum theft_trial_res add_advance_weekday(struct theft* t, void* test_input) {
 	input->d1.year = 0;
 	input->d1.month = 0;
 	input->d1.day = (input->d1.day % MON13_DAY_PER_WEEK);
+	struct mon13_date sum = mon13_add(input->c, input->d0, input->d1, true);
 	int weekday0 = mon13_get_weekday(input->c, input->d0);
-	int weekday1 = mon13_get_weekday(input->c, input->d1);
+	int weekday1 = mon13_get_weekday(input->c, sum);
 	if((weekday1 - weekday0) == input->d1.day) {
 		return THEFT_TRIAL_PASS;
+	}
+	return THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res add_advance_month(struct theft* t, void* test_input) {
+	struct test_1c1d* input = test_input;
+	if(input->c == NULL || input->d.month == 0) {
+		return THEFT_TRIAL_SKIP;
+	}
+	input->d.day = MON13_DAY_PER_MONTH;
+	struct mon13_date one_day = {.year = 0, .month = 0, .day = 1};
+	struct mon13_date sum = mon13_add(input->c, input->d, one_day, true);
+	if(sum.day == 1) {
+		if(input->d.month == MON13_MONTH_PER_YEAR && sum.month == 1) {
+			return THEFT_TRIAL_PASS;
+		}
+		else if(sum.month == (input->d.month + 1)) {
+			return THEFT_TRIAL_PASS;
+		}
 	}
 	return THEFT_TRIAL_FAIL;
 }
@@ -393,6 +470,12 @@ enum theft_trial_res get_weekday_range(struct theft* t, void* test_input) {
 	return THEFT_TRIAL_FAIL;
 }
 
+struct theft_type_info random_leap_year_info = {
+	.alloc = alloc_leap_year,
+	.free = theft_generic_free_cb,
+	.print = print_leap_year,
+};
+
 struct theft_type_info random_1c1d_info = {
 	.alloc = alloc_1c1d,
 	.free = theft_generic_free_cb,
@@ -437,6 +520,24 @@ int main() {
 			.name = "mon13_bad_date: bad day",
 			.prop1 = bad_date_day,
 			.type_info = { &random_1c1d_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_is_leap_year: Gregorian true",
+			.prop1 = is_leap_year_gregorian,
+			.type_info = { &random_leap_year_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_is_leap_year: Gregorian false",
+			.prop1 = is_leap_year_gregorian_not,
+			.type_info = { &random_leap_year_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_convert: leap year Tranquility",
+			.prop1 = convert_leap_tranquility,
+			.type_info = { &random_leap_year_info },
 			.seed = seed
 		},
 		{
@@ -499,6 +600,12 @@ int main() {
 			.name = "mon13_add: advance weekday",
 			.prop1 = add_advance_weekday,
 			.type_info = { &random_add_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: advance month",
+			.prop1 = add_advance_month,
+			.type_info = { &random_1c1d_info },
 			.seed = seed
 		},
 		{
