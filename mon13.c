@@ -3,6 +3,20 @@
 
 #include "mon13.h"
 
+enum mon13_validity mon13_bad_date(
+	const struct mon13_cal* cal,
+	const struct mon13_date d
+) {
+	return MON13_VALID;
+}
+
+bool mon13_is_leap_year(
+	const struct mon13_cal* cal,
+	const struct mon13_date d
+) {
+	return false;
+}
+
 struct mon13_date mon13_convert(
 	const struct mon13_cal* src,
 	const struct mon13_cal* dest,

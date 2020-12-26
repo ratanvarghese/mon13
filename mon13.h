@@ -19,6 +19,11 @@ enum mon13_cal_flags {
 	MON13_CAL_GREGORIAN_LEAP_YEAR = 1 << 1
 };
 
+enum mon13_validity {
+	MON13_VALID = 0,
+	MON13_LARGE_DAY_OF_MONTH
+};
+
 struct mon13_date {
 	int32_t year;
 	int8_t month;
@@ -45,6 +50,16 @@ struct mon13_cal {
 	int8_t intercalary_day_count;
 	int8_t flags;
 };
+
+enum mon13_validity mon13_bad_date(
+	const struct mon13_cal* cal,
+	const struct mon13_date d
+);
+
+bool mon13_is_leap_year(
+	const struct mon13_cal* cal,
+	const struct mon13_date d
+);
 
 struct mon13_date mon13_convert(
 	const struct mon13_cal* src,
