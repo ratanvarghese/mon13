@@ -254,7 +254,7 @@ enum theft_trial_res is_leap_year_gregorian(struct theft* t, void* test_input) {
 enum theft_trial_res is_leap_year_gregorian_not(struct theft* t, void* test_input) {
 	int32_t* input = test_input;
 	*input = *input - 1;
-	return mon13_is_leap_year(NULL, *input) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	return mon13_is_leap_year(NULL, *input) ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS;
 }
 
 enum theft_trial_res convert_leap_tranquility(struct theft* t, void* test_input) {
@@ -422,7 +422,7 @@ enum theft_trial_res get_weekday_start_month(struct theft* t, void* test_input) 
 	struct test_1c1d* input = test_input;
 	input->d.day = 1;
 	int weekday = mon13_get_weekday(input->c, input->d);
-	if(input->c == NULL && weekday < 0) {
+	if((input->c == NULL || input->d.month == 0) && weekday < 0) {
 		return THEFT_TRIAL_PASS;
 	}
 	else if(input->c != NULL && weekday == 0) {
@@ -435,7 +435,7 @@ enum theft_trial_res get_weekday_end_month(struct theft* t, void* test_input) {
 	struct test_1c1d* input = test_input;
 	input->d.day = MON13_DAY_PER_MONTH;
 	int weekday = mon13_get_weekday(input->c, input->d);
-	if(input->c == NULL && weekday < 0) {
+	if((input->c == NULL || input->d.month == 0) && weekday < 0) {
 		return THEFT_TRIAL_PASS;
 	}
 	else if(input->c != NULL && weekday == (MON13_DAY_PER_WEEK - 1)) {

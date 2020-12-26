@@ -13,10 +13,16 @@ enum mon13_validity mon13_bad_date(
 
 bool mon13_is_leap_year(
 	const struct mon13_cal* cal,
-	int32_t year
+	const int32_t year
 ) {
-	bool res;
-	return res;
+	int32_t y = year;
+	if(year < 0) { //Assuming no zero year
+		y++;
+	}
+	if(cal != NULL && (cal->flags & MON13_CAL_GREGORIAN_LEAP_YEAR)) {
+		y += cal->era_start_gregorian.year;
+	}
+	return (y % 400 == 0) || (y % 4 == 0 && y % 100 != 0);
 }
 
 struct mon13_date mon13_convert(
@@ -62,6 +68,8 @@ int8_t mon13_get_weekday(
 	const struct mon13_cal* cal,
 	const struct mon13_date d
 ) {
-	int res;
-	return res;
+	if(cal == NULL || d.month == 0) {
+		return -1;
+	}
+	return (d.day - 1) % MON13_DAY_PER_WEEK;
 }

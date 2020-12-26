@@ -65,7 +65,7 @@ enum mon13_validity mon13_bad_date(
 
 bool mon13_is_leap_year(
 	const struct mon13_cal* cal,
-	int32_t year
+	const int32_t year
 );
 
 struct mon13_date mon13_convert(
