@@ -29,7 +29,9 @@ enum mon13_cal_flags {
 
 enum mon13_validity {
 	MON13_VALID = 0,
-	MON13_LARGE_DAY_OF_MONTH
+	MON13_INVALID_MONTH,
+	MON13_INVALID_YEAR_ZERO,
+	MON13_INVALID_DAY
 };
 
 struct mon13_date {

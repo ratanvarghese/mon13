@@ -3,12 +3,65 @@
 
 #include "mon13.h"
 
+static int max_day_gregorian(int8_t month, bool leap) {
+	switch(month) {
+		case 2:
+			return leap ? 29 : 28;
+		case 4:
+		case 6:
+		case 9:
+		case 11:
+			return 30;
+		default:
+			return 31;
+	}
+}
+
+static const struct mon13_intercalary* get_ic(
+	const struct mon13_cal* cal,
+	const struct mon13_date d
+) {
+	for(int i = 0; i < cal->intercalary_day_count; i++) {
+		struct mon13_intercalary ic = cal->intercalary_days[i];
+		if(ic.month == d.month && ic.day == d.day) {
+			if((ic.flags & MON13_IC_LEAP) && !mon13_is_leap_year(cal,d.year)) {
+				continue;
+			}
+			return &(cal->intercalary_days[i]);
+		}
+	}
+	return NULL;
+}
+
 enum mon13_validity mon13_bad_date(
 	const struct mon13_cal* cal,
 	const struct mon13_date d
 ) {
-	enum mon13_validity res;
-	return res;
+	if(d.year == 0) {
+		return MON13_INVALID_YEAR_ZERO;
+	}
+
+	if(cal == NULL) {
+		if(d.month < 1 || d.month > MON13_GREGORIAN_MONTH_PER_YEAR) {
+			return MON13_INVALID_MONTH;
+		}
+		int md = max_day_gregorian(d.month, mon13_is_leap_year(NULL, d.year));
+		if(d.day < 1 || d.day > md) {
+			return MON13_INVALID_DAY;
+		}
+	}
+	else {
+		if(get_ic(cal, d) != NULL) {
+			return MON13_VALID;
+		}
+		if(d.month < 1 || d.month > MON13_MONTH_PER_YEAR) {
+			return MON13_INVALID_MONTH;
+		}
+		if(d.day < 1 || d.day > MON13_DAY_PER_MONTH) {
+			return MON13_INVALID_DAY;
+		}
+	}
+	return MON13_VALID;
 }
 
 bool mon13_is_leap_year(

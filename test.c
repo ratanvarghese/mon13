@@ -230,7 +230,7 @@ void print_add(FILE* f, const void* instance, void* env) {
 
 enum theft_trial_res bad_date_month(struct theft* t, void* test_input) {
 	struct test_1c1d* input = test_input;
-	input->d.month += MON13_MONTH_PER_YEAR;
+	input->d.month += (MON13_MONTH_PER_YEAR + 1);
 	if(mon13_bad_date(input->c, input->d)) {
 		return THEFT_TRIAL_PASS;
 	}
@@ -239,7 +239,7 @@ enum theft_trial_res bad_date_month(struct theft* t, void* test_input) {
 
 enum theft_trial_res bad_date_day(struct theft* t, void* test_input) {
 	struct test_1c1d* input = test_input;
-	input->d.day += MON13_DAY_PER_MONTH;
+	input->d.day += (input->c != NULL) ? MON13_DAY_PER_MONTH : 31;
 	if(mon13_bad_date(input->c, input->d)) {
 		return THEFT_TRIAL_PASS;
 	}
