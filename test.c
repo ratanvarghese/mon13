@@ -32,13 +32,11 @@ struct test_add {
 	bool skip;
 };
 
-#if defined(__GLIBC__)
 #define TEST_QSORT_LEN 100
-struct test_qsort_r {
+struct test_qsort {
 	struct mon13_cal* c;
 	struct mon13_date d[TEST_QSORT_LEN];
 };
-#endif
 
 static struct mon13_cal* random_cal(struct theft* t) {
 	switch(theft_random_choice(t, 4)) {
@@ -167,9 +165,8 @@ enum theft_alloc_res alloc_add(struct theft* t, void* data, void** instance) {
 	return THEFT_ALLOC_OK;
 }
 
-#if defined(__GLIBC__)
-enum theft_alloc_res alloc_qsort_r(struct theft* t, void* data, void** instance) {
-	struct test_qsort_r* res = malloc(sizeof(struct test_qsort_r));
+enum theft_alloc_res alloc_qsort(struct theft* t, void* data, void** instance) {
+	struct test_qsort* res = malloc(sizeof(struct test_qsort));
 	if(res == NULL) {
 		return THEFT_ALLOC_ERROR;
 	}
@@ -180,7 +177,6 @@ enum theft_alloc_res alloc_qsort_r(struct theft* t, void* data, void** instance)
 	*instance = res;
 	return THEFT_ALLOC_OK;
 }
-#endif
 
 void print_leap_year(FILE* f, const void* instance, void* env) {
 	const int32_t* input = instance;
@@ -360,9 +356,41 @@ enum theft_trial_res compare_reverse_arg(struct theft* t, void* test_input) {
 	return THEFT_TRIAL_FAIL;
 }
 
+#define QSORT_F(fname, caddr) \
+	int fname (const void* d0, const void* d1) { \
+		return mon13_compare( \
+			(const struct mon13_date*)d0, \
+			(const struct mon13_date*)d1, \
+			caddr \
+		); \
+	}
+
+QSORT_F(compare_qsort_tq, &(mon13_tranquility))
+QSORT_F(compare_qsort_if, &(mon13_international_fixed))
+QSORT_F(compare_qsort_ps, &(mon13_positivist))
+QSORT_F(compare_qsort_gr, NULL)
+
+#define RUN_QSORT_F(c, d, fname, caddr) \
+	if(c == caddr) { \
+		qsort(d, TEST_QSORT_LEN, sizeof(struct mon13_date), fname); \
+	}
+
+enum theft_trial_res compare_qsort(struct theft* t, void* test_input) {
+	struct test_qsort* input = test_input;
+	RUN_QSORT_F(input->c, input->d, compare_qsort_tq, &(mon13_tranquility))
+	RUN_QSORT_F(input->c, input->d, compare_qsort_if, &(mon13_international_fixed))
+	RUN_QSORT_F(input->c, input->d, compare_qsort_ps, &(mon13_positivist))
+	RUN_QSORT_F(input->c, input->d, compare_qsort_gr, NULL)
+
+	if(input->d[0].year <= input->d[TEST_QSORT_LEN-1].year) {
+		return THEFT_TRIAL_PASS;
+	}
+	return THEFT_TRIAL_FAIL;
+}
+
 #if defined(__GLIBC__)
 enum theft_trial_res compare_qsort_r(struct theft* t, void* test_input) {
-	struct test_qsort_r* input = test_input;
+	struct test_qsort* input = test_input;
 	qsort_r(
 		input->d, TEST_QSORT_LEN, sizeof(struct mon13_date),
 		mon13_compare, input->c
@@ -500,12 +528,10 @@ struct theft_type_info random_add_info = {
 	.print = print_add,
 };
 
-#if defined(__GLIBC__)
-struct theft_type_info random_qsort_r_info = {
-	.alloc = alloc_qsort_r,
+struct theft_type_info random_qsort_info = {
+	.alloc = alloc_qsort,
 	.free = theft_generic_free_cb
 };
-#endif
 
 int main() {
 	theft_seed seed = theft_seed_of_time();
@@ -582,11 +608,17 @@ int main() {
 			.type_info = { &random_1c2d_info },
 			.seed = seed
 		},
+		{
+			.name = "mon13_compare: qsort",
+			.prop1 = compare_qsort,
+			.type_info = { &random_qsort_info },
+			.seed = seed
+		},
 #if defined(__GLIBC__)
 		{
 			.name = "mon13_compare: qsort_r",
 			.prop1 = compare_qsort_r,
-			.type_info = { &random_qsort_r_info },
+			.type_info = { &random_qsort_info },
 			.seed = seed
 		},
 #endif		
