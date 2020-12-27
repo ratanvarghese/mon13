@@ -21,6 +21,10 @@ static const struct mon13_intercalary* get_ic(
 	const struct mon13_cal* cal,
 	const struct mon13_date d
 ) {
+	if(cal == NULL) {
+		return NULL;
+	}
+
 	for(int i = 0; i < cal->intercalary_day_count; i++) {
 		struct mon13_intercalary ic = cal->intercalary_days[i];
 		if(ic.month == d.month && ic.day == d.day) {
@@ -98,13 +102,68 @@ int mon13_fmt(
 	return res;
 }
 
+static int compare_simple(int8_t month0, int8_t day0, int8_t month1, int8_t day1) {
+	if(month0 < month1) {
+		return -1;
+	}
+	if(month0 > month1) {
+		return 1;
+	}
+	if(day0 < day1) {
+		return -1;
+	}
+	if(day0 > day1) {
+		return 1;
+	}
+
+	return 0;
+}
+
+static struct mon13_date before_intercalary(
+	const struct mon13_date d,
+	struct mon13_cal* cal,
+	int* recurse_count
+) {
+	if(cal == NULL) {
+		return d;
+	}
+	const struct mon13_intercalary* ic = get_ic(cal, d);
+	if(ic == NULL || (ic->before_month == d.month && ic->before_day == d.day)) {
+		return d; //before.* == d.* is an invalid calendar: no looping, quit fast
+	}
+	if(recurse_count != NULL) {
+		*recurse_count++;
+	}
+	struct mon13_date res;
+	res.year = d.year;
+	res.month = ic->before_month;
+	res.day = ic->before_day;
+	return before_intercalary(res, cal, recurse_count);
+}
+
 int mon13_compare(
 	const struct mon13_date* d0,
 	const struct mon13_date* d1,
 	struct mon13_cal* cal
 ) {
-	int res;
-	return res;
+	if(d0->year < d1->year) {
+		return -1;
+	}
+	if(d0->year > d1->year) {
+		return 1;
+	}
+
+	int simple_res = compare_simple(d0->month, d0->day, d1->month, d1->day);
+	if(simple_res == 0 || (d0->month > 0 && d1->month > 0)) {
+		return simple_res;
+	}
+
+	int rc0 = 0;
+	int rc1 = 0;
+	struct mon13_date bic0 = before_intercalary(*d0, cal, &rc0);
+	struct mon13_date bic1 = before_intercalary(*d1, cal, &rc1);
+	int bic_res = compare_simple(bic0.month, bic0.day, bic1.month, bic1.day);
+	return (bic_res == 0) ? (rc0 - rc1) : bic_res;
 }
 
 struct mon13_date mon13_add(
