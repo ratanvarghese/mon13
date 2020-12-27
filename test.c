@@ -360,6 +360,39 @@ enum theft_trial_res compare_lesser_year(struct theft* t, void* test_input) {
 	return THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res compare_intercalary(struct theft* t, void* test_input) {
+	struct test_1c1d* input = test_input;
+	if(input->c == NULL) {
+		return THEFT_TRIAL_SKIP;
+	}
+	for(int i = 0; i < input->c->intercalary_day_count; i++) {
+		struct mon13_intercalary ic = input->c->intercalary_days[i];
+		if(ic.flags & MON13_IC_ERA_START) {
+			continue;
+		}
+		if((ic.flags & MON13_IC_LEAP) && !mon13_is_leap_year(input->c, input->d.year)) {
+			continue;
+		}
+		if(input->d.month == ic.month && input->d.day == ic.before_day) {
+			continue;
+		}
+		if(input->d.month == ic.before_month && input->d.day == ic.before_day) {
+			continue;
+		}
+		struct mon13_date icd0 = {
+			.year=input->d.year, .month=ic.month, .day=ic.day
+		};
+		struct mon13_date icd1 = {
+			.year=input->d.year, .month=ic.before_month, .day=ic.before_day
+		};
+		int cmp0 = mon13_compare(&icd0, &(input->d), input->c);
+		int cmp1 = mon13_compare(&icd1, &(input->d), input->c);
+		if(cmp0 != cmp1) {
+			return THEFT_TRIAL_FAIL;
+		}
+	}
+	return THEFT_TRIAL_PASS;
+}
 
 enum theft_trial_res compare_reverse_arg(struct theft* t, void* test_input) {
 	struct test_1c2d* input = test_input;
@@ -628,6 +661,12 @@ int main() {
 		{
 			.name = "mon13_compare: trivial lesser year",
 			.prop1 = compare_lesser_year,
+			.type_info = { &random_1c1d_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_compare: intercalary",
+			.prop1 = compare_intercalary,
 			.type_info = { &random_1c1d_info },
 			.seed = seed
 		},
