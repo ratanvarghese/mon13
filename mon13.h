@@ -23,7 +23,8 @@ enum mon13_ic_flags {
 enum mon13_cal_flags {
 	MON13_CAL_NONE = 0,
 	MON13_CAL_YEARLESS_ERA_START = 1 << 0,
-	MON13_CAL_GREGORIAN_LEAP_YEAR = 1 << 1
+	MON13_CAL_GREGORIAN_LEAP_YEAR = 1 << 1,
+	MON13_CAL_GREGORIAN_WKDY_NAMES = 1 << 2,
 };
 
 enum mon13_validity {
@@ -39,11 +40,11 @@ struct mon13_date {
 
 struct mon13_intercalary {
 	const char* name;
+	int32_t flags;
 	int8_t month;
 	int8_t day;
 	int8_t before_month;
 	int8_t before_day;
-	int8_t flags;
 };
 
 struct mon13_cal {
@@ -54,8 +55,9 @@ struct mon13_cal {
 	const char* cal_name;
 	struct mon13_date era_start_gregorian;
 	int32_t era_start_millisecond;
+	int32_t flags;
 	int8_t intercalary_day_count;
-	int8_t flags;
+	int8_t week_info;
 };
 
 enum mon13_validity mon13_bad_date(
@@ -99,6 +101,8 @@ int8_t mon13_get_weekday(
 	const struct mon13_cal* cal,
 	const struct mon13_date d
 );
+
+const char* mon13_wkdy_names[7];
 
 struct mon13_cal mon13_tranquility;
 struct mon13_cal mon13_international_fixed;
