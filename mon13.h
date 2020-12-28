@@ -27,13 +27,6 @@ enum mon13_cal_flags {
 	MON13_CAL_GREGORIAN_WKDY_NAMES = 1 << 2,
 };
 
-enum mon13_validity {
-	MON13_VALID = 0,
-	MON13_INVALID_MONTH,
-	MON13_INVALID_YEAR_ZERO,
-	MON13_INVALID_DAY
-};
-
 struct mon13_date {
 	int32_t year;
 	int8_t month;
