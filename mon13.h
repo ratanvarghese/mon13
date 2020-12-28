@@ -94,8 +94,15 @@ int mon13_compare(
 
 struct mon13_date mon13_add(
 	const struct mon13_cal* cal,
-	const struct mon13_date a,
-	const struct mon13_date b,
+	const struct mon13_date fixed_date,
+	const struct mon13_date duration,
+	const bool skip_intercalary_day
+);
+
+struct mon13_date mon13_sub(
+	const struct mon13_cal* cal,
+	const struct mon13_date d0,
+	const struct mon13_date d1,
 	const bool skip_intercalary_day
 );
 

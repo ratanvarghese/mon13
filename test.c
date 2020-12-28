@@ -11,25 +11,28 @@
 struct test_1c1d {
 	struct mon13_cal* c;
 	struct mon13_date d;
+	bool flip;
 };
 
 struct test_1c2d {
 	struct mon13_cal* c;
 	struct mon13_date d0;
 	struct mon13_date d1;
+	bool flip;
 };
 
 struct test_2c1d {
 	struct mon13_cal* c0;
 	struct mon13_cal* c1;
 	struct mon13_date d;
+	bool flip;
 };
 
 struct test_add {
 	struct mon13_cal* c;
 	struct mon13_date d0;
 	struct mon13_date d1;
-	bool skip;
+	bool flip;
 };
 
 #define TEST_QSORT_LEN 600
@@ -41,6 +44,7 @@ struct test_qsort {
 	int i2;
 	bool fix_year;
 	bool fix_month;
+	bool flip;
 };
 
 static struct mon13_cal* random_cal(struct theft* t) {
@@ -114,6 +118,7 @@ enum theft_alloc_res alloc_1c1d(struct theft* t, void* data, void** instance) {
 	}
 	res->c = random_cal(t);
 	res->d = random_date(t, res->c);
+	res->flip = theft_random_choice(t, 2);
 
 	*instance = res;
 	return THEFT_ALLOC_OK;
@@ -127,6 +132,7 @@ enum theft_alloc_res alloc_1c2d(struct theft* t, void* data, void** instance) {
 	res->c = random_cal(t);
 	res->d0 = random_date(t, res->c);
 	res->d1 = random_date(t, res->c);
+	res->flip = theft_random_choice(t, 2);
 
 	*instance = res;
 	return THEFT_ALLOC_OK;
@@ -140,6 +146,7 @@ enum theft_alloc_res alloc_2c1d(struct theft* t, void* data, void** instance) {
 	res->c0 = random_cal(t);
 	res->c1 = random_cal(t);
 	res->d = random_date(t, res->c0);
+	res->flip = theft_random_choice(t, 2);
 	
 	*instance = res;
 	return THEFT_ALLOC_OK;
@@ -164,7 +171,7 @@ enum theft_alloc_res alloc_add(struct theft* t, void* data, void** instance) {
 	if(theft_random_choice(t, 2)) {
 		res->d1.day = -(res->d1.day);
 	}
-	res->skip = (theft_random_choice(t, 2) == 0);
+	res->flip = (theft_random_choice(t, 2) == 0);
 
 	*instance = res;
 	return THEFT_ALLOC_OK;
@@ -195,6 +202,8 @@ enum theft_alloc_res alloc_qsort(struct theft* t, void* data, void** instance) {
 			res->d[i].month = res->d[0].month;
 		}
 	}
+
+	res->flip = theft_random_choice(t, 2);
 	*instance = res;
 	return THEFT_ALLOC_OK;
 }
@@ -208,17 +217,22 @@ void print_1c1d(FILE* f, const void* instance, void* env) {
 	const struct test_1c1d* input = instance;
 	const struct mon13_date d = input->d;
 	const char* name = (input->c == NULL) ? "Gregorian" : input->c->cal_name;
-	fprintf(f, "(%d-%02d-%02d) %s", d.year, d.month, d.day, name);
+	const char* flip = input->flip ? "true" : "false";
+	fprintf(
+		f, "(%d-%02d-%02d) %s, flip = %s",
+		d.year, d.month, d.day, name, flip
+	);
 }
 
 void print_1c2d(FILE* f, const void* instance, void* env) {
 	const struct test_1c2d* input = instance;
 	const char* name = (input->c == NULL) ? "Gregorian" : input->c->cal_name;
+	const char* flip = input->flip ? "true" : "false";
 	fprintf(
-		f, "(%d-%02d-%02d) (%d-%02d-%02d) %s",
+		f, "(%d-%02d-%02d) (%d-%02d-%02d) %s, flip = %s",
 		input->d0.year, input->d0.month, input->d0.day,
 		input->d1.year, input->d1.month, input->d1.day,
-		name
+		name, flip
 	);
 }
 
@@ -226,22 +240,23 @@ void print_2c1d(FILE* f, const void* instance, void* env) {
 	const struct test_2c1d* input = instance;
 	const char* name0 = (input->c0 == NULL) ? "Gregorian" : input->c0->cal_name;
 	const char* name1 = (input->c1 == NULL) ? "Gregorian" : input->c1->cal_name;
+	const char* flip = input->flip ? "true" : "false";
 	fprintf(
-		f, "(%d-%02d-%02d) %s, %s",
+		f, "(%d-%02d-%02d) %s, %s, flip = %s",
 		input->d.year, input->d.month, input->d.day,
-		name0, name1
+		name0, name1, flip
 	);
 }
 
 void print_add(FILE* f, const void* instance, void* env) {
 	const struct test_add* input = instance;
 	const char* name = (input->c == NULL) ? "Gregorian" : input->c->cal_name;
-	const char* skip = input->skip ? "true" : "false";
+	const char* flip = input->flip ? "true" : "false";
 	fprintf(
-		f, "(%d-%02d-%02d) (%d-%02d-%02d) %s, skip = %s",
+		f, "(%d-%02d-%02d) (%d-%02d-%02d) %s, flip = %s",
 		input->d0.year, input->d0.month, input->d0.day,
 		input->d1.year, input->d1.month, input->d1.day,
-		name, skip
+		name, flip
 	);
 }
 
@@ -465,11 +480,14 @@ enum theft_trial_res compare_qsort_r(struct theft* t, void* test_input) {
 }
 #endif
 
-enum theft_trial_res add_reverse_arg(struct theft* t, void* test_input) {
+enum theft_trial_res add_round_trip(struct theft* t, void* test_input) {
 	struct test_add* input = test_input;
-	struct mon13_date sum0 = mon13_add(input->c, input->d0, input->d1, input->skip);
-	struct mon13_date sum1 = mon13_add(input->c, input->d1, input->d0, input->skip);
-	if(mon13_compare(&(input->d0), &(input->d1), input->c) == 0) {
+	struct mon13_date sum0 = mon13_add(input->c, input->d0, input->d1, input->flip);
+	struct mon13_date d2 = {
+		.year = -(input->d1.year), .month = -(input->d1.month), .day = -(input->d1.day)
+	};
+	struct mon13_date sum1 = mon13_add(input->c, sum0, d2, input->flip);
+	if(mon13_compare(&sum1, &(input->d0), input->c) == 0) {
 		return THEFT_TRIAL_PASS;
 	}
 	return THEFT_TRIAL_FAIL;
@@ -506,6 +524,61 @@ enum theft_trial_res add_advance_month(struct theft* t, void* test_input) {
 		}
 	}
 	return THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res sub_then_add(struct theft* t, void* test_input) {
+	struct test_1c2d* input = test_input;
+	bool b = input->flip;
+	struct mon13_date diff = mon13_sub(input->c, input->d0, input->d1, b);
+	struct mon13_date sum = mon13_add(input->c, input->d1, diff, b);
+	if(mon13_compare(&(input->d0), &sum, input->c) == 0) {
+		return THEFT_TRIAL_PASS;
+	}
+	return THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res sub_reverse_arg(struct theft* t, void* test_input) {
+	struct test_1c2d* input = test_input;
+	bool b = input->flip;
+	struct mon13_date diff0 = mon13_sub(input->c, input->d0, input->d1, b);
+	struct mon13_date diff1 = mon13_sub(input->c, input->d1, input->d0, b);
+	if(diff0.year != -diff1.year) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(diff0.month != -diff1.month) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(diff0.day != -diff1.day) {
+		return THEFT_TRIAL_FAIL;
+	}
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res sub_after_qsort(struct theft* t, void* test_input) {
+	struct test_qsort* input = test_input;
+	RUN_QSORT_F(input->c, input->d, compare_qsort_tq, &(mon13_tranquility))
+	RUN_QSORT_F(input->c, input->d, compare_qsort_if, &(mon13_international_fixed))
+	RUN_QSORT_F(input->c, input->d, compare_qsort_ps, &(mon13_positivist))
+	RUN_QSORT_F(input->c, input->d, compare_qsort_gr, NULL)
+	const struct mon13_date d0 = input->d[input->i0];
+	const struct mon13_date d1 = input->d[input->i1];
+	const struct mon13_date d2 = input->d[input->i2];
+	struct mon13_date diff0 = mon13_sub(input->c, d0, d0, input->flip);
+	struct mon13_date diff1 = mon13_sub(input->c, d0, d1, input->flip);
+	struct mon13_date diff2 = mon13_sub(input->c, d0, d2, input->flip);
+
+	//Use NULL to force simple numeric compare.
+	if(mon13_compare(&diff0, &diff0, NULL) != 0) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(mon13_compare(&diff1, &diff0, NULL) < 0) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(mon13_compare(&diff2, &diff1, NULL) < 0) {
+		return THEFT_TRIAL_FAIL;
+	}
+	
+	return THEFT_TRIAL_PASS;
 }
 
 enum theft_trial_res get_weekday_start_month(struct theft* t, void* test_input) {
@@ -691,8 +764,8 @@ int main() {
 		},
 #endif		
 		{
-			.name = "mon13_add: reverse arguments",
-			.prop1 = add_reverse_arg,
+			.name = "mon13_add: round trip",
+			.prop1 = add_round_trip,
 			.type_info = { &random_add_info },
 			.seed = seed
 		},
@@ -706,6 +779,24 @@ int main() {
 			.name = "mon13_add: advance month",
 			.prop1 = add_advance_month,
 			.type_info = { &random_1c1d_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_sub: subtract then add",
+			.prop1 = sub_then_add,
+			.type_info = { &random_1c2d_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_sub: reverse arguments",
+			.prop1 = sub_reverse_arg,
+			.type_info = { &random_1c2d_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_sub: subtract after qsort",
+			.prop1 = sub_after_qsort,
+			.type_info = { &random_qsort_info },
 			.seed = seed
 		},
 		{
