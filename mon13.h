@@ -62,11 +62,6 @@ struct mon13_cal {
 	int8_t week_info;
 };
 
-enum mon13_validity mon13_bad_date(
-	const struct mon13_cal* cal,
-	const struct mon13_date d
-);
-
 bool mon13_is_leap_year(
 	const struct mon13_cal* cal,
 	const int32_t year
@@ -90,20 +85,6 @@ int mon13_compare(
 	const struct mon13_date* d0,
 	const struct mon13_date* d1,
 	struct mon13_cal* cal
-);
-
-struct mon13_date mon13_add(
-	const struct mon13_cal* cal,
-	const struct mon13_date fixed_date,
-	const struct mon13_date duration,
-	const bool skip_intercalary_day
-);
-
-struct mon13_date mon13_sub(
-	const struct mon13_cal* cal,
-	const struct mon13_date d0,
-	const struct mon13_date d1,
-	const bool skip_intercalary_day
 );
 
 int8_t mon13_get_weekday(

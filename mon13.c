@@ -37,37 +37,6 @@ static const struct mon13_intercalary* get_ic(
 	return NULL;
 }
 
-enum mon13_validity mon13_bad_date(
-	const struct mon13_cal* cal,
-	const struct mon13_date d
-) {
-	if(d.year == 0) {
-		return MON13_INVALID_YEAR_ZERO;
-	}
-
-	if(cal == NULL) {
-		if(d.month < 1 || d.month > MON13_GREGORIAN_MONTH_PER_YEAR) {
-			return MON13_INVALID_MONTH;
-		}
-		int md = max_day_gregorian(d.month, mon13_is_leap_year(NULL, d.year));
-		if(d.day < 1 || d.day > md) {
-			return MON13_INVALID_DAY;
-		}
-	}
-	else {
-		if(get_ic(cal, d) != NULL) {
-			return MON13_VALID;
-		}
-		if(d.month < 1 || d.month > MON13_MONTH_PER_YEAR) {
-			return MON13_INVALID_MONTH;
-		}
-		if(d.day < 1 || d.day > MON13_DAY_PER_MONTH) {
-			return MON13_INVALID_DAY;
-		}
-	}
-	return MON13_VALID;
-}
-
 bool mon13_is_leap_year(
 	const struct mon13_cal* cal,
 	const int32_t year
@@ -164,26 +133,6 @@ int mon13_compare(
 	struct mon13_date bic1 = before_intercalary(*d1, cal, &rc1);
 	int bic_res = compare_simple(bic0.month, bic0.day, bic1.month, bic1.day);
 	return (bic_res == 0) ? (rc0 - rc1) : bic_res;
-}
-
-struct mon13_date mon13_add(
-	const struct mon13_cal* cal,
-	const struct mon13_date fixed_date,
-	const struct mon13_date duration,
-	const bool skip_intercalary_day
-) {
-	struct mon13_date res;
-	return res;
-}
-
-struct mon13_date mon13_sub(
-	const struct mon13_cal* cal,
-	const struct mon13_date d0,
-	const struct mon13_date d1,
-	const bool skip_intercalary_day
-) {
-	struct mon13_date res;
-	return res;
 }
 
 int8_t mon13_get_weekday(

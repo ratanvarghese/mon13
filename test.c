@@ -28,13 +28,6 @@ struct test_2c1d {
 	bool flip;
 };
 
-struct test_add {
-	struct mon13_cal* c;
-	struct mon13_date d0;
-	struct mon13_date d1;
-	bool flip;
-};
-
 #define TEST_QSORT_LEN 600
 struct test_qsort {
 	struct mon13_cal* c;
@@ -152,31 +145,6 @@ enum theft_alloc_res alloc_2c1d(struct theft* t, void* data, void** instance) {
 	return THEFT_ALLOC_OK;
 }
 
-enum theft_alloc_res alloc_add(struct theft* t, void* data, void** instance) {
-	struct test_add* res = malloc(sizeof(struct test_add));
-	if(res == NULL) {
-		return THEFT_ALLOC_ERROR;
-	}
-	res->c = random_cal(t);
-	res->d0 = random_date(t, res->c);
-	res->d1.year = theft_random_choice(t, INT_MAX);
-	if(theft_random_choice(t, 2)) {
-		res->d1.year = -(res->d1.year);
-	}
-	res->d1.month = theft_random_choice(t, INT_MAX);
-	if(theft_random_choice(t, 2)) {
-		res->d1.month = -(res->d1.month);
-	}
-	res->d1.day = theft_random_choice(t, INT_MAX);
-	if(theft_random_choice(t, 2)) {
-		res->d1.day = -(res->d1.day);
-	}
-	res->flip = (theft_random_choice(t, 2) == 0);
-
-	*instance = res;
-	return THEFT_ALLOC_OK;
-}
-
 enum theft_alloc_res alloc_qsort(struct theft* t, void* data, void** instance) {
 	struct test_qsort* res = malloc(sizeof(struct test_qsort));
 	if(res == NULL) {
@@ -246,36 +214,6 @@ void print_2c1d(FILE* f, const void* instance, void* env) {
 		input->d.year, input->d.month, input->d.day,
 		name0, name1, flip
 	);
-}
-
-void print_add(FILE* f, const void* instance, void* env) {
-	const struct test_add* input = instance;
-	const char* name = (input->c == NULL) ? "Gregorian" : input->c->cal_name;
-	const char* flip = input->flip ? "true" : "false";
-	fprintf(
-		f, "(%d-%02d-%02d) (%d-%02d-%02d) %s, flip = %s",
-		input->d0.year, input->d0.month, input->d0.day,
-		input->d1.year, input->d1.month, input->d1.day,
-		name, flip
-	);
-}
-
-enum theft_trial_res bad_date_month(struct theft* t, void* test_input) {
-	struct test_1c1d* input = test_input;
-	input->d.month += (MON13_MONTH_PER_YEAR + 1);
-	if(mon13_bad_date(input->c, input->d)) {
-		return THEFT_TRIAL_PASS;
-	}
-	return THEFT_TRIAL_FAIL;
-}
-
-enum theft_trial_res bad_date_day(struct theft* t, void* test_input) {
-	struct test_1c1d* input = test_input;
-	input->d.day += (input->c != NULL) ? MON13_DAY_PER_MONTH : 31;
-	if(mon13_bad_date(input->c, input->d)) {
-		return THEFT_TRIAL_PASS;
-	}
-	return THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res is_leap_year_gregorian(struct theft* t, void* test_input) {
@@ -480,107 +418,6 @@ enum theft_trial_res compare_qsort_r(struct theft* t, void* test_input) {
 }
 #endif
 
-enum theft_trial_res add_round_trip(struct theft* t, void* test_input) {
-	struct test_add* input = test_input;
-	struct mon13_date sum0 = mon13_add(input->c, input->d0, input->d1, input->flip);
-	struct mon13_date d2 = {
-		.year = -(input->d1.year), .month = -(input->d1.month), .day = -(input->d1.day)
-	};
-	struct mon13_date sum1 = mon13_add(input->c, sum0, d2, input->flip);
-	if(mon13_compare(&sum1, &(input->d0), input->c) == 0) {
-		return THEFT_TRIAL_PASS;
-	}
-	return THEFT_TRIAL_FAIL;
-}
-
-enum theft_trial_res add_advance_weekday(struct theft* t, void* test_input) {
-	struct test_add* input = test_input;
-	input->d1.year = 0;
-	input->d1.month = 0;
-	input->d1.day = (input->d1.day % MON13_DAY_PER_WEEK);
-	struct mon13_date sum = mon13_add(input->c, input->d0, input->d1, true);
-	int weekday0 = mon13_get_weekday(input->c, input->d0);
-	int weekday1 = mon13_get_weekday(input->c, sum);
-	if((weekday1 - weekday0) == input->d1.day) {
-		return THEFT_TRIAL_PASS;
-	}
-	return THEFT_TRIAL_FAIL;
-}
-
-enum theft_trial_res add_advance_month(struct theft* t, void* test_input) {
-	struct test_1c1d* input = test_input;
-	if(input->c == NULL || input->d.month == 0) {
-		return THEFT_TRIAL_SKIP;
-	}
-	input->d.day = MON13_DAY_PER_MONTH;
-	struct mon13_date one_day = {.year = 0, .month = 0, .day = 1};
-	struct mon13_date sum = mon13_add(input->c, input->d, one_day, true);
-	if(sum.day == 1) {
-		if(input->d.month == MON13_MONTH_PER_YEAR && sum.month == 1) {
-			return THEFT_TRIAL_PASS;
-		}
-		else if(sum.month == (input->d.month + 1)) {
-			return THEFT_TRIAL_PASS;
-		}
-	}
-	return THEFT_TRIAL_FAIL;
-}
-
-enum theft_trial_res sub_then_add(struct theft* t, void* test_input) {
-	struct test_1c2d* input = test_input;
-	bool b = input->flip;
-	struct mon13_date diff = mon13_sub(input->c, input->d0, input->d1, b);
-	struct mon13_date sum = mon13_add(input->c, input->d1, diff, b);
-	if(mon13_compare(&(input->d0), &sum, input->c) == 0) {
-		return THEFT_TRIAL_PASS;
-	}
-	return THEFT_TRIAL_FAIL;
-}
-
-enum theft_trial_res sub_reverse_arg(struct theft* t, void* test_input) {
-	struct test_1c2d* input = test_input;
-	bool b = input->flip;
-	struct mon13_date diff0 = mon13_sub(input->c, input->d0, input->d1, b);
-	struct mon13_date diff1 = mon13_sub(input->c, input->d1, input->d0, b);
-	if(diff0.year != -diff1.year) {
-		return THEFT_TRIAL_FAIL;
-	}
-	if(diff0.month != -diff1.month) {
-		return THEFT_TRIAL_FAIL;
-	}
-	if(diff0.day != -diff1.day) {
-		return THEFT_TRIAL_FAIL;
-	}
-	return THEFT_TRIAL_PASS;
-}
-
-enum theft_trial_res sub_after_qsort(struct theft* t, void* test_input) {
-	struct test_qsort* input = test_input;
-	RUN_QSORT_F(input->c, input->d, compare_qsort_tq, &(mon13_tranquility))
-	RUN_QSORT_F(input->c, input->d, compare_qsort_if, &(mon13_international_fixed))
-	RUN_QSORT_F(input->c, input->d, compare_qsort_ps, &(mon13_positivist))
-	RUN_QSORT_F(input->c, input->d, compare_qsort_gr, NULL)
-	const struct mon13_date d0 = input->d[input->i0];
-	const struct mon13_date d1 = input->d[input->i1];
-	const struct mon13_date d2 = input->d[input->i2];
-	struct mon13_date diff0 = mon13_sub(input->c, d0, d0, input->flip);
-	struct mon13_date diff1 = mon13_sub(input->c, d0, d1, input->flip);
-	struct mon13_date diff2 = mon13_sub(input->c, d0, d2, input->flip);
-
-	//Use NULL to force simple numeric compare.
-	if(mon13_compare(&diff0, &diff0, NULL) != 0) {
-		return THEFT_TRIAL_FAIL;
-	}
-	if(mon13_compare(&diff1, &diff0, NULL) < 0) {
-		return THEFT_TRIAL_FAIL;
-	}
-	if(mon13_compare(&diff2, &diff1, NULL) < 0) {
-		return THEFT_TRIAL_FAIL;
-	}
-	
-	return THEFT_TRIAL_PASS;
-}
-
 enum theft_trial_res get_weekday_start_month(struct theft* t, void* test_input) {
 	struct test_1c1d* input = test_input;
 	input->d.day = 1;
@@ -657,12 +494,6 @@ struct theft_type_info random_2c1d_info = {
 	.print = print_2c1d,
 };
 
-struct theft_type_info random_add_info = {
-	.alloc = alloc_add,
-	.free = theft_generic_free_cb,
-	.print = print_add,
-};
-
 struct theft_type_info random_qsort_info = {
 	.alloc = alloc_qsort,
 	.free = theft_generic_free_cb
@@ -671,18 +502,6 @@ struct theft_type_info random_qsort_info = {
 int main() {
 	theft_seed seed = theft_seed_of_time();
 	struct theft_run_config config[] = {
-		{
-			.name = "mon13_bad_date: bad month",
-			.prop1 = bad_date_month,
-			.type_info = { &random_1c1d_info },
-			.seed = seed
-		},
-		{
-			.name = "mon13_bad_date: bad day",
-			.prop1 = bad_date_day,
-			.type_info = { &random_1c1d_info },
-			.seed = seed
-		},
 		{
 			.name = "mon13_is_leap_year: Gregorian true",
 			.prop1 = is_leap_year_gregorian,
@@ -763,42 +582,6 @@ int main() {
 			.seed = seed
 		},
 #endif		
-		{
-			.name = "mon13_add: round trip",
-			.prop1 = add_round_trip,
-			.type_info = { &random_add_info },
-			.seed = seed
-		},
-		{
-			.name = "mon13_add: advance weekday",
-			.prop1 = add_advance_weekday,
-			.type_info = { &random_add_info },
-			.seed = seed
-		},
-		{
-			.name = "mon13_add: advance month",
-			.prop1 = add_advance_month,
-			.type_info = { &random_1c1d_info },
-			.seed = seed
-		},
-		{
-			.name = "mon13_sub: subtract then add",
-			.prop1 = sub_then_add,
-			.type_info = { &random_1c2d_info },
-			.seed = seed
-		},
-		{
-			.name = "mon13_sub: reverse arguments",
-			.prop1 = sub_reverse_arg,
-			.type_info = { &random_1c2d_info },
-			.seed = seed
-		},
-		{
-			.name = "mon13_sub: subtract after qsort",
-			.prop1 = sub_after_qsort,
-			.type_info = { &random_qsort_info },
-			.seed = seed
-		},
 		{
 			.name = "mon13_get_weekday: start month",
 			.prop1 = get_weekday_start_month,
