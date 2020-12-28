@@ -225,7 +225,7 @@ enum theft_trial_res is_leap_year_gregorian(struct theft* t, void* test_input) {
 
 enum theft_trial_res is_leap_year_gregorian_not(struct theft* t, void* test_input) {
 	int32_t* input = test_input;
-	struct mon13_date d = {.year = *input, .month = 1, .day = 1};
+	struct mon13_date d = {.year = *input-1, .month = 1, .day = 1};
 	d = mon13_add(d, 0, MON13_ADD_NONE, NULL);
 	return (d.flags & MON13_DATE_IS_LEAP_YEAR) ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS;
 }
