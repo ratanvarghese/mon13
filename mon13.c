@@ -17,6 +17,20 @@ static int max_day_gregorian(int8_t month, bool leap) {
 	}
 }
 
+static bool mon13_is_leap_year(
+	const struct mon13_cal* cal,
+	const int32_t year
+) {
+	int32_t y = year;
+	if(year < 0) { //Assuming no zero year
+		y++;
+	}
+	if(cal != NULL && (cal->flags & MON13_CAL_GREGORIAN_LEAP_YEAR)) {
+		y += cal->era_start_gregorian.year;
+	}
+	return (y % 400 == 0) || (y % 4 == 0 && y % 100 != 0);
+}
+
 static const struct mon13_intercalary* get_ic(
 	const struct mon13_cal* cal,
 	const struct mon13_date d
@@ -37,37 +51,13 @@ static const struct mon13_intercalary* get_ic(
 	return NULL;
 }
 
-bool mon13_is_leap_year(
-	const struct mon13_cal* cal,
-	const int32_t year
-) {
-	int32_t y = year;
-	if(year < 0) { //Assuming no zero year
-		y++;
+static struct mon13_date normalize(const struct mon13_date d, const struct mon13_cal* cal) {
+	struct mon13_date res = {.year = d.year, .month = d.month, .day = d.day};
+	res.weekday = (cal==NULL||res.month==0) ? -1 : (res.day-1)%MON13_DAY_PER_WEEK;
+	res.flags = 0;
+	if(mon13_is_leap_year(cal, res.year)) {
+		res.flags |= MON13_DATE_IS_LEAP_YEAR;
 	}
-	if(cal != NULL && (cal->flags & MON13_CAL_GREGORIAN_LEAP_YEAR)) {
-		y += cal->era_start_gregorian.year;
-	}
-	return (y % 400 == 0) || (y % 4 == 0 && y % 100 != 0);
-}
-
-struct mon13_date mon13_convert(
-	const struct mon13_cal* src,
-	const struct mon13_cal* dest,
-	const struct mon13_date d
-) {
-	struct mon13_date res;
-	return res;
-}
-
-int mon13_fmt(
-	const struct mon13_cal* cal,
-	const struct mon13_date d,
-	const char* fmt,
-	char* buf,
-	const size_t buflen
-) {
-	int res;
 	return res;
 }
 
@@ -110,6 +100,26 @@ static struct mon13_date before_intercalary(
 	return before_intercalary(res, cal, recurse_count);
 }
 
+struct mon13_date mon13_convert(
+	const struct mon13_cal* src,
+	const struct mon13_cal* dest,
+	const struct mon13_date d
+) {
+	struct mon13_date res;
+	return res;
+}
+
+int mon13_fmt(
+	const struct mon13_cal* cal,
+	const struct mon13_date d,
+	const char* fmt,
+	char* buf,
+	const size_t buflen
+) {
+	int res;
+	return res;
+}
+
 int mon13_compare(
 	const struct mon13_date* d0,
 	const struct mon13_date* d1,
@@ -135,12 +145,18 @@ int mon13_compare(
 	return (bic_res == 0) ? (rc0 - rc1) : bic_res;
 }
 
-int8_t mon13_get_weekday(
-	const struct mon13_cal* cal,
-	const struct mon13_date d
+struct mon13_date mon13_add(
+	const struct mon13_date d,
+	int offset,
+	enum mon13_add_mode mode,
+	const struct mon13_cal* cal
 ) {
-	if(cal == NULL || d.month == 0) {
-		return -1;
+	struct mon13_date res = {.year = d.year, .month = d.month, .day = d.day};
+	switch(mode) {
+		case MON13_ADD_DAYS: res.day += offset; break;
+		case MON13_ADD_MONTHS: res.month += offset; break;
+		case MON13_ADD_YEARS: res.year += offset; break;
+		default: break;
 	}
-	return (d.day - 1) % MON13_DAY_PER_WEEK;
+	return normalize(res, cal);
 }

@@ -218,13 +218,16 @@ void print_2c1d(FILE* f, const void* instance, void* env) {
 
 enum theft_trial_res is_leap_year_gregorian(struct theft* t, void* test_input) {
 	int32_t* input = test_input;
-	return mon13_is_leap_year(NULL, *input) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	struct mon13_date d = {.year = *input, .month = 1, .day = 1};
+	d = mon13_add(d, 0, MON13_ADD_NONE, NULL);
+	return (d.flags & MON13_DATE_IS_LEAP_YEAR) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res is_leap_year_gregorian_not(struct theft* t, void* test_input) {
 	int32_t* input = test_input;
-	*input = *input - 1;
-	return mon13_is_leap_year(NULL, *input) ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS;
+	struct mon13_date d = {.year = *input, .month = 1, .day = 1};
+	d = mon13_add(d, 0, MON13_ADD_NONE, NULL);
+	return (d.flags & MON13_DATE_IS_LEAP_YEAR) ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS;
 }
 
 enum theft_trial_res convert_leap_tranquility(struct theft* t, void* test_input) {
@@ -318,12 +321,15 @@ enum theft_trial_res compare_intercalary(struct theft* t, void* test_input) {
 	if(input->c == NULL) {
 		return THEFT_TRIAL_SKIP;
 	}
+	struct mon13_date tmp = mon13_add(input->d, 0, MON13_ADD_NONE, input->c);
+	bool is_leap = (tmp.flags & MON13_DATE_IS_LEAP_YEAR);
+
 	for(int i = 0; i < input->c->intercalary_day_count; i++) {
 		struct mon13_intercalary ic = input->c->intercalary_days[i];
 		if(ic.flags & MON13_IC_ERA_START) {
 			continue;
 		}
-		if((ic.flags & MON13_IC_LEAP) && !mon13_is_leap_year(input->c, input->d.year)) {
+		if((ic.flags & MON13_IC_LEAP) && !is_leap) {
 			continue;
 		}
 		if(input->d.month == ic.month && input->d.day == ic.before_day) {
@@ -421,7 +427,8 @@ enum theft_trial_res compare_qsort_r(struct theft* t, void* test_input) {
 enum theft_trial_res get_weekday_start_month(struct theft* t, void* test_input) {
 	struct test_1c1d* input = test_input;
 	input->d.day = 1;
-	int weekday = mon13_get_weekday(input->c, input->d);
+	struct mon13_date tmp = mon13_add(input->d, 0, MON13_ADD_NONE, input->c);
+	int weekday = tmp.weekday;
 	if((input->c == NULL || input->d.month == 0) && weekday < 0) {
 		return THEFT_TRIAL_PASS;
 	}
@@ -434,7 +441,8 @@ enum theft_trial_res get_weekday_start_month(struct theft* t, void* test_input) 
 enum theft_trial_res get_weekday_end_month(struct theft* t, void* test_input) {
 	struct test_1c1d* input = test_input;
 	input->d.day = MON13_DAY_PER_MONTH;
-	int weekday = mon13_get_weekday(input->c, input->d);
+	struct mon13_date tmp = mon13_add(input->d, 0, MON13_ADD_NONE, input->c);
+	int weekday = tmp.weekday;
 	if((input->c == NULL || input->d.month == 0) && weekday < 0) {
 		return THEFT_TRIAL_PASS;
 	}
@@ -446,21 +454,25 @@ enum theft_trial_res get_weekday_end_month(struct theft* t, void* test_input) {
 
 enum theft_trial_res get_weekday_perennial(struct theft* t, void* test_input) {
 	struct test_1c1d* input = test_input;
-	int weekday0 = mon13_get_weekday(input->c, input->d);
+	struct mon13_date tmp = mon13_add(input->d, 0, MON13_ADD_NONE, input->c);
+	int weekday0 = tmp.weekday;
 	
-	bool leap = (input->c != NULL && mon13_is_leap_year(input->c, input->d.year));
-	input->d.year += (input->d.day + input->d.month);
-	while(leap && weekday0 < 0 && !mon13_is_leap_year(input->c, input->d.year)) {
-		input->d.year++;
+	bool leap = (input->c != NULL && (tmp.flags & MON13_DATE_IS_LEAP_YEAR));
+	tmp = mon13_add(input->d, (tmp.day + tmp.month), MON13_ADD_YEARS, input->c);
+	if(leap && weekday0 < 0) {
+		while(!(tmp.flags & MON13_DATE_IS_LEAP_YEAR)) {
+			tmp = mon13_add(tmp, 1, MON13_ADD_YEARS, input->c);
+		}
 	}
 
-	int weekday1 = mon13_get_weekday(input->c, input->d);
+	int weekday1 = tmp.weekday;
 	return (weekday0 == weekday1) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res get_weekday_range(struct theft* t, void* test_input) {
 	struct test_1c1d* input = test_input;
-	int weekday = mon13_get_weekday(input->c, input->d);
+	struct mon13_date tmp = mon13_add(input->d, 0, MON13_ADD_NONE, input->c);
+	int weekday = tmp.weekday;
 	if(input->c == NULL || input->d.month == 0) {
 		return (weekday < 0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 	}

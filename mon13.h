@@ -27,10 +27,24 @@ enum mon13_cal_flags {
 	MON13_CAL_GREGORIAN_WKDY_NAMES = 1 << 2,
 };
 
+enum mon13_date_flags {
+	MON13_DATE_NONE = 0,
+	MON13_DATE_IS_LEAP_YEAR = 1 << 0
+};
+
+enum mon13_add_mode {
+	MON13_ADD_NONE,
+	MON13_ADD_DAYS,
+	MON13_ADD_MONTHS,
+	MON13_ADD_YEARS
+};
+
 struct mon13_date {
 	int32_t year;
 	int8_t month;
 	int8_t day;
+	int8_t weekday;
+	int8_t flags;
 };
 
 struct mon13_intercalary {
@@ -55,11 +69,6 @@ struct mon13_cal {
 	int8_t week_info;
 };
 
-bool mon13_is_leap_year(
-	const struct mon13_cal* cal,
-	const int32_t year
-);
-
 struct mon13_date mon13_convert(
 	const struct mon13_cal* src,
 	const struct mon13_cal* dest,
@@ -80,9 +89,11 @@ int mon13_compare(
 	struct mon13_cal* cal
 );
 
-int8_t mon13_get_weekday(
-	const struct mon13_cal* cal,
-	const struct mon13_date d
+struct mon13_date mon13_add(
+	const struct mon13_date d,
+	int offset,
+	enum mon13_add_mode mode,
+	const struct mon13_cal* cal
 );
 
 const char* mon13_wkdy_names[7];
