@@ -28,6 +28,13 @@ struct test_2c1d {
 	bool flip;
 };
 
+struct test_add {
+	struct mon13_cal* c;
+	struct mon13_date d;
+	int32_t offset;
+	bool flip;
+};
+
 #define TEST_QSORT_LEN 600
 struct test_qsort {
 	struct mon13_cal* c;
@@ -52,9 +59,9 @@ static struct mon13_cal* random_cal(struct theft* t) {
 
 static struct mon13_date random_date(struct theft* t, struct mon13_cal* c) {
 	struct mon13_date res;
-	res.year = theft_random_choice(t, INT_MAX) + 1;
+	res.year = theft_random_choice(t, INT32_MAX) + 1;
 	if(theft_random_choice(t, 2)) {
-		res.year = -res.year;
+		res.year = -(res.year);
 	}
 	if(c == NULL) {
 		res.month = theft_random_choice(t, MON13_GREGORIAN_MONTH_PER_YEAR) + 1;
@@ -79,8 +86,10 @@ static struct mon13_date random_date(struct theft* t, struct mon13_cal* c) {
 	else {
 		res.month = theft_random_choice(t, MON13_MONTH_PER_YEAR + 1);
 		if(res.month == 0) {
-			res.day = theft_random_choice(t, c->intercalary_day_count) + 1;
-			if(c->intercalary_days[res.day-1].flags & MON13_IC_ERA_START) {
+			int ic_idx = theft_random_choice(t, c->intercalary_day_count);
+			res.day = c->intercalary_days[ic_idx].day;
+			res.month = c->intercalary_days[ic_idx].month;
+			if(c->intercalary_days[ic_idx].flags & MON13_IC_ERA_START) {
 				res.year = 0;
 			}
 		}
@@ -141,6 +150,23 @@ enum theft_alloc_res alloc_2c1d(struct theft* t, void* data, void** instance) {
 	res->d = random_date(t, res->c0);
 	res->flip = theft_random_choice(t, 2);
 	
+	*instance = res;
+	return THEFT_ALLOC_OK;
+}
+
+enum theft_alloc_res alloc_add(struct theft* t, void* data, void** instance) {
+	struct test_add* res = malloc(sizeof(struct test_add));
+	if(res == NULL) {
+		return THEFT_ALLOC_ERROR;
+	}
+	res->c = random_cal(t);
+	res->d = random_date(t, res->c);
+	res->offset = theft_random_choice(t, INT32_MAX);
+	if(theft_random_choice(t, 2)) {
+		res->offset = -(res->offset);
+	}
+	res->flip = theft_random_choice(t, 2);
+
 	*instance = res;
 	return THEFT_ALLOC_OK;
 }
@@ -213,6 +239,17 @@ void print_2c1d(FILE* f, const void* instance, void* env) {
 		f, "(%d-%02d-%02d) %s, %s, flip = %s",
 		input->d.year, input->d.month, input->d.day,
 		name0, name1, flip
+	);
+}
+
+void print_add(FILE* f, const void* instance, void* env) {
+	const struct test_add* input = instance;
+	const struct mon13_date d = input->d;
+	const char* name = (input->c == NULL) ? "Gregorian" : input->c->cal_name;
+	const char* flip = input->flip ? "true" : "false";
+	fprintf(
+		f, "(%d-%02d-%02d) %s, offset = %d, flip = %s",
+		d.year, d.month, d.day, name, input->offset, flip
 	);
 }
 
@@ -482,33 +519,326 @@ enum theft_trial_res get_weekday_range(struct theft* t, void* test_input) {
 	return THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res add_year(struct theft* t, void* test_input) {
+	struct test_add* input = test_input;
+	struct mon13_date res = mon13_add(input->d, input->offset, MON13_ADD_YEARS, input->c);
+	int32_t expected = input->d.year + input->offset;
+ 	//Year Zero boundary
+	//test_add should not generate d.year == 0, but may generate input->offset == 0
+	if(input->d.year < 0 && input->offset > 0 && (-input->d.year) <= input->offset) {
+		expected++;
+	}
+	else if(input->d.year > 0 && input->offset < 0 && input->d.year <= (-input->offset)) {
+		expected--;
+	}
+	return (res.year == expected) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res add_month_g(struct test_add* input, struct mon13_date res) {
+	if(res.month < 1 || res.month > MON13_GREGORIAN_MONTH_PER_YEAR) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	if((input->d.day <= 28) && (res.day != input->d.day)) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if((input->d.day > 28) && (res.month != 2) && (res.day <= 28)) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	int yearDiff = res.year - input->d.year;
+	int monthDiff = res.month - input->d.month;
+	if((yearDiff*MON13_GREGORIAN_MONTH_PER_YEAR + monthDiff) == input->offset) {
+		return THEFT_TRIAL_PASS;
+	}
+	return THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res add_month_simple(struct test_add* input, struct mon13_date res) {
+	if(res.day != input->d.day) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(res.month < 1 || res.month > MON13_MONTH_PER_YEAR) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	int yearDiff = res.year - input->d.year;
+	int monthDiff = res.month - input->d.month;
+	if((yearDiff*MON13_MONTH_PER_YEAR + monthDiff) == input->offset) {
+		return THEFT_TRIAL_PASS;
+	}
+	return THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res add_month_ic(struct test_add* input, struct mon13_date res) {
+	int8_t start_month = input->d.month;
+	int8_t start_day = input->d.day;
+	while(start_month < 1 || start_day > MON13_DAY_PER_MONTH) {
+		for(int i = 0; i < input->c->intercalary_day_count; i++) {
+			struct mon13_intercalary ic = input->c->intercalary_days[i];
+			if(input->d.year == 0 && !(ic.flags & MON13_IC_ERA_START)) {
+				continue;
+			}
+			if(ic.month == start_month && ic.day == start_day) {
+				start_month = ic.before_month;
+				start_day = ic.before_day;
+			}
+		}
+	}
+	struct test_add new_add = {
+		.c = input->c,
+		.d = {.year=input->d.year, .month=start_month, .day=start_day},
+		.offset = input->offset,
+		.flip = input->flip
+	};
+	return add_month_simple(&new_add, res);
+}
+
+enum theft_trial_res add_month(struct theft* t, void* test_input) {
+	struct test_add* input = test_input;
+	struct mon13_date res = mon13_add(input->d, input->offset, MON13_ADD_MONTHS, input->c);
+	if(input->c == NULL) {
+		return add_month_g(input, res);
+	}
+	else if(input->d.month >= 1 && input->d.day <= MON13_DAY_PER_MONTH) {
+		return add_month_simple(input, res);
+	}
+	else {
+		return add_month_ic(input, res);
+	}
+}
+
+enum theft_trial_res add_day_loop(struct theft* t, void* test_input) {
+	struct test_add* input = test_input;
+	int32_t mini_offset = (input->offset < 0) ? -1 : 1;
+	input->offset = input->offset % 1000; //Don't want to loop too long!!
+	struct mon13_date res0 = mon13_add(input->d, input->offset, MON13_ADD_DAYS, input->c);
+	struct mon13_date res1 = input->d;
+	for(int i = 0; i != input->offset; i += mini_offset) {
+		res1 = mon13_add(res1, mini_offset, MON13_ADD_DAYS, input->c);
+	}
+	if(mon13_compare(&res0, &res1, input->c) == 0) {
+		return THEFT_TRIAL_PASS;
+	}
+	return THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res add_day_round_trip(struct theft* t, void* test_input) {
+	struct test_add* input = test_input;
+	struct mon13_date tmp = mon13_add(input->d, input->offset, MON13_ADD_DAYS, input->c);
+	struct mon13_date res = mon13_add(tmp, -(input->offset), MON13_ADD_DAYS, input->c);
+	if(mon13_compare(&res, &(input->d), input->c) == 0) {
+		return THEFT_TRIAL_PASS;
+	}
+	return THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res add_day_1_g(struct test_1c1d* input, struct mon13_date res) {
+	if(res.month == input->d.month) {
+		if(res.year != input->d.year) {
+			return THEFT_TRIAL_FAIL;
+		}
+		if(res.day != (input->d.day + 1) || res.day > 31 || input->d.day > 30) {
+			return THEFT_TRIAL_FAIL;
+		}
+		return THEFT_TRIAL_PASS;
+	}
+	else if(res.year == input->d.year) {
+		if(res.month != (input->d.month + 1)) {
+			return THEFT_TRIAL_FAIL;
+		}
+		if(res.day != 1) {
+			return THEFT_TRIAL_FAIL;
+		}
+		return THEFT_TRIAL_PASS;
+	}
+	else {
+		if(res.year != (input->d.year + 1) && res.year != 1) {
+			return THEFT_TRIAL_FAIL;
+		}
+		else if(res.month != 1 || input->d.month != MON13_GREGORIAN_MONTH_PER_YEAR) {
+			return THEFT_TRIAL_FAIL;
+		}
+		else if(res.day != 1 || input->d.day != 31) {
+			return THEFT_TRIAL_FAIL;
+		}
+		return THEFT_TRIAL_PASS;
+	}
+}
+
+enum theft_trial_res add_day_1_simple(struct test_1c1d* input, struct mon13_date res, bool skip) {
+	if(!skip) {
+		for(int i = 0; i < input->c->intercalary_day_count; i++) {
+			struct mon13_intercalary ic = input->c->intercalary_days[i];
+			if(input->d.year != -1 && (ic.flags & MON13_IC_ERA_START)) {
+				continue;
+			}
+			if(!(res.flags & MON13_DATE_IS_LEAP_YEAR) && (ic.flags & MON13_IC_LEAP)){
+				continue;
+			}
+			if(input->d.day == ic.before_day && input->d.month == ic.before_month) {
+				if(res.month != ic.month || res.day != ic.day) {
+					return THEFT_TRIAL_FAIL;
+				}
+				if(ic.flags & MON13_IC_YEAR_START) {
+					if(res.year != (input->d.year + 1)) {
+						return THEFT_TRIAL_FAIL;
+					}
+				}
+				else if(res.year != input->d.year){
+					return THEFT_TRIAL_FAIL;
+				}
+				return THEFT_TRIAL_PASS;
+			}
+		}
+	}
+
+	if(res.month == input->d.month) {
+		if(res.year != input->d.year) {
+			return THEFT_TRIAL_FAIL;
+		}
+		else if((res.day != (input->d.day + 1)) || res.day >= MON13_DAY_PER_MONTH) {
+			return THEFT_TRIAL_FAIL;
+		}
+		return THEFT_TRIAL_PASS;
+	}
+	else if(res.year == input->d.year) {
+		if(res.month >= MON13_MONTH_PER_YEAR) {
+			return THEFT_TRIAL_FAIL;
+		}
+		else if(res.day < MON13_DAY_PER_MONTH) {
+			return THEFT_TRIAL_FAIL;
+		}
+		return THEFT_TRIAL_PASS;
+	}
+	else {
+		if(res.year != (input->d.year + 1) && res.year != 1) {
+			return THEFT_TRIAL_FAIL;
+		}
+		else if(res.month != 1 || input->d.month != MON13_MONTH_PER_YEAR) {
+			return THEFT_TRIAL_FAIL;
+		}
+		else if(res.day != 1 || input->d.day != MON13_DAY_PER_MONTH) {
+			return THEFT_TRIAL_FAIL;
+		}
+		return THEFT_TRIAL_PASS;
+	}
+}
+
+enum theft_trial_res add_day_1_ic(struct test_1c1d* input, struct mon13_date res) {
+	if(input->c == &mon13_positivist) { //Two intercalary days in a row on leap year.
+		struct mon13_date norm_d = mon13_add(input->d, 0, MON13_ADD_NONE, input->c);
+		if(norm_d.flags & MON13_DATE_IS_LEAP_YEAR) {
+			if(input->d.day == 1) {
+				if(res.day != 2 || res.month != 0 || res.year != input->d.year) {
+					return THEFT_TRIAL_FAIL;
+				}
+				else {
+					return THEFT_TRIAL_PASS;
+				}
+			}
+			if(input->d.day == 2) {
+				if(res.day != 1 || res.month != 1) {
+					return THEFT_TRIAL_FAIL;
+				}
+				else if(res.year != (input->d.year + 1) && res.year != 1) {
+					return THEFT_TRIAL_FAIL;
+				}
+				else {
+					return THEFT_TRIAL_PASS;
+				}
+			}
+		}
+	}
+
+
+	int32_t before_year = (input->d.year == 0) ? -1 : input->d.year;
+	int8_t before_day, before_month;
+	for(int i = 0; i < input->c->intercalary_day_count; i++) {
+		struct mon13_intercalary ic = input->c->intercalary_days[i];
+		if(input->d.year == 0 && !(ic.flags & MON13_IC_ERA_START)) {
+			continue;
+		}
+		if(input->d.day == ic.day && input->d.month == ic.month) {
+			before_day = ic.before_day;
+			before_month = ic.before_month;
+			if(ic.flags & MON13_IC_YEAR_START) {
+				before_year--;
+			}
+		}
+	}
+	struct test_1c1d new_1c1d = {
+		.c = input->c,
+		.d = {.day = before_day, .month = before_month, .year = before_year}
+	};
+	return add_day_1_simple(&new_1c1d, res, true);
+}
+
+enum theft_trial_res add_day_1(struct theft* t, void* test_input) {
+	struct test_1c1d* input = test_input;
+	struct mon13_date res = mon13_add(input->d, 1, MON13_ADD_DAYS, input->c);
+	if(input->c == NULL) {
+		return add_day_1_g(input, res);
+	}
+	else if(input->d.month >= 1 && input->d.day <= MON13_DAY_PER_MONTH) {
+		return add_day_1_simple(input, res, false);
+	}
+	else {
+		return add_day_1_ic(input, res);
+	}
+}
+
 struct theft_type_info random_leap_year_info = {
 	.alloc = alloc_leap_year,
 	.free = theft_generic_free_cb,
 	.print = print_leap_year,
+	.autoshrink_config = {
+		.enable = true
+	}
 };
 
 struct theft_type_info random_1c1d_info = {
 	.alloc = alloc_1c1d,
 	.free = theft_generic_free_cb,
 	.print = print_1c1d,
+	.autoshrink_config = {
+		.enable = true
+	}
 };
 
 struct theft_type_info random_1c2d_info = {
 	.alloc = alloc_1c2d,
 	.free = theft_generic_free_cb,
 	.print = print_1c2d,
+	.autoshrink_config = {
+		.enable = true
+	}
 };
 
 struct theft_type_info random_2c1d_info = {
 	.alloc = alloc_2c1d,
 	.free = theft_generic_free_cb,
 	.print = print_2c1d,
+	.autoshrink_config = {
+		.enable = true
+	}
+};
+
+struct theft_type_info random_add_info = {
+	.alloc = alloc_add,
+	.free = theft_generic_free_cb,
+	.print = print_add,
+	.autoshrink_config = {
+		.enable = true
+	}
 };
 
 struct theft_type_info random_qsort_info = {
 	.alloc = alloc_qsort,
-	.free = theft_generic_free_cb
+	.free = theft_generic_free_cb,
+	.autoshrink_config = {
+		.enable = true
+	}
 };
 
 int main() {
@@ -615,6 +945,36 @@ int main() {
 		{
 			.name = "mon13_get_weekday: range",
 			.prop1 = get_weekday_range,
+			.type_info = { &random_1c1d_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: year",
+			.prop1 = add_year,
+			.type_info = { &random_add_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: month",
+			.prop1 = add_month,
+			.type_info = { &random_add_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: day in loop",
+			.prop1 = add_day_loop,
+			.type_info = { &random_add_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: day round trip",
+			.prop1 = add_day_round_trip,
+			.type_info = { &random_add_info },
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: 1 day",
+			.prop1 = add_day_1,
 			.type_info = { &random_1c1d_info },
 			.seed = seed
 		},

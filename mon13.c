@@ -51,8 +51,8 @@ static const struct mon13_intercalary* get_ic(
 	return NULL;
 }
 
-static struct mon13_date normalize(const struct mon13_date d, const struct mon13_cal* cal) {
-	struct mon13_date res = {.year = d.year, .month = d.month, .day = d.day};
+static struct mon13_date normalize(int y, int m, int d, const struct mon13_cal* cal) {
+	struct mon13_date res = {.year = y, .month = m, .day = d};
 	res.weekday = (cal==NULL||res.month==0) ? -1 : (res.day-1)%MON13_DAY_PER_WEEK;
 	res.flags = 0;
 	if(mon13_is_leap_year(cal, res.year)) {
@@ -147,16 +147,18 @@ int mon13_compare(
 
 struct mon13_date mon13_add(
 	const struct mon13_date d,
-	int offset,
+	int32_t offset,
 	enum mon13_add_mode mode,
 	const struct mon13_cal* cal
 ) {
-	struct mon13_date res = {.year = d.year, .month = d.month, .day = d.day};
+	int year = d.year;
+	int month = d.month;
+	int day = d.day;
 	switch(mode) {
-		case MON13_ADD_DAYS: res.day += offset; break;
-		case MON13_ADD_MONTHS: res.month += offset; break;
-		case MON13_ADD_YEARS: res.year += offset; break;
+		case MON13_ADD_DAYS: day += offset; break;
+		case MON13_ADD_MONTHS: month += offset; break;
+		case MON13_ADD_YEARS: year += offset; break;
 		default: break;
 	}
-	return normalize(res, cal);
+	return normalize(year, month, day, cal);
 }

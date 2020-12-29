@@ -91,7 +91,7 @@ int mon13_compare(
 
 struct mon13_date mon13_add(
 	const struct mon13_date d,
-	int offset,
+	int32_t offset,
 	enum mon13_add_mode mode,
 	const struct mon13_cal* cal
 );
