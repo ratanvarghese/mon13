@@ -80,7 +80,7 @@ static int compare_simple(int8_t month0, int8_t day0, int8_t month1, int8_t day1
 
 static struct mon13_date before_intercalary(
 	const struct mon13_date d,
-	struct mon13_cal* cal,
+	const struct mon13_cal* cal,
 	int* recurse_count
 ) {
 	if(cal == NULL) {

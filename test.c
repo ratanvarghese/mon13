@@ -697,7 +697,7 @@ enum theft_trial_res add_day_1_simple(struct test_1c1d* input, struct mon13_date
 		if(res.year != input->d.year) {
 			return THEFT_TRIAL_FAIL;
 		}
-		else if((res.day != (input->d.day + 1)) || res.day >= MON13_DAY_PER_MONTH) {
+		else if((res.day != (input->d.day + 1)) || res.day > MON13_DAY_PER_MONTH) {
 			return THEFT_TRIAL_FAIL;
 		}
 		return THEFT_TRIAL_PASS;

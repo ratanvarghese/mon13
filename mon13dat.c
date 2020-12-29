@@ -20,18 +20,21 @@ struct mon13_cal mon13_tranquility = {
 			.flags = MON13_IC_YEAR,
 			.month = 0, .day = 1,
 			.before_month = 13, .before_day = 28,
+			.day_of_year = 365
 		},
 		{
 			.name = "Aldrin Day",
 			.flags = MON13_IC_LEAP,
 			.month = 0, .day = 2,
 			.before_month = 8, .before_day = 27,
+			.day_of_year = 224
 		},
 		{
 			.name = "Moon Landing Day",
 			.flags = MON13_IC_ERA_START,
 			.month = 0, .day = 3,
 			.before_month = 13, .before_day = 28,
+			.day_of_year = 365
 		}
 	},
 	.month_names = {
@@ -62,12 +65,14 @@ struct mon13_cal mon13_international_fixed = {
 			.flags = MON13_IC_YEAR,
 			.month = 13, .day = 29,
 			.before_month = 13, .before_day = 28,
+			.day_of_year = 365
 		},
 		{
 			.name = "Leap Day",
 			.flags = MON13_IC_LEAP,
 			.month = 6, .day = 29,
 			.before_month = 6, .before_day = 28,
+			.day_of_year = 169
 		}
 	},
 	.month_names = {
@@ -94,12 +99,14 @@ struct mon13_cal mon13_positivist = {
 			.flags = MON13_IC_YEAR,
 			.month = 0, .day = 1,
 			.before_month = 13, .before_day = 28,
+			.day_of_year = 365
 		},
 		{
 			.name = "Festival of Holy Women",
 			.flags = MON13_IC_LEAP,
 			.month = 0, .day = 2,
 			.before_month = 0, .before_day = 1,
+			.day_of_year = 366
 		}
 	},
 	.month_names = {

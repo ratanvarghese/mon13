@@ -49,7 +49,8 @@ struct mon13_date {
 
 struct mon13_intercalary {
 	const char* name;
-	int32_t flags;
+	int16_t flags;
+	int16_t day_of_year;
 	int8_t month;
 	int8_t day;
 	int8_t before_month;
@@ -64,7 +65,7 @@ struct mon13_cal {
 	const char* cal_name;
 	struct mon13_date era_start_gregorian;
 	int32_t era_start_millisecond;
-	int32_t flags;
+	int16_t flags;
 	int8_t intercalary_day_count;
 	int8_t week_info;
 };
