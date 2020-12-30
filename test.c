@@ -59,7 +59,7 @@ static struct mon13_cal* random_cal(struct theft* t) {
 
 static struct mon13_date random_date(struct theft* t, struct mon13_cal* c) {
 	struct mon13_date res;
-	res.year = theft_random_choice(t, INT32_MAX) + 1;
+	res.year = theft_random_choice(t, INT32_MAX/4) + 1; //Avoid overflow
 	if(theft_random_choice(t, 2)) {
 		res.year = -(res.year);
 	}
@@ -161,7 +161,7 @@ enum theft_alloc_res alloc_add(struct theft* t, void* data, void** instance) {
 	}
 	res->c = random_cal(t);
 	res->d = random_date(t, res->c);
-	res->offset = theft_random_choice(t, INT32_MAX);
+	res->offset = theft_random_choice(t, INT32_MAX/4); //Avoid overflow
 	if(theft_random_choice(t, 2)) {
 		res->offset = -(res->offset);
 	}
@@ -530,7 +530,7 @@ enum theft_trial_res add_year(struct theft* t, void* test_input) {
 	if(input->d.year < 0 && input->offset > 0 && (-input->d.year) <= input->offset) {
 		expected++;
 	}
-	else if(input->d.year > 0 && input->offset < 0 && input->d.year <= (-input->offset)) {
+	else if(input->d.year >= 0 && input->offset < 0 && input->d.year <= (-input->offset)) {
 		expected--;
 	}
 	return (res.year == expected) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
@@ -548,11 +548,21 @@ enum theft_trial_res add_month_g(struct test_add* input, struct mon13_date res) 
 		return THEFT_TRIAL_FAIL;
 	}
 
-	int yearDiff = res.year - input->d.year;
-	int monthDiff = res.month - input->d.month;
-	if((yearDiff*MON13_GREGORIAN_MONTH_PER_YEAR + monthDiff) == input->offset) {
+	int year_diff = res.year - input->d.year;
+	int month_diff = res.month - input->d.month;
+	if(res.year < 0 && input->d.year > 0) {
+		year_diff++;
+	}
+	else if(res.year > 0 && input->d.year < 0) {
+		year_diff--;
+	}
+	int calc_offset = year_diff*MON13_GREGORIAN_MONTH_PER_YEAR + month_diff;
+	if(calc_offset == input->offset) {
 		return THEFT_TRIAL_PASS;
 	}
+	printf("offset = %d, calc_offset = %d, input = (%d-%02d-%02d)\tresult = (%d-%02d-%02d)\n",
+		input->offset, calc_offset, input->d.year, input->d.month, input->d.day, res.year, res.month, res.day
+	);
 	return THEFT_TRIAL_FAIL;
 }
 
@@ -564,15 +574,26 @@ enum theft_trial_res add_month_simple(struct test_add* input, struct mon13_date 
 		return THEFT_TRIAL_FAIL;
 	}
 
-	int yearDiff = res.year - input->d.year;
-	int monthDiff = res.month - input->d.month;
-	if((yearDiff*MON13_MONTH_PER_YEAR + monthDiff) == input->offset) {
+	int year_diff = res.year - input->d.year;
+	int month_diff = res.month - input->d.month;
+	if(res.year < 0 && input->d.year > 0) {
+		year_diff++;
+	}
+	else if(res.year > 0 && input->d.year < 0) {
+		year_diff--;
+	}
+	int calc_offset = year_diff*MON13_MONTH_PER_YEAR + month_diff;
+	if(calc_offset == input->offset) {
 		return THEFT_TRIAL_PASS;
 	}
+	printf("offset = %d, calc_offset = %d, input = (%d-%02d-%02d)\tresult = (%d-%02d-%02d)\n",
+		input->offset, calc_offset, input->d.year, input->d.month, input->d.day, res.year, res.month, res.day
+	);
 	return THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res add_month_ic(struct test_add* input, struct mon13_date res) {
+	int32_t start_year = input->d.year;
 	int8_t start_month = input->d.month;
 	int8_t start_day = input->d.day;
 	while(start_month < 1 || start_day > MON13_DAY_PER_MONTH) {
@@ -584,12 +605,16 @@ enum theft_trial_res add_month_ic(struct test_add* input, struct mon13_date res)
 			if(ic.month == start_month && ic.day == start_day) {
 				start_month = ic.before_month;
 				start_day = ic.before_day;
+				if(input->d.year == 0 && ic.flags & MON13_IC_ERA_START) {
+					start_year =  -1;
+				}
 			}
 		}
 	}
+	int32_t y = (input->d.year == 0) ? (input->d.year - 1) : input->d.year;
 	struct test_add new_add = {
 		.c = input->c,
-		.d = {.year=input->d.year, .month=start_month, .day=start_day},
+		.d = {.year=start_year, .month=start_month, .day=start_day},
 		.offset = input->offset,
 		.flip = input->flip
 	};
@@ -599,7 +624,19 @@ enum theft_trial_res add_month_ic(struct test_add* input, struct mon13_date res)
 enum theft_trial_res add_month(struct theft* t, void* test_input) {
 	struct test_add* input = test_input;
 	struct mon13_date res = mon13_add(input->d, input->offset, MON13_ADD_MONTHS, input->c);
-	if(input->c == NULL) {
+	if(input->offset == 0) {
+		if(res.year != input->d.year) {
+			return THEFT_TRIAL_FAIL;
+		}
+		else if(res.month != input->d.month) {
+			return THEFT_TRIAL_FAIL;
+		}
+		else if(res.day != input->d.day) {
+			return THEFT_TRIAL_FAIL;
+		}
+		return THEFT_TRIAL_PASS;
+	}
+	else if(input->c == NULL) {
 		return add_month_g(input, res);
 	}
 	else if(input->d.month >= 1 && input->d.day <= MON13_DAY_PER_MONTH) {
