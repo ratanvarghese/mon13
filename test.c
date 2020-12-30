@@ -363,23 +363,25 @@ enum theft_trial_res compare_intercalary(struct theft* t, void* test_input) {
 
 	for(int i = 0; i < input->c->intercalary_day_count; i++) {
 		struct mon13_intercalary ic = input->c->intercalary_days[i];
+		if(input->d.month == ic.month && input->d.day == ic.day) {
+			continue;
+		}
+		if(input->d.month == ic.before_month && input->d.day == ic.before_day) {
+			continue;
+		}
 		if(ic.flags & MON13_IC_ERA_START) {
 			continue;
 		}
 		if((ic.flags & MON13_IC_LEAP) && !is_leap) {
 			continue;
 		}
-		if(input->d.month == ic.month && input->d.day == ic.before_day) {
-			continue;
-		}
-		if(input->d.month == ic.before_month && input->d.day == ic.before_day) {
-			continue;
-		}
+		int32_t icd_y = (input->d.year == 0) ? 1 : input->d.year;
+
 		struct mon13_date icd0 = {
-			.year=input->d.year, .month=ic.month, .day=ic.day
+			.year=icd_y, .month=ic.month, .day=ic.day
 		};
 		struct mon13_date icd1 = {
-			.year=input->d.year, .month=ic.before_month, .day=ic.before_day
+			.year=icd_y, .month=ic.before_month, .day=ic.before_day
 		};
 		int cmp0 = mon13_compare(&icd0, &(input->d), input->c);
 		int cmp1 = mon13_compare(&icd1, &(input->d), input->c);
