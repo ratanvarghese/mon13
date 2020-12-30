@@ -31,26 +31,6 @@ static bool mon13_is_leap_year(
 	return (y % 400 == 0) || (y % 4 == 0 && y % 100 != 0);
 }
 
-static const struct mon13_intercalary* get_ic(
-	const struct mon13_cal* cal,
-	const struct mon13_date d
-) {
-	if(cal == NULL) {
-		return NULL;
-	}
-
-	for(int i = 0; i < cal->intercalary_day_count; i++) {
-		struct mon13_intercalary ic = cal->intercalary_days[i];
-		if(ic.month == d.month && ic.day == d.day) {
-			if((ic.flags & MON13_IC_LEAP) && !mon13_is_leap_year(cal,d.year)) {
-				continue;
-			}
-			return &(cal->intercalary_days[i]);
-		}
-	}
-	return NULL;
-}
-
 static struct mon13_date normalize(int y, int m, int d, const struct mon13_cal* cal) {
 	struct mon13_date res = {.year = y, .month = m, .day = d};
 	res.weekday = (cal==NULL||res.month==0) ? -1 : (res.day-1)%MON13_DAY_PER_WEEK;
@@ -61,43 +41,49 @@ static struct mon13_date normalize(int y, int m, int d, const struct mon13_cal* 
 	return res;
 }
 
-static int compare_simple(int8_t month0, int8_t day0, int8_t month1, int8_t day1) {
-	if(month0 < month1) {
-		return -1;
+static int16_t day_of_year_g(const struct mon13_date d, bool leap) {
+	int16_t res = d.day;
+	for(int8_t i = 1; i < d.month; i++) {
+		res += max_day_gregorian(i, leap);
 	}
-	if(month0 > month1) {
-		return 1;
-	}
-	if(day0 < day1) {
-		return -1;
-	}
-	if(day0 > day1) {
-		return 1;
-	}
-
-	return 0;
+	return res;
 }
 
-static struct mon13_date before_intercalary(
+static int16_t day_of_year(
 	const struct mon13_date d,
-	const struct mon13_cal* cal,
-	int* recurse_count
+	const struct mon13_cal* cal
 ) {
+	bool leap = mon13_is_leap_year(cal, d.year);
 	if(cal == NULL) {
-		return d;
+		return day_of_year_g(d, leap);
 	}
-	const struct mon13_intercalary* ic = get_ic(cal, d);
-	if(ic == NULL || (ic->before_month == d.month && ic->before_day == d.day)) {
-		return d; //before.* == d.* is an invalid calendar: no looping, quit fast
+
+	int16_t leap_boundary = 367; //Intentionally beyond length of year.
+	int16_t res = d.day + ((d.month - 1) * MON13_DAY_PER_MONTH);
+	bool res_is_ic = false;
+	for(int i = 0; i < cal->intercalary_day_count; i++) {
+		struct mon13_intercalary ic = cal->intercalary_days[i];
+		bool is_leap_day = (ic.flags & MON13_IC_LEAP);
+		bool is_era_start = (ic.flags & MON13_IC_ERA_START);
+		if(leap && is_leap_day) {
+			leap_boundary = ic.day_of_year;
+		}
+
+		if(is_era_start && d.year != 0) {
+			continue;
+		}
+		else if(d.day == ic.day && d.month == ic.month) {
+			res = ic.day_of_year;
+			res_is_ic = true;
+		}
+		else if(!res_is_ic && !is_leap_day && res >= ic.day_of_year) {
+			res++;
+		}
 	}
-	if(recurse_count != NULL) {
-		*recurse_count++;
+	if(res >= leap_boundary) {
+		res++;
 	}
-	struct mon13_date res;
-	res.year = d.year;
-	res.month = ic->before_month;
-	res.day = ic->before_day;
-	return before_intercalary(res, cal, recurse_count);
+	return res;
 }
 
 struct mon13_date mon13_convert(
@@ -132,17 +118,15 @@ int mon13_compare(
 		return 1;
 	}
 
-	int simple_res = compare_simple(d0->month, d0->day, d1->month, d1->day);
-	if(simple_res == 0 || (d0->month > 0 && d1->month > 0)) {
-		return simple_res;
+	int16_t day_of_year_0 = day_of_year(*d0, cal);
+	int16_t day_of_year_1 = day_of_year(*d1, cal);
+	if(day_of_year_0 < day_of_year_1) {
+		return -1;
 	}
-
-	int rc0 = 0;
-	int rc1 = 0;
-	struct mon13_date bic0 = before_intercalary(*d0, cal, &rc0);
-	struct mon13_date bic1 = before_intercalary(*d1, cal, &rc1);
-	int bic_res = compare_simple(bic0.month, bic0.day, bic1.month, bic1.day);
-	return (bic_res == 0) ? (rc0 - rc1) : bic_res;
+	if(day_of_year_0 > day_of_year_1) {
+		return 1;
+	}
+	return 0;
 }
 
 struct mon13_date mon13_add(
