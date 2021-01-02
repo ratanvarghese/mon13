@@ -17,7 +17,7 @@ static int max_day_gregorian(int8_t month, bool leap) {
 	}
 }
 
-static bool mon13_is_leap_year(
+static bool is_leap_year(
 	const struct mon13_cal* cal,
 	const int32_t year
 ) {
@@ -48,7 +48,7 @@ static int16_t to_doy(
 	const struct mon13_date d,
 	const struct mon13_cal* cal
 ) {
-	bool leap = mon13_is_leap_year(cal, d.year);
+	bool leap = is_leap_year(cal, d.year);
 	if(cal == NULL) {
 		return to_doy_g(d, leap);
 	}
@@ -108,7 +108,7 @@ static struct mon13_date from_doy(
 	const int16_t doy,
 	const struct mon13_cal* cal
 ) {
-	bool leap = mon13_is_leap_year(cal, year);
+	bool leap = is_leap_year(cal, year);
 	if(cal == NULL) {
 		return from_doy_g(year, doy, leap);
 	}
@@ -194,7 +194,7 @@ static struct mon13_date add_months(
 		res.year--;
 	}
 
-	bool leap = mon13_is_leap_year(c, res.year);
+	bool leap = is_leap_year(c, res.year);
 	int max_day = (c == NULL) ? max_day_gregorian(res.month, leap) : MON13_DAY_PER_MONTH;
 	res.day = (res.day > max_day) ? max_day : res.day;
 	return res;
@@ -257,7 +257,7 @@ struct mon13_date mon13_add(
 
 	res.weekday = (cal==NULL||res.month==0) ? -1 : (res.day-1)%MON13_DAY_PER_WEEK;
 	res.flags = 0;
-	if(mon13_is_leap_year(cal, res.year)) {
+	if(is_leap_year(cal, res.year)) {
 		res.flags |= MON13_DATE_IS_LEAP_YEAR;
 	}
 	return res;
