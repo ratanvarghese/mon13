@@ -9,27 +9,27 @@
 #include "mon13.h"
 
 struct test_1c1d {
-	struct mon13_cal* c;
+	const struct mon13_cal* c;
 	struct mon13_date d;
 	bool flip;
 };
 
 struct test_1c2d {
-	struct mon13_cal* c;
+	const struct mon13_cal* c;
 	struct mon13_date d0;
 	struct mon13_date d1;
 	bool flip;
 };
 
 struct test_2c1d {
-	struct mon13_cal* c0;
-	struct mon13_cal* c1;
+	const struct mon13_cal* c0;
+	const struct mon13_cal* c1;
 	struct mon13_date d;
 	bool flip;
 };
 
 struct test_add {
-	struct mon13_cal* c;
+	const struct mon13_cal* c;
 	struct mon13_date d;
 	int32_t offset;
 	bool flip;
@@ -37,7 +37,7 @@ struct test_add {
 
 #define TEST_QSORT_LEN 600
 struct test_qsort {
-	struct mon13_cal* c;
+	const struct mon13_cal* c;
 	struct mon13_date d[TEST_QSORT_LEN];
 	int i0;
 	int i1;
@@ -47,7 +47,7 @@ struct test_qsort {
 	bool flip;
 };
 
-static struct mon13_cal* random_cal(struct theft* t) {
+static const struct mon13_cal* random_cal(struct theft* t) {
 	switch(theft_random_choice(t, 4)) {
 		case 0: return &mon13_tranquility;
 		case 1: return &mon13_international_fixed;
@@ -57,7 +57,7 @@ static struct mon13_cal* random_cal(struct theft* t) {
 	}
 }
 
-static struct mon13_date random_date(struct theft* t, struct mon13_cal* c) {
+static struct mon13_date random_date(struct theft* t, const struct mon13_cal* c) {
 	struct mon13_date res;
 	res.year = theft_random_choice(t, INT32_MAX/4) + 1; //Avoid overflow
 	if(theft_random_choice(t, 2)) {
@@ -284,7 +284,7 @@ enum theft_trial_res convert_leap_tranquility(struct theft* t, void* test_input)
 	}
 
 	for(int i = 0; i < mon13_tranquility.intercalary_day_count; i++) {
-		struct mon13_intercalary* ic = &(mon13_tranquility.intercalary_days[i]);
+		const struct mon13_intercalary* ic = &(mon13_tranquility.intercalary_days[i]);
 		if(ic->flags & MON13_IC_LEAP) {
 			if(d_out.day == ic->day && d_out.month == ic->month) {
 				return THEFT_TRIAL_PASS;

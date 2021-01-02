@@ -13,7 +13,7 @@ const char* mon13_wkdy_names[7] = {
 	WKDY_SUN, WKDY_MON, WKDY_TUE, WKDY_WED, WKDY_THU, WKDY_FRI, WKDY_SAT
 };
 
-struct mon13_cal mon13_tranquility = {
+const struct mon13_cal mon13_tranquility = {
 	.intercalary_days = {
 		{
 			.name = "Armstrong Day",
@@ -58,7 +58,7 @@ struct mon13_cal mon13_tranquility = {
 	.week_info = 5
 };
 
-struct mon13_cal mon13_international_fixed = {
+const struct mon13_cal mon13_international_fixed = {
 	.intercalary_days = {
 		{
 			.name = "Year Day",
@@ -92,7 +92,7 @@ struct mon13_cal mon13_international_fixed = {
 	.week_info = 0
 };
 
-struct mon13_cal mon13_positivist = {
+const struct mon13_cal mon13_positivist = {
 	.intercalary_days = {
 		{
 			.name = "Festival of the All the Dead",

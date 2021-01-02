@@ -3,7 +3,7 @@
 
 #include "mon13.h"
 
-static int max_day_gregorian(int8_t month, bool leap) {
+static int max_day_gregorian(const int8_t month, const bool leap) {
 	switch(month) {
 		case 2:
 			return leap ? 29 : 28;
@@ -31,7 +31,7 @@ static bool is_leap_year(
 	return (y % 400 == 0) || (y % 4 == 0 && y % 100 != 0);
 }
 
-static int16_t to_doy_g(const struct mon13_date d, bool leap) {
+static int16_t to_doy_g(const struct mon13_date d, const bool leap) {
 	int16_t res = d.day;
 	for(int8_t i = 1; i < d.month; i++) {
 		res += max_day_gregorian(i, leap);
@@ -39,7 +39,7 @@ static int16_t to_doy_g(const struct mon13_date d, bool leap) {
 	return res;
 }
 
-static int cmp(int x, int y) {
+static int cmp(const int x, const int y) {
 	//https://stackoverflow.com/a/1903975
 	return (x > y) - (x < y);
 }
@@ -151,7 +151,7 @@ static struct mon13_date from_doy(
 	return res;
 }
 
-static struct mon13_date add_years(const struct mon13_date d, int32_t offset) {
+static struct mon13_date add_years(const struct mon13_date d, const int32_t offset) {
 	struct mon13_date res = d;
 	res.year += offset;
 	if(d.year < 0 && res.year >= 0) {
@@ -165,7 +165,7 @@ static struct mon13_date add_years(const struct mon13_date d, int32_t offset) {
 
 static struct mon13_date add_months(
 	const struct mon13_date d,
-	int32_t offset,
+	const int32_t offset,
 	const struct mon13_cal* c
 ) {
 	int32_t max_month = (c == NULL) ? MON13_GREGORIAN_MONTH_PER_YEAR : MON13_MONTH_PER_YEAR;
@@ -202,7 +202,7 @@ static struct mon13_date add_months(
 
 static struct mon13_date add_days(
 	const struct mon13_date d,
-	int32_t offset,
+	const int32_t offset,
 	const struct mon13_cal* c
 ) {
 	return d;
@@ -231,7 +231,7 @@ int mon13_fmt(
 int mon13_compare(
 	const struct mon13_date* d0,
 	const struct mon13_date* d1,
-	struct mon13_cal* cal
+	const struct mon13_cal* cal
 ) {
 	int sgn_year = cmp(d0->year, d1->year);
 	if(sgn_year != 0) {
@@ -242,8 +242,8 @@ int mon13_compare(
 
 struct mon13_date mon13_add(
 	const struct mon13_date d,
-	int32_t offset,
-	enum mon13_add_mode mode,
+	const int32_t offset,
+	const enum mon13_add_mode mode,
 	const struct mon13_cal* cal
 ) {
 	struct mon13_date res = d;

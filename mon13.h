@@ -87,20 +87,20 @@ int mon13_fmt(
 int mon13_compare(
 	const struct mon13_date* d0,
 	const struct mon13_date* d1,
-	struct mon13_cal* cal
+	const struct mon13_cal* cal
 );
 
 struct mon13_date mon13_add(
 	const struct mon13_date d,
-	int32_t offset,
-	enum mon13_add_mode mode,
+	const int32_t offset,
+	const enum mon13_add_mode mode,
 	const struct mon13_cal* cal
 );
 
 const char* mon13_wkdy_names[7];
 
-struct mon13_cal mon13_tranquility;
-struct mon13_cal mon13_international_fixed;
-struct mon13_cal mon13_positivist;
+const struct mon13_cal mon13_tranquility;
+const struct mon13_cal mon13_international_fixed;
+const struct mon13_cal mon13_positivist;
 
 #endif //MON13_H
