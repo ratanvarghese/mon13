@@ -22,13 +22,20 @@ static bool is_leap_year(
 	const int32_t year
 ) {
 	int32_t y = year;
-	if(year < 0) { //Assuming no zero year
-		y++;
-	}
 	if(cal != NULL && (cal->flags & MON13_CAL_GREGORIAN_LEAP_YEAR)) {
 		y += cal->era_start_gregorian.year;
 	}
+	if(year < 0) { //Assuming no zero year
+		y++;
+	}
 	return (y % 400 == 0) || (y % 4 == 0 && y % 100 != 0);
+}
+
+static int16_t year_len(
+	const int32_t year,
+	const struct mon13_cal* cal
+) {
+	return is_leap_year(cal, year) ? 366 : 365;
 }
 
 static int16_t to_doy_g(const struct mon13_date d, const bool leap) {
@@ -68,7 +75,10 @@ static int16_t to_doy(
 			continue;
 		}
 		else if(d.day == ic.day && d.month == ic.month) {
-			if(!is_leap_day || leap) {
+			if(leap && is_leap_day) {
+				return ic.day_of_year;
+			}
+			else if(!is_leap_day) {
 				res = ic.day_of_year;
 				res_is_ic = true;
 			}
@@ -122,10 +132,12 @@ static struct mon13_date from_doy(
 			year_day = &(cal->intercalary_days[i]);
 		}
 
-		bool res_era = year == 0 && (ic.flags & MON13_IC_ERA_START);
+		bool era_start = (year == 0) || (year == -1 && doy >= 365);
+		bool res_era = era_start && (ic.flags & MON13_IC_ERA_START);
 		bool ic_leap = ic.flags & MON13_IC_LEAP;
 		bool res_leap = leap && ic_leap && (ic.day_of_year == doy);
 		if(res_era || res_leap) {
+			res.year = (res_era ? 0 : res.year);
 			res.month = ic.month;
 			res.day = ic.day;
 			return res;
@@ -147,19 +159,24 @@ static struct mon13_date from_doy(
 	}
 
 	res.day = ((n_doy - 1) % MON13_DAY_PER_MONTH) + 1;
-	res.month = ((n_doy - 1) / MON13_DAY_PER_MONTH) + 1;
+	res.month = ((n_doy - res.day) / MON13_DAY_PER_MONTH) + 1;
+	return res;
+}
+
+static int32_t add_years_raw(const int32_t y, const int32_t offset) {
+	int32_t res = y + offset;
+	if(y < 0 && res >= 0) {
+		res++;
+	}
+	else if(y >= 0 && res <= 0) {
+		res--;
+	}
 	return res;
 }
 
 static struct mon13_date add_years(const struct mon13_date d, const int32_t offset) {
 	struct mon13_date res = d;
-	res.year += offset;
-	if(d.year < 0 && res.year >= 0) {
-		res.year++;
-	}
-	else if(d.year >= 0 && res.year <= 0) {
-		res.year--;
-	}
+	res.year = add_years_raw(res.year, offset);
 	return res;
 }
 
@@ -183,21 +200,30 @@ static struct mon13_date add_months(
 
 	res.month += offset_months;
 	if(res.month < 1) {
-		res.year--;
+		res.year = add_years_raw(res.year, -1);
 		res.month += max_month;
 	}
 	else if(res.month > max_month) {
-		res.year++;
+		res.year = add_years_raw(res.year, 1);
 		res.month -= max_month;
 	}
-	if(res.year == 0) {
-		res.year--;
-	}
-
 	bool leap = is_leap_year(c, res.year);
 	int max_day = (c == NULL) ? max_day_gregorian(res.month, leap) : MON13_DAY_PER_MONTH;
 	res.day = (res.day > max_day) ? max_day : res.day;
 	return res;
+}
+
+static int16_t leap_doy(const struct mon13_cal* c) {
+	if(c == NULL) {
+		return to_doy_g((struct mon13_date){0,2,29}, true);
+	}
+	for(int i = 0; i < c->intercalary_day_count; i++) {
+		struct mon13_intercalary ic = c->intercalary_days[i];
+		if(ic.flags & MON13_IC_LEAP) {
+			return ic.day_of_year;
+		}
+	}
+	return 366;
 }
 
 static struct mon13_date add_days(
@@ -205,7 +231,38 @@ static struct mon13_date add_days(
 	const int32_t offset,
 	const struct mon13_cal* c
 ) {
-	return d;
+	int32_t remaining_offset = (offset > 0 ? offset : -offset);
+	int32_t sgn_offset = (int32_t)cmp(offset, 0);
+	int16_t d_doy = to_doy(d, c);
+	int32_t year_offset = 0;
+	int32_t start_year = d.year == 0 ? -1 : d.year; 
+	int16_t y_len = year_len(start_year, c);
+	for(int32_t y = (start_year + sgn_offset); remaining_offset >= y_len; y += sgn_offset) {
+		if(y == 0) {
+			y += sgn_offset;
+		}
+		if(sgn_offset < 0) {
+			y_len = year_len(y, c);
+		}
+		remaining_offset -= y_len;
+		if(sgn_offset > 0) {
+			y_len = year_len(y, c);
+		}
+		year_offset += sgn_offset;
+	}
+	int32_t res_year = add_years_raw(d.year, year_offset);
+
+	int16_t res_doy = d_doy + (sgn_offset * remaining_offset);
+	int16_t res_year_len = year_len(res_year, c);
+	if(res_doy < 1) {
+		res_year = add_years_raw(res_year, -1);
+		res_doy += year_len(res_year, c);
+	}
+	else if(res_doy > res_year_len) {
+		res_doy -= res_year_len;
+		res_year = add_years_raw(res_year, 1);
+	}
+	return from_doy(res_year, res_doy, c);
 }
 
 struct mon13_date mon13_convert(

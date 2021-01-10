@@ -85,7 +85,7 @@ const struct mon13_cal mon13_international_fixed = {
 	},
 	.era_names = { "Before Common Era", "Common Era" },
 	.cal_name = "International Fixed",
-	.era_start_gregorian = { .year = 1, .month = 1, .day = 1 },
+	.era_start_gregorian = { .year = -1, .month = 1, .day = 1 },
 	.era_start_millisecond = 0,
 	.flags = MON13_CAL_GREGORIAN_LEAP_YEAR | MON13_CAL_GREGORIAN_WKDY_NAMES,
 	.intercalary_day_count = 2,
@@ -119,7 +119,7 @@ const struct mon13_cal mon13_positivist = {
 	},
 	.era_names = { "Before Positivist Era", "After Positivist Era" }, //unknown
 	.cal_name = "Positivist",
-	.era_start_gregorian = { .year = 1789, .month = 1, .day = 1 },
+	.era_start_gregorian = { .year = 1788, .month = 12, .day = 31 },
 	.era_start_millisecond = 0,
 	.flags = MON13_CAL_GREGORIAN_LEAP_YEAR | MON13_CAL_GREGORIAN_WKDY_NAMES,
 	.intercalary_day_count = 2,

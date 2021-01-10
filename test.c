@@ -65,9 +65,10 @@ static struct mon13_date random_date(struct theft* t, const struct mon13_cal* c)
 	}
 	if(c == NULL) {
 		res.month = theft_random_choice(t, MON13_GREGORIAN_MONTH_PER_YEAR) + 1;
+		int32_t y = (res.year > 0) ? res.year : (res.year + 1);
 		switch(res.month) {
 			case 2:
-				if ((res.year%4 == 0 && res.year%100 != 0) || res.year%400 == 0) {
+				if ((y%4 == 0 && y%100 != 0) || y%400 == 0) {
 					res.day = theft_random_choice(t, 29) + 1;
 				}
 				else {
@@ -87,10 +88,26 @@ static struct mon13_date random_date(struct theft* t, const struct mon13_cal* c)
 		res.month = theft_random_choice(t, MON13_MONTH_PER_YEAR + 1);
 		if(res.month == 0) {
 			int ic_idx = theft_random_choice(t, c->intercalary_day_count);
-			res.day = c->intercalary_days[ic_idx].day;
-			res.month = c->intercalary_days[ic_idx].month;
-			if(c->intercalary_days[ic_idx].flags & MON13_IC_ERA_START) {
+			struct mon13_intercalary ic = c->intercalary_days[ic_idx];
+			if(res.year == -1 && ic_idx == 0 && c->intercalary_day_count > 2) {
+				ic = c->intercalary_days[2];
+			}
+
+			res.day = ic.day;
+			res.month = ic.month;
+			if(ic.flags & MON13_IC_ERA_START) {
 				res.year = 0;
+			}
+			if((ic.flags & MON13_IC_LEAP)) {
+				while((res.year + c->era_start_gregorian.year) % 4 != 0) {
+					res.year++;
+				}
+				if((res.year + c->era_start_gregorian.year) % 100 == 0) {
+					res.year += 4;
+				}
+				if(res.year <= 0) {
+					res.year--;
+				}
 			}
 		}
 		else {
@@ -666,9 +683,21 @@ enum theft_trial_res add_day_round_trip(struct theft* t, void* test_input) {
 	struct test_add* input = test_input;
 	struct mon13_date tmp = mon13_add(input->d, input->offset, MON13_ADD_DAYS, input->c);
 	struct mon13_date res = mon13_add(tmp, -(input->offset), MON13_ADD_DAYS, input->c);
+
 	if(mon13_compare(&res, &(input->d), input->c) == 0) {
 		return THEFT_TRIAL_PASS;
 	}
+
+	printf(
+		"(%d-%02d-%02d) + %d days (%d-%02d-%02d) - %d days (%d-%02d-%02d) %s\n",
+		input->d.year, input->d.month, input->d.day,
+		input->offset,
+		tmp.year, tmp.month, tmp.day,
+		input->offset,
+		res.year, res.month, res.day,
+		(input->c == NULL) ? "Gregorian" : input->c->cal_name
+	);
+
 	return THEFT_TRIAL_FAIL;
 }
 
@@ -742,10 +771,10 @@ enum theft_trial_res add_day_1_simple(struct test_1c1d* input, struct mon13_date
 		return THEFT_TRIAL_PASS;
 	}
 	else if(res.year == input->d.year) {
-		if(res.month >= MON13_MONTH_PER_YEAR) {
+		if(res.month != (input->d.month + 1)) {
 			return THEFT_TRIAL_FAIL;
 		}
-		else if(res.day < MON13_DAY_PER_MONTH) {
+		else if(res.day != 1 || input->d.day != MON13_DAY_PER_MONTH) {
 			return THEFT_TRIAL_FAIL;
 		}
 		return THEFT_TRIAL_PASS;
@@ -816,15 +845,28 @@ enum theft_trial_res add_day_1_ic(struct test_1c1d* input, struct mon13_date res
 enum theft_trial_res add_day_1(struct theft* t, void* test_input) {
 	struct test_1c1d* input = test_input;
 	struct mon13_date res = mon13_add(input->d, 1, MON13_ADD_DAYS, input->c);
+	enum theft_trial_res trial_res;
+
 	if(input->c == NULL) {
-		return add_day_1_g(input, res);
+		trial_res = add_day_1_g(input, res);
 	}
 	else if(input->d.month >= 1 && input->d.day <= MON13_DAY_PER_MONTH) {
-		return add_day_1_simple(input, res, false);
+		trial_res = add_day_1_simple(input, res, false);
 	}
 	else {
-		return add_day_1_ic(input, res);
+		trial_res = add_day_1_ic(input, res);
 	}
+
+	if(trial_res != THEFT_TRIAL_PASS) {
+		printf(
+			"(%d-%02d-%02d) + 1 day = (%d-%02d-%02d) %s\n",
+			input->d.year, input->d.month, input->d.day,
+			res.year, res.month, res.day,
+			(input->c == NULL) ? "Gregorian" : input->c->cal_name
+		);
+	}
+
+	return trial_res;
 }
 
 struct theft_type_info random_leap_year_info = {
@@ -1009,13 +1051,15 @@ int main() {
 			.name = "mon13_add: day round trip",
 			.prop1 = add_day_round_trip,
 			.type_info = { &random_add_info },
-			.seed = seed
+			.seed = seed,
+			.trials = 2000
 		},
 		{
 			.name = "mon13_add: 1 day",
 			.prop1 = add_day_1,
 			.type_info = { &random_1c1d_info },
-			.seed = seed
+			.seed = seed,
+			.trials = 2000
 		},
 	};
 	int config_count = sizeof(config)/sizeof(struct theft_run_config);
