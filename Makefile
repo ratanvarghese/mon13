@@ -3,7 +3,7 @@
 
 CC=gcc
 CFLAGS=-std=c99
-THEFTDIR=../../theft
+THEFTDIR=./theft
 
 all: test
 
