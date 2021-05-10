@@ -97,10 +97,10 @@ struct mon13_date mon13_add(
 	const struct mon13_cal* cal
 );
 
-const char* mon13_wkdy_names[7];
+extern const char* mon13_wkdy_names[7];
 
-const struct mon13_cal mon13_tranquility;
-const struct mon13_cal mon13_international_fixed;
-const struct mon13_cal mon13_positivist;
+extern const struct mon13_cal mon13_tranquility;
+extern const struct mon13_cal mon13_international_fixed;
+extern const struct mon13_cal mon13_positivist;
 
 #endif //MON13_H
