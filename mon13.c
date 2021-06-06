@@ -28,7 +28,7 @@ int mon13_compare(
 	const struct mon13_date* d1,
 	const struct mon13_cal* cal
 ) {
-	return 0;
+	return -1;
 }
 
 struct mon13_date mon13_add(

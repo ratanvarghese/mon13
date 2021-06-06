@@ -64,7 +64,9 @@ int mon13_extract(
 
 //Predefined calendars
 extern const struct mon13_cal mon13_gregorian;
+extern const struct mon13_cal mon13_gregorian_year_zero;
 extern const struct mon13_cal mon13_tranquility;
+extern const struct mon13_cal mon13_tranquility_year_zero;
 //extern const struct mon13_cal mon13_cotsworth;
 //extern const struct mon13_cal mon13_positivist;
 

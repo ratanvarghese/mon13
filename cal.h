@@ -15,6 +15,11 @@ enum intercalary_flags {
 	IC_SENTINEL = 1 << 3
 };
 
+enum cal_flags {
+	CAL_NONE = 0,
+	CAL_YEAR_ZERO = 1 << 0
+};
+
 //Structures
 struct lkup {
 	uint16_t offset;
@@ -41,6 +46,7 @@ struct mon13_cal {
 	const char** era_list;
 	const char* name;
 	struct mon13_date era_start_gregorian;
+	int64_t flags;
 };
 
 #endif //MON13_CAL_H

@@ -1,3 +1,7 @@
 *.o
 test
 test.log
+*.gcov
+*.gcda
+*.gcno
+plan

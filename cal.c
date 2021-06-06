@@ -69,7 +69,20 @@ const struct mon13_cal mon13_gregorian = {
 	.weekday_list = gregorian_weekdays,
 	.era_list = gregorian_eras,
 	.name = "Gregorian",
-	.era_start_gregorian = { .year = 1969, .month = 7, .day = 20 },
+	.era_start_gregorian = { .year = 0, .month = 1, .day = 1 },
+	.flags = CAL_NONE
+};
+
+const struct mon13_cal mon13_gregorian_year_zero = {
+	.intercalary_list = gregorian_ic,
+	.common_lookup_list = gregorian_common_lookup,
+	.leap_lookup_list = gregorian_leap_lookup,
+	.month_list = gregorian_months,
+	.weekday_list = gregorian_weekdays,
+	.era_list = gregorian_eras,
+	.name = "Gregorian",
+	.era_start_gregorian = { .year = 0, .month = 1, .day = 1 },
+	.flags = CAL_YEAR_ZERO
 };
 
 //Tranquility Calendar
@@ -151,4 +164,17 @@ const struct mon13_cal mon13_tranquility = {
 	.era_list = tranquility_eras,
 	.name = "Tranquility",
 	.era_start_gregorian = { .year = 1969, .month = 7, .day = 20 },
+	.flags = CAL_NONE
+};
+
+const struct mon13_cal mon13_tranquility_year_zero = {
+	.intercalary_list = tranquility_ic,
+	.common_lookup_list = tranquility_common_lookup,
+	.leap_lookup_list = tranquility_leap_lookup,
+	.month_list = tranquility_months,
+	.weekday_list = tranquility_weekdays,
+	.era_list = tranquility_eras,
+	.name = "Tranquility",
+	.era_start_gregorian = { .year = 1969, .month = 7, .day = 20 },
+	.flags = CAL_YEAR_ZERO
 };
