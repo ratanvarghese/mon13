@@ -31,16 +31,16 @@ struct mon13_cal;
 
 //Functions
 struct mon13_date mon13_convert(
+	const struct mon13_date d,
 	const struct mon13_cal* src,
-	const struct mon13_cal* dest,
-	const struct mon13_date d
+	const struct mon13_cal* dest
 );
 
 struct mon13_date mon13_add(
 	const struct mon13_date d,
+	const struct mon13_cal* cal,
 	const int32_t offset,
-	const enum mon13_add_mode mode,
-	const struct mon13_cal* cal
+	const enum mon13_add_mode mode
 );
 
 int mon13_compare(
@@ -51,12 +51,13 @@ int mon13_compare(
 
 int mon13_extract(
 	const struct mon13_date d,
+	const struct mon13_cal* cal,
 	const enum mon13_extract_mode mode
 );
 
 int mon13_format(
-	const struct mon13_cal* cal,
 	const struct mon13_date d,
+	const struct mon13_cal* cal,
 	const char* fmt,
 	char* buf,
 	const size_t buflen
