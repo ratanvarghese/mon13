@@ -380,9 +380,6 @@ enum theft_trial_res add_zero(struct theft* t, void* a1, void* a2, void* a3)
 	else if(!equal_year_month_day(res0, *d)) {
 		return THEFT_TRIAL_FAIL;
 	}
-	else if(res0.dinfo != res1.dinfo) { //Don't assume d has good dinfo
-		return THEFT_TRIAL_FAIL;
-	}
 	return THEFT_TRIAL_PASS;
 }
 

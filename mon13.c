@@ -9,7 +9,7 @@ struct mon13_date mon13_convert(
 	const struct mon13_cal* src,
 	const struct mon13_cal* dest
 ) {
-	struct mon13_date res = {.year = 0, .month = 0, .day = 0, .dinfo = 0};
+	struct mon13_date res = {.year = 0, .month = 0, .day = 0};
 	return res;
 }
 
@@ -19,7 +19,7 @@ struct mon13_date mon13_add(
 	const int32_t offset,
 	const enum mon13_add_mode mode
 ) {
-	struct mon13_date res = {.year = 0, .month = 0, .day = 9, .dinfo = 0};
+	struct mon13_date res = {.year = 0, .month = 0, .day = 9};
 	return res;
 }
 

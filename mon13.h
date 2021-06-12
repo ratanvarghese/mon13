@@ -22,7 +22,6 @@ enum mon13_extract_mode {
 //Structures
 struct mon13_date {
 	int32_t year;
-	uint16_t dinfo;
 	uint8_t month;
 	uint8_t day;
 };
