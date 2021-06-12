@@ -20,7 +20,7 @@ const struct intercalary gregorian_ic[] = {
 const char* gregorian_months[] = {
 	"January", "February", "March", "April",
 	"May", "June", "July", "August",
-	"September", "October", "November", "December"
+	"September", "October", "November", "December", NULL
 };
 
 const char* gregorian_weekdays[] = {
