@@ -15,8 +15,7 @@ enum mon13_add_mode {
 enum mon13_extract_mode {
 	MON13_DAY_OF_YEAR,
 	MON13_DAY_OF_WEEK,
-	MON13_IS_LEAP_YEAR,
-	MON13_IS_OK
+	MON13_IS_LEAP_YEAR
 };
 
 //Structures

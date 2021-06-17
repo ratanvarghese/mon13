@@ -181,9 +181,23 @@ enum theft_trial_res convert_known(struct theft* t, void* test_input)
 	struct mon13_date res0 = mon13_convert(kcd->d1, kcd->c1, kcd->c0);
 	struct mon13_date res1 = mon13_convert(kcd->d0, kcd->c0, kcd->c1);
 	if(mon13_compare(&res0, &(kcd->d0), kcd->c0)) {
+		printf("FINDME expected:");
+		print_known(stdout, kcd, NULL);
+		printf(", res0:");
+		print_date(stdout, &res0, NULL);
+		printf(", res1:");
+		print_date(stdout, &res1, NULL);
+		
 		return THEFT_TRIAL_FAIL;
 	}
 	if(mon13_compare(&res1, &(kcd->d1), kcd->c1)) {
+		printf("FINDME expected:");
+		print_known(stdout, kcd, NULL);
+		printf(", res0:");
+		print_date(stdout, &res0, NULL);
+		printf(", res1:");
+		print_date(stdout, &res1, NULL);
+		
 		return THEFT_TRIAL_FAIL;
 	}
 	return THEFT_TRIAL_PASS;
@@ -437,16 +451,6 @@ enum theft_trial_res compare_random_gr(struct theft* t, void* a1, void* a2)
 }
 
 //Theft trials: extract
-enum theft_trial_res extract_is_ok(struct theft* t, void* a1, void* a2)
-{
-	const struct mon13_date* d = a1;
-	const struct mon13_cal* c = a2;
-
-	struct mon13_date sum = mon13_add(*d, c, 0, MON13_ADD_NONE);
-	bool res = mon13_extract(sum, c, MON13_IS_OK);
-	return res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
-}
-
 enum theft_trial_res extract_is_leap(struct theft* t, void* a1, void* a2)
 {
 	const struct mon13_date* d = a1;
@@ -755,24 +759,6 @@ int main() {
 			.type_info = {
 				&gr_year0_info,
 				&gr_year0_info
-			},
-			.seed = seed
-		},
-		{
-			.name = "mon13_extract: IS_OK, Gregorian Year 0",
-			.prop2 = extract_is_ok,
-			.type_info = {
-				&gr_year0_info,
-				&gr_year0_cal_info
-			},
-			.seed = seed
-		},
-		{
-			.name = "mon13_extract: IS_OK, Tranquility Year 0",
-			.prop2 = extract_is_ok,
-			.type_info = {
-				&tq_year0_info,
-				&tq_year0_cal_info
 			},
 			.seed = seed
 		},

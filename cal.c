@@ -69,8 +69,8 @@ const struct mon13_cal mon13_gregorian = {
 	.weekday_list = gregorian_weekdays,
 	.era_list = gregorian_eras,
 	.name = "Gregorian",
-	.era_start_gregorian = { .year = 0, .month = 1, .day = 1 },
-	.flags = CAL_NONE
+	.era_start_gregorian = { .year = 0, .month = 12, .day = 31 },
+	.flags = CAL_GREGORIAN_LEAP
 };
 
 const struct mon13_cal mon13_gregorian_year_zero = {
@@ -81,8 +81,8 @@ const struct mon13_cal mon13_gregorian_year_zero = {
 	.weekday_list = gregorian_weekdays,
 	.era_list = gregorian_eras,
 	.name = "Gregorian",
-	.era_start_gregorian = { .year = 0, .month = 1, .day = 1 },
-	.flags = CAL_YEAR_ZERO
+	.era_start_gregorian = { .year = 0, .month = 12, .day = 31 },
+	.flags = CAL_YEAR_ZERO | CAL_GREGORIAN_LEAP
 };
 
 //Tranquility Calendar
@@ -164,7 +164,7 @@ const struct mon13_cal mon13_tranquility = {
 	.era_list = tranquility_eras,
 	.name = "Tranquility",
 	.era_start_gregorian = { .year = 1969, .month = 7, .day = 20 },
-	.flags = CAL_NONE
+	.flags = CAL_GREGORIAN_LEAP
 };
 
 const struct mon13_cal mon13_tranquility_year_zero = {
@@ -176,5 +176,5 @@ const struct mon13_cal mon13_tranquility_year_zero = {
 	.era_list = tranquility_eras,
 	.name = "Tranquility",
 	.era_start_gregorian = { .year = 1969, .month = 7, .day = 20 },
-	.flags = CAL_YEAR_ZERO
+	.flags = CAL_YEAR_ZERO | CAL_GREGORIAN_LEAP
 };

@@ -17,7 +17,8 @@ enum intercalary_flags {
 
 enum cal_flags {
 	CAL_NONE = 0,
-	CAL_YEAR_ZERO = 1 << 0
+	CAL_YEAR_ZERO = 1 << 0,
+	CAL_GREGORIAN_LEAP = 1 << 1
 };
 
 //Structures

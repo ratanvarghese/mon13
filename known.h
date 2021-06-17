@@ -59,33 +59,45 @@ const struct known_convert_date gr2tq_oa[] = {
 		.d0 = {.year = 430, .month = 8, .day = 28}, //Past Armstrong Day
 		.d1 = {.year = -1538, .month = 2, .day = 11} //start B: 1 + (28 - 18)
 	},
-	//Siddhartha Gautama founds Buddhism (not on Wiki... where's this date from?)
+	/*
+	Siddhartha Gautama founds Buddhism
+	Problems:
+	+ no idea where the Gregorian year is from, it's not on Wikipedia
+	+ exact day unknown
+	+ -535 - 1969 = -2504
+	+ -529 - 1969 = -2498
 	{
 		.c0 = &mon13_gregorian_year_zero,
 		.c1 = &mon13_tranquility_year_zero,
-		.d0 = {.year = -535, .month = 7, .day = 20}, //Unknown?
+		.d0 = {.year = -535, .month = 7, .day = 20},
 		.d1 = {.year = -2498, .month = 0, .day = 1}
 	},
+	*/
 	//Subrahmanyan Chandrasekhar's birth and death
 	{
 		.c0 = &mon13_gregorian_year_zero,
 		.c1 = &mon13_tranquility_year_zero,
 		.d0 = {.year = 1910, .month = 10, .day = 19}, //Past Armstrong Day
-		.d1 = {.year = -58, .month = 4, .day = 7} //start D: 1 + (19 - 13)
+		.d1 = {.year = -59, .month = 4, .day = 7} //start D: 1 + (19 - 13)
 	},
 	{
 		.c0 = &mon13_gregorian_year_zero,
 		.c1 = &mon13_tranquility_year_zero,
 		.d0 = {.year = 1995, .month = 8, .day = 21}, //Past Armstrong Day
-		.d1 = {.year = 27, .month = 4, .day = 4} //start B: 1 + (21 - 18)
+		.d1 = {.year = 26, .month = 2, .day = 4} //start B: 1 + (21 - 18)
 	},
-	//Publication of *De Revolutionibus Orbium Coelestium* by Copernicus
+	/*Publication of *De Revolutionibus Orbium Coelestium* by Copernicus
+	Problems:
+	+ exact day unknown
+	+ 1543 - 1969 = -426
+	+ 1539 - 1969 = -430
 	{
 		.c0 = &mon13_gregorian_year_zero,
 		.c1 = &mon13_tranquility_year_zero,
-		.d0 = {.year = 1995, .month = 7, .day = 20}, //Unknown month/day
-		.d1 = {.year = -430, .month = 0, .day = 1} //start B: 1 + (21 - 18)
+		.d0 = {.year = 1543, .month = 7, .day = 20},
+		.d1 = {.year = -430, .month = 0, .day = 1}
 	},
+	*/
 	//Democritus of Abdera's birth and death
 	{
 		.c0 = &mon13_gregorian_year_zero,
@@ -104,7 +116,7 @@ const struct known_convert_date gr2tq_oa[] = {
 		.c0 = &mon13_gregorian_year_zero,
 		.c1 = &mon13_tranquility_year_zero,
 		.d0 = {.year = 1879, .month = 3, .day = 14}, //Born on Pi Day? Really?
-		.d1 = {.year = -90, .month = 9, .day = 2} //start I: 1 + (3 - 2)
+		.d1 = {.year = -90, .month = 9, .day = 13} //start I: 1 + (14 - 2)
 	},
 	{
 		.c0 = &mon13_gregorian_year_zero,
@@ -129,7 +141,7 @@ const struct known_convert_date gr2tq_oa[] = {
 	{
 		.c0 = &mon13_gregorian_year_zero,
 		.c1 = &mon13_tranquility_year_zero,
-		.d0 = {.year = 1571, .month = 12, .day = 27}, //Past Armstrong Day
+		.d0 = {.year = 1671, .month = 12, .day = 27}, //Past Armstrong Day
 		.d1 = {.year = -297, .month = 6, .day = 20} //start F: 1 + (27 - 8)
 	},
 	{
