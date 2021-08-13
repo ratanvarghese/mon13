@@ -78,13 +78,13 @@ const struct known_convert_date gr2tq_oa[] = {
 		.c0 = &mon13_gregorian_year_zero,
 		.c1 = &mon13_tranquility_year_zero,
 		.d0 = {.year = 1910, .month = 10, .day = 19}, //Past Armstrong Day
-		.d1 = {.year = -59, .month = 4, .day = 7} //start D: 1 + (19 - 13)
+		.d1 = {.year = -58, .month = 4, .day = 7} //start D: 1 + (19 - 13)
 	},
 	{
 		.c0 = &mon13_gregorian_year_zero,
 		.c1 = &mon13_tranquility_year_zero,
 		.d0 = {.year = 1995, .month = 8, .day = 21}, //Past Armstrong Day
-		.d1 = {.year = 26, .month = 2, .day = 4} //start B: 1 + (21 - 18)
+		.d1 = {.year = 27, .month = 2, .day = 4} //start B: 1 + (21 - 18)
 	},
 	/*Publication of *De Revolutionibus Orbium Coelestium* by Copernicus
 	Problems:
