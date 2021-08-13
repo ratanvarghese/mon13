@@ -6,20 +6,50 @@
 #include "cal.h"
 
 //Helper structs
+struct floor_res {
+	int quot;
+	int rem;
+};
+
 struct doy_date {
 	int32_t year;
 	uint16_t doy;
 };
 
 //Generic helpers
+struct floor_res floor_div(int32_t a, int32_t b) {
+	struct floor_res res;
+	res.quot = a / b;
+	res.rem = a % b;
+
+	//By C99, negative division tends to 0.
+	//We want negative division tending towards -infinity.
+	//See https://stackoverflow.com/questions/46265403/
+	bool negative_division = (a < 0) ^ (b < 0);
+	if(res.rem != 0 && negative_division) {
+		res.quot--;
+		res.rem += b;
+	}
+	return res;
+}
+
 bool is_leap(int32_t year, const struct mon13_cal* cal) {
-	if(year < 1 && (cal->flags & CAL_YEAR_ZERO) == 0) {
-		year++;
+	int y = year;
+	int c = cal->leap_cycle.year_count;
+	int l = cal->leap_cycle.leap_year_count;
+	int A = cal->leap_cycle.offset_years;
+
+	int adjusted = (l*y - A);
+	struct floor_res f_simple = floor_div(adjusted, c);
+	bool simple_res = f_simple.rem < l;
+	if(cal->flags & LEAP_GREGORIAN_SKIP) {
+		struct floor_res f_100 = floor_div(adjusted, 100);
+		struct floor_res f_400 = floor_div(adjusted, 400);
+		return simple_res && (f_100.rem != 0 || f_400.rem == 0);
 	}
-	if((cal->flags & CAL_GREGORIAN_LEAP) != 0) {
-		year += cal->era_start_gregorian.year;
+	else {
+		return simple_res;
 	}
-	return (year % 400 == 0) || (year % 4 == 0 && year % 100 != 0);
 }
 
 struct mon13_date last_day_of_segment(int32_t year, struct lkup segment) {
@@ -34,19 +64,16 @@ uint8_t segment_len(const struct lkup segment) {
 	return (segment.day_end - segment.day_start) + 1;
 }
 
-uint16_t year_len(bool leap) {
-	return leap ? 366 : 365;
+uint16_t year_len(bool leap, const struct mon13_cal* cal) {
+	struct leap_cycle_info lc = cal->leap_cycle; 
+	return leap ? lc.common_days + lc.leap_days : lc.common_days;
 }
 
 struct mon13_date last_day_of_year(int32_t year, const struct mon13_cal* cal) {
 	const bool leap = is_leap(year, cal);
 	const struct lkup* res_lookup_list = leap ? cal->leap_lookup_list : cal->common_lookup_list;
-	const unsigned doy_max = year_len(leap);
-	unsigned doy_past = 0;
 	size_t max_i = 0;
-	for(size_t i = 0; doy_past < doy_max; i++) {
-		const struct lkup segment = res_lookup_list[i];
-		doy_past = segment.offset + segment_len(segment);
+	for(size_t i = 0; (res_lookup_list[i].flags & LKUP_SENTINEL) == 0; i++) {
 		max_i = i;
 	}
 	return last_day_of_segment(year, res_lookup_list[max_i]);
@@ -55,11 +82,9 @@ struct mon13_date last_day_of_year(int32_t year, const struct mon13_cal* cal) {
 struct doy_date month_day_to_doy(struct mon13_date d, const struct mon13_cal* cal) {
 	//Assuming d is normalized.
 	const bool leap = is_leap(d.year, cal);
-	const unsigned doy_max = year_len(leap);
 	const struct lkup* lookup_list = leap ? cal->leap_lookup_list : cal->common_lookup_list;
 
-	unsigned doy_past = 0;
-	for(size_t i = 0; doy_past < doy_max; i++) {
+	for(size_t i = 0; (lookup_list[i].flags & LKUP_SENTINEL) == 0; i++) {
 		const struct lkup segment = lookup_list[i];
 		if(d.month == segment.month) {
 			if(d.day >= segment.day_start && d.day <= segment.day_end) {
@@ -69,27 +94,25 @@ struct doy_date month_day_to_doy(struct mon13_date d, const struct mon13_cal* ca
 				return res;
 			}
 		}
-		doy_past = segment.offset + segment_len(segment);
 	}
 
 	struct doy_date final;
 	final.year = d.year;
-	final.doy = doy_max;
+	final.doy = year_len(leap, cal);
 	return final;
 }
 
 struct mon13_date doy_to_month_day(struct doy_date d, const struct mon13_cal* cal) {
 	//Assuming d is normalized.
 	const bool leap = is_leap(d.year, cal);
-	const unsigned doy_max = year_len(leap);
+	const unsigned doy_max = year_len(leap, cal);
 	const struct lkup* lookup_list = leap ? cal->leap_lookup_list : cal->common_lookup_list;
 
-	unsigned doy_past = 0;
-	for(size_t i = 0; doy_past < doy_max; i++) {
+	for(size_t i = 0; (lookup_list[i].flags & LKUP_SENTINEL) == 0; i++) {
 		const struct lkup segment = lookup_list[i];
-		doy_past = segment.offset + segment_len(segment);
-		if(d.doy > segment.offset && d.doy <= doy_past) {
-			struct mon13_date res; 
+		unsigned segment_end = segment.offset + segment_len(segment);
+		if(d.doy > segment.offset && d.doy <= segment_end) {
+			struct mon13_date res;
 			res.year = d.year;
 			res.month = segment.month;
 			res.day = d.doy - segment.offset + segment.day_start - 1;
@@ -100,24 +123,76 @@ struct mon13_date doy_to_month_day(struct doy_date d, const struct mon13_cal* ca
 	return last_day_of_year(d.year, cal);
 }
 
+//MJD conversions
+struct doy_date mjd_to_doy(int32_t mjd, const struct mon13_cal* cal) {
+	const struct leap_cycle_info lc = cal->leap_cycle;
+
+	const int day_total = mjd - cal->epoch_mjd - lc.offset_days;
+	struct floor_res f_400, f_100, f_cycle, f_common, f_leap;
+	if(lc.flags & LEAP_GREGORIAN_SKIP) {
+		const int common_400 = year_len(false, cal) * 400;
+		const int leap_400 = (100 - 3) * lc.leap_days;
+		f_400 = floor_div(day_total, common_400 + leap_400);
+
+		const int common_100 = year_len(false, cal) * 100;
+		const int leap_100 = ((100/lc.year_count) - 1) * lc.leap_days;
+		f_100 = floor_div(f_400.rem, common_100 + leap_100);
+	}
+	else {
+		f_400.quot = 0;
+		f_400.rem = 0;
+		f_100.quot = 0;
+		f_100.rem = day_total;
+	}
+
+	const int common_cycle = year_len(false, cal) * lc.year_count;
+	const int leap_cycle = lc.leap_year_count * lc.leap_days;
+	f_cycle = floor_div(f_100.rem, common_cycle + leap_cycle);
+	f_common = floor_div(f_cycle.rem, year_len(false, cal));
+
+	struct doy_date res;
+	res.year = 400*f_400.quot + 100*f_100.quot + lc.year_count*f_cycle.quot + f_common.quot;
+	res.year += lc.offset_years;
+
+	if(f_100.quot == lc.year_count || f_common.quot == lc.year_count) {
+		res.doy = year_len(true, cal);
+	}
+	else {
+		res.year++;
+		res.doy = f_common.rem + 1;
+	}
+	return res;
+}
+
+int32_t doy_to_mjd(struct doy_date doy, const struct mon13_cal* cal) {
+	const struct leap_cycle_info lc = cal->leap_cycle;
+
+	const int32_t off_year = doy.year - 1 - lc.offset_years;
+	const int32_t common_days = off_year * lc.common_days;
+	
+	struct floor_res f_leap = floor_div(off_year, lc.year_count);
+	int32_t leap_days = lc.leap_year_count * f_leap.quot * lc.leap_days;
+
+	if(lc.flags & LEAP_GREGORIAN_SKIP) {
+		struct floor_res f_100 = floor_div(off_year, 100);
+		struct floor_res f_400 = floor_div(off_year, 400);
+		leap_days += ((f_400.quot - f_100.quot) * lc.leap_days);
+	}
+
+	const int32_t total_days = common_days + leap_days + lc.offset_days;
+	const int32_t mjd = total_days + cal->epoch_mjd - 1;
+
+	return mjd + doy.doy;
+}
+
 //Normalization
-int32_t norm_year(int32_t year, const struct mon13_cal* cal) {
-	return (year == 0 && (cal->flags & CAL_YEAR_ZERO) == 0) ? -1 : year;
-}
-
-int32_t norm_year_sum(int32_t year_sum, const struct mon13_cal* cal) {
-	return (year_sum == 0 && (cal->flags & CAL_YEAR_ZERO) == 0) ? 1 : year_sum;
-}
-
 struct mon13_date norm_month(struct mon13_date d, const struct mon13_cal* cal) {
 	//Assuming d.year normalized
 	const bool leap = is_leap(d.year, cal);
-	const unsigned doy_max = year_len(leap);
 	const struct lkup* lookup_list = leap ? cal->leap_lookup_list : cal->common_lookup_list;
 	
-	unsigned doy_past = 0;
 	unsigned month_max = 0;
-	for(size_t i = 0; doy_past < doy_max; i++) {
+	for(size_t i = 0; (lookup_list[i].flags & LKUP_SENTINEL) == 0; i++) {
 		const struct lkup segment = lookup_list[i];
 		if(segment.month == d.month) {
 			return d;
@@ -126,7 +201,6 @@ struct mon13_date norm_month(struct mon13_date d, const struct mon13_cal* cal) {
 		if(segment.month > month_max) {
 			month_max = segment.month;
 		}
-		doy_past = segment.offset + segment_len(segment);
 	}
 
 	//If d.month == 0, but month 0 not found in lookup, convert to month_max;
@@ -134,7 +208,7 @@ struct mon13_date norm_month(struct mon13_date d, const struct mon13_cal* cal) {
 	uint16_t m = (d.month < month_max) ? month_max : d.month;
 
 	struct mon13_date res;
-	res.year = norm_year_sum(d.year + (m / month_max), cal);
+	res.year = d.year + (m / month_max);
 	res.month = m + ((m - 1) % month_max) + 1; //Don't want res.month == 0.
 	res.day = d.day;
 	return res;
@@ -144,7 +218,7 @@ struct doy_date norm_day_of_year(struct doy_date d, const struct mon13_cal* cal)
 	uint16_t doy_done = 0;
 	int32_t year = d.year;
 	while(true) {
-		uint16_t doy_sum = doy_done + year_len(is_leap(year, cal));
+		uint16_t doy_sum = doy_done + year_len(is_leap(year, cal), cal);
 		if(doy_sum >= d.doy) {
 			//doy_done never exceeds d.doy.
 			//That makes it slightly easier to determine the result.
@@ -156,19 +230,17 @@ struct doy_date norm_day_of_year(struct doy_date d, const struct mon13_cal* cal)
 			doy_done = doy_sum;
 		}
 	}
-	struct doy_date res = {.year = norm_year_sum(year, cal), .doy = d.doy - doy_done};
+	struct doy_date res = {.year = year, .doy = d.doy - doy_done};
 	return res;
 }
 
 struct mon13_date norm_day(struct mon13_date d, const struct mon13_cal* cal) {
 	//Assuming d.year and d.month normalized
 	const bool leap = is_leap(d.year, cal);
-	const unsigned doy_max = year_len(leap);
 	const struct lkup* lookup_list = leap ? cal->leap_lookup_list : cal->common_lookup_list;
 
-	unsigned doy_past = 0;
 	size_t matching_i = 0;
-	for(size_t i = 0; doy_past < doy_max; i++) {
+	for(size_t i = 0; (lookup_list[i].flags & LKUP_SENTINEL) == 0; i++) {
 		const struct lkup segment = lookup_list[i];
 		if(segment.month == d.month) {
 			if(d.day >= segment.day_start && d.day <= segment.day_end) {
@@ -176,13 +248,12 @@ struct mon13_date norm_day(struct mon13_date d, const struct mon13_cal* cal) {
 			}
 			matching_i = i;
 		}
-		doy_past = segment.offset + segment_len(segment);
 	}
 
 	
 	if(d.day == 0) {
 		if(matching_i == 0) {
-			return last_day_of_year(norm_year(d.year - 1, cal), cal);
+			return last_day_of_year(d.year - 1, cal);
 		}
 		else {
 			return last_day_of_segment(d.year, lookup_list[matching_i - 1]);
@@ -197,29 +268,9 @@ struct mon13_date norm_day(struct mon13_date d, const struct mon13_cal* cal) {
 }
 
 struct mon13_date normalize(struct mon13_date d, const struct mon13_cal* cal) {
-	int32_t year = norm_year(d.year, cal);
-	struct mon13_date d_norm_year = {.year = year, .month = d.month, .day = d.day};
-	struct mon13_date d_norm_month = norm_month(d_norm_year, cal);
+	struct mon13_date d_norm_month = norm_month(d, cal);
 	struct mon13_date d_norm_day = norm_day(d_norm_month, cal);
 	return d_norm_day;
-}
-
-//Addition and Subtraction
-struct doy_date add_day_of_year(struct doy_date d0, struct doy_date d1, const struct mon13_cal* cal) {
-	int32_t sum_year = norm_year_sum(d0.year + d1.year, cal);
-	struct doy_date sum = {.year = sum_year, .doy = d0.doy + d1.doy};
-	return norm_day_of_year(sum, cal);
-}
-
-struct doy_date sub_day_of_year(struct doy_date d0, struct doy_date d1, const struct mon13_cal* cal) {
-	int32_t diff_year = norm_year(d0.year - d1.year, cal);
-	uint16_t big_doy = d0.doy;
-	if(d0.doy <= d1.doy) {
-		diff_year = norm_year(diff_year - 1, cal);
-		big_doy += year_len(is_leap(diff_year, cal));
-	}
-	struct doy_date diff = {.year = diff_year, .doy = big_doy - d1.doy};
-	return norm_day_of_year(diff, cal);
 }
 
 //Public functions
@@ -231,19 +282,14 @@ struct mon13_date mon13_convert(
 	if(src == NULL || dest == NULL) {
 		return d;
 	}
-	struct mon13_date d_norm = normalize(d, src);
+
+	struct mon13_date src_norm = normalize(d, src);
 	if(src == dest) {
-		return d_norm;
+		return src_norm;
 	}
-
-	const struct mon13_cal* mediator = &mon13_gregorian_year_zero;
-	struct doy_date src_doy = month_day_to_doy(src->era_start_gregorian, mediator);
-	struct doy_date dest_doy = month_day_to_doy(dest->era_start_gregorian, mediator);
-	struct doy_date d_doy = month_day_to_doy(d, src);
-
-	struct doy_date sum = add_day_of_year(d_doy, src_doy, mediator);
-	struct doy_date diff = sub_day_of_year(sum, dest_doy, mediator);
-	return doy_to_month_day(diff, dest);
+	int32_t mjd = doy_to_mjd(month_day_to_doy(src_norm, src), src);
+	struct mon13_date res = doy_to_month_day(mjd_to_doy(mjd, dest), dest);
+	return res;
 }
 
 struct mon13_date mon13_add(
