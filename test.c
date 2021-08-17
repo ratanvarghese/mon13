@@ -181,23 +181,9 @@ enum theft_trial_res convert_known(struct theft* t, void* test_input)
 	struct mon13_date res0 = mon13_convert(kcd->d1, kcd->c1, kcd->c0);
 	struct mon13_date res1 = mon13_convert(kcd->d0, kcd->c0, kcd->c1);
 	if(mon13_compare(&res0, &(kcd->d0), kcd->c0)) {
-		printf("FINDME expected:");
-		print_known(stdout, kcd, NULL);
-		printf(", res0:");
-		print_date(stdout, &res0, NULL);
-		printf(", res1:");
-		print_date(stdout, &res1, NULL);
-		
 		return THEFT_TRIAL_FAIL;
 	}
 	if(mon13_compare(&res1, &(kcd->d1), kcd->c1)) {
-		printf("FINDME expected:");
-		print_known(stdout, kcd, NULL);
-		printf(", res0:");
-		print_date(stdout, &res0, NULL);
-		printf(", res1:");
-		print_date(stdout, &res1, NULL);
-		
 		return THEFT_TRIAL_FAIL;
 	}
 	return THEFT_TRIAL_PASS;
@@ -265,14 +251,21 @@ enum theft_trial_res add_1day_tq(struct theft* t, void* test_input)
 	}
 	else if(res.month == 0 && res.day == 1) {
 		bool correct_start = (d->month == 13) && (d->day == 28);
-		bool stable_ym = (res.year == d->year) && (res.month == d->month);
-		correct_res = correct_start && stable_ym;
+		bool stable_y = (res.year == d->year);
+		correct_res = correct_start && stable_y;
 
 	}
 	else if(res.month == 0 && res.day == 2) {
 		bool correct_start = (d->month == 8) && (d->day == 27);
 		bool leap = mon13_extract(res, c, MON13_IS_LEAP_YEAR);
-		correct_res = (correct_start && leap); 
+		bool stable_y = (res.year == d->year);
+		correct_res = (correct_start && leap && stable_y); 
+	}
+	else if(res.month == 8 && res.day == 28 && mon13_extract(res, c, MON13_IS_LEAP_YEAR)) {
+		bool correct_start = (d->month == 0) && (d->day == 2);
+		bool stable_y = (res.year == d->year);
+		correct_res = (correct_start && stable_y); 
+
 	}
 	else if(res.month != d->month) {
 		correct_res = add_1day_month(*d, res, d->day == 28);
@@ -291,7 +284,8 @@ enum theft_trial_res add_day_roundtrip(struct theft* t, void* a1, void* a2, void
 
 	struct mon13_date res0 = mon13_add(*d, c, offset, MON13_ADD_DAYS);
 	struct mon13_date res1 = mon13_add(res0, c, -offset, MON13_ADD_DAYS);
-	return mon13_compare(d, &res0, c) ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS;
+
+	return mon13_compare(d, &res1, c) ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS;
 }
 
 enum theft_trial_res add_day_split(struct theft* t, void* a1, void* a2, void* a3)
@@ -398,6 +392,7 @@ enum theft_trial_res add_zero(struct theft* t, void* a1, void* a2, void* a3)
 }
 
 //Theft trials: compare
+
 enum theft_trial_res compare_nearby(struct theft* t, void* a1, void* a2, void* a3, void* a4)
 {
 	const struct mon13_date* d = a1;
@@ -406,7 +401,10 @@ enum theft_trial_res compare_nearby(struct theft* t, void* a1, void* a2, void* a
 	const struct mon13_cal* c = a4;
 
 	offset = offset >= 0 ? offset : -offset;
-
+	if(offset > (INT32_MAX/2)) {
+		offset = INT32_MAX/2;
+	}
+	
 	struct mon13_date sum[5];
 	sum[0] = mon13_add(*d, c, 2*(-offset), m);
 	sum[1] = mon13_add(*d, c, 1*(-offset), m);
@@ -414,19 +412,38 @@ enum theft_trial_res compare_nearby(struct theft* t, void* a1, void* a2, void* a
 	sum[3] = mon13_add(*d, c, 1*(offset), m);
 	sum[4] = mon13_add(*d, c, 2*(offset), m);
 
-	int res[5];
 	for(int i = 0; i < 5; i++) {
-		res[i] = mon13_compare(d, &sum[i], c);
-		if(offset == 0 && res[i] != 0) {
+		int res = mon13_compare(d, &sum[i], c);
+		if(offset == 0 && res != 0) {
+				printf("FINDME 1 res: %d d:", res);
+            	print_date(stdout, d, NULL);
+            	printf(", sum[i]:");
+            	print_date(stdout, &sum[i], NULL);
 			return THEFT_TRIAL_FAIL;
 		}
-		else if(i == 2 && res[i] != 0) {
+		else if(i == 2 && res != 0) {
+				printf("FINDME 2 res: %d d:", res);
+            	print_date(stdout, d, NULL);
+            	printf(", sum[i]:");
+            	print_date(stdout, &sum[i], NULL);
 			return THEFT_TRIAL_FAIL;
 		}
-		else if(offset != 0 && i > 0 && res[i-1] >= res[i]) {
+		else if(i < 2 && res < 0) {
+				printf("FINDME 3 res: %d d:", res);
+            	print_date(stdout, d, NULL);
+            	printf(", sum[i]:");
+            	print_date(stdout, &sum[i], NULL);
+			return THEFT_TRIAL_FAIL;
+		}
+		else if(i > 2 && res > 0) {
+				printf("FINDME 4 res: %d d:", res);
+            	print_date(stdout, d, NULL);
+            	printf(", sum[i]:");
+            	print_date(stdout, &sum[i], NULL);
 			return THEFT_TRIAL_FAIL;
 		}
 	}
+
 	return THEFT_TRIAL_PASS;
 }
 
@@ -516,7 +533,7 @@ enum theft_trial_res extract_day_of_year_add_one(struct theft* t, void* a1, void
 		res = (doy1 == 1);
 	}
 	else {
-		res = (doy1 == doy0 + 1) && (doy1 < 365) && (doy1 > 0);
+		res = (doy1 == doy0 + 1) && (doy1 <= 365) && (doy1 > 0);
 	}
 	return res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }

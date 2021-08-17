@@ -273,6 +273,41 @@ struct mon13_date normalize(struct mon13_date d, const struct mon13_cal* cal) {
 	return d_norm_day;
 }
 
+//Year Zero adjustment
+
+bool yz_needs_adjustment(int32_t y, const struct mon13_cal* cal) {
+	return (cal->flags & CAL_YEAR_ZERO) == 0 && y < 1;
+}
+
+struct mon13_date yz_to_no_yz(struct mon13_date d, const struct mon13_cal* cal) {
+	int32_t y = yz_needs_adjustment(d.year, cal) ? (d.year + 1) : d.year;
+	struct mon13_date res = {.year = y, .month = d.month, .day = d.day};
+	return res;
+}
+
+struct mon13_date no_yz_to_yz(struct mon13_date d, const struct mon13_cal* cal) {
+	int32_t y = yz_needs_adjustment(d.year, cal) ? (d.year - 1) : d.year;
+	struct mon13_date res = {.year = y, .month = d.month, .day = d.day};
+	return res;
+}
+
+//Adding
+struct mon13_date add_days(struct mon13_date d, int32_t offset, const struct mon13_cal* cal) {
+	int32_t mjd = doy_to_mjd(month_day_to_doy(d, cal), cal);
+	struct mon13_date res = doy_to_month_day(mjd_to_doy(mjd + offset, cal), cal);
+	return res;
+}
+
+struct mon13_date add_years(struct mon13_date d, int32_t offset, const struct mon13_cal* cal) {
+	struct mon13_date res = {.year = d.year + offset, .month = d.month, .day = d.day};
+	return res;
+}
+
+struct mon13_date add_months(struct mon13_date d, int32_t offset, const struct mon13_cal* cal) {
+
+}
+
+
 //Public functions
 struct mon13_date mon13_convert(
 	const struct mon13_date d,
@@ -283,12 +318,15 @@ struct mon13_date mon13_convert(
 		return d;
 	}
 
-	struct mon13_date src_norm = normalize(d, src);
+	struct mon13_date src_yz = no_yz_to_yz(d, src);
+	struct mon13_date src_norm = normalize(src_yz, src);
 	if(src == dest) {
 		return src_norm;
 	}
+
 	int32_t mjd = doy_to_mjd(month_day_to_doy(src_norm, src), src);
-	struct mon13_date res = doy_to_month_day(mjd_to_doy(mjd, dest), dest);
+	struct mon13_date res_yz = doy_to_month_day(mjd_to_doy(mjd, dest), dest);
+	struct mon13_date res = yz_to_no_yz(res_yz, dest);
 	return res;
 }
 
@@ -298,7 +336,21 @@ struct mon13_date mon13_add(
 	const int32_t offset,
 	const enum mon13_add_mode mode
 ) {
-	struct mon13_date res = {.year = 0, .month = 0, .day = 9};
+	
+	struct mon13_date d_yz = no_yz_to_yz(d, cal);
+	struct mon13_date d_norm = normalize(d_yz, cal);
+	struct mon13_date res_yz;
+	switch(mode) {
+		case MON13_ADD_NONE: res_yz = d_norm;
+		case MON13_ADD_DAYS: res_yz = add_days(d, offset, cal); break;
+		case MON13_ADD_YEARS: res_yz = add_years(d, offset, cal); break;
+		default: {
+			res_yz.year = 0;
+			res_yz.month = 0;
+			res_yz.day = 9;
+		}
+	}
+	struct mon13_date res = yz_to_no_yz(res_yz, cal);
 	return res;
 }
 
@@ -313,14 +365,17 @@ int mon13_compare(
 		d1_norm = *d1;
 	}
 	else {
-		d0_norm = normalize(*d0, cal);
-		d1_norm = normalize(*d1, cal);
+		d0_norm = normalize(no_yz_to_yz(*d0, cal), cal);
+		d1_norm = normalize(no_yz_to_yz(*d1, cal), cal);
 	}
-
-	//TODO: if(d0->month == 0 || d1->month == 0)
 
 	if(d0_norm.year != d1_norm.year) {
 		return d0_norm.year - d1_norm.year;
+	}
+	else if(cal != NULL && (d0->month == 0 || d1->month == 0)) {
+		struct doy_date doy0 = month_day_to_doy(*d0, cal);
+		struct doy_date doy1 = month_day_to_doy(*d1, cal);
+		return doy0.doy - doy1.doy;
 	}
 	else if(d0_norm.month != d1_norm.month) {
 		return d0_norm.month - d1_norm.month;
@@ -335,9 +390,10 @@ int mon13_extract(
 	const struct mon13_cal* cal,
 	const enum mon13_extract_mode mode
 ) {
-	struct mon13_date norm_d = normalize(d, cal);
+	struct mon13_date norm_d = normalize(no_yz_to_yz(d, cal), cal);
 	switch(mode) {
-		case MON13_IS_LEAP_YEAR: return is_leap(d.year, cal);
+		case MON13_DAY_OF_YEAR: return month_day_to_doy(norm_d, cal).doy;
+		case MON13_IS_LEAP_YEAR: return is_leap(norm_d.year, cal);
 		default: return 0;
 	}
 }
