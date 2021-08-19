@@ -62,7 +62,8 @@ enum theft_alloc_res alloc_year0(struct theft* t, void* env, void** instance)
 
 	struct known_convert_date* kcd;
 	select_gr2tq_oa(t, NULL, (void**)&kcd);
-	int32_t offset = theft_random_choice(t, INT32_MAX);
+	int32_t offset = (theft_random_choice(t, INT32_MAX) - (INT32_MAX/2));
+
 	if(env == kcd->c0) {
 		*res = mon13_add(kcd->d0, kcd->c0, offset, MON13_ADD_DAYS);
 	}
@@ -211,6 +212,28 @@ enum theft_trial_res convert_gr_year0(struct theft* t, void* test_input)
 	return year0_convert_correct(*d, res) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res convert_tq_year0_reverse(struct theft* t, void* test_input)
+{
+	const struct mon13_date* d = test_input;
+	struct mon13_date res = mon13_convert(
+		*d,
+		&mon13_tranquility,
+		&mon13_tranquility_year_zero
+	);
+	return year0_convert_correct(res, *d) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res convert_gr_year0_reverse(struct theft* t, void* test_input)
+{
+	const struct mon13_date* d = test_input;
+	struct mon13_date res = mon13_convert(
+		*d,
+		&mon13_gregorian,
+		&mon13_gregorian_year_zero
+	);
+	return year0_convert_correct(res, *d) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
 //Theft trials: add
 enum theft_trial_res add_1day_gr(struct theft* t, void* test_input)
 {
@@ -323,6 +346,7 @@ enum theft_trial_res add_1month_gr(struct theft* t, void* test_input)
 		bool inc_year = (res.year == d->year + 1) && (res.month == 1);
 		correct_res = correct_start && inc_year;
 	}
+
 	return correct_res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
@@ -351,6 +375,7 @@ enum theft_trial_res add_1month_tq(struct theft* t, void* test_input)
 		bool inc_year = (res.year == d->year + 1) && (res.month == 1);
 		correct_res = correct_start && inc_year;
 	}
+
 	return correct_res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;	
 }
 
@@ -402,7 +427,7 @@ enum theft_trial_res compare_nearby(struct theft* t, void* a1, void* a2, void* a
 
 	offset = offset >= 0 ? offset : -offset;
 	if(offset > (INT32_MAX/2)) {
-		offset = INT32_MAX/2;
+		offset = INT32_MAX/4;
 	}
 	
 	struct mon13_date sum[5];
@@ -412,34 +437,22 @@ enum theft_trial_res compare_nearby(struct theft* t, void* a1, void* a2, void* a
 	sum[3] = mon13_add(*d, c, 1*(offset), m);
 	sum[4] = mon13_add(*d, c, 2*(offset), m);
 
+	if(sum[0].year > sum[2].year || sum[4].year < sum[2].year) {
+		return THEFT_TRIAL_SKIP; //Overflow: need another test for overflow handling...
+	}
+
 	for(int i = 0; i < 5; i++) {
 		int res = mon13_compare(d, &sum[i], c);
 		if(offset == 0 && res != 0) {
-				printf("FINDME 1 res: %d d:", res);
-            	print_date(stdout, d, NULL);
-            	printf(", sum[i]:");
-            	print_date(stdout, &sum[i], NULL);
 			return THEFT_TRIAL_FAIL;
 		}
 		else if(i == 2 && res != 0) {
-				printf("FINDME 2 res: %d d:", res);
-            	print_date(stdout, d, NULL);
-            	printf(", sum[i]:");
-            	print_date(stdout, &sum[i], NULL);
 			return THEFT_TRIAL_FAIL;
 		}
 		else if(i < 2 && res < 0) {
-				printf("FINDME 3 res: %d d:", res);
-            	print_date(stdout, d, NULL);
-            	printf(", sum[i]:");
-            	print_date(stdout, &sum[i], NULL);
 			return THEFT_TRIAL_FAIL;
 		}
 		else if(i > 2 && res > 0) {
-				printf("FINDME 4 res: %d d:", res);
-            	print_date(stdout, d, NULL);
-            	printf(", sum[i]:");
-            	print_date(stdout, &sum[i], NULL);
 			return THEFT_TRIAL_FAIL;
 		}
 	}
@@ -533,7 +546,7 @@ enum theft_trial_res extract_day_of_year_add_one(struct theft* t, void* a1, void
 		res = (doy1 == 1);
 	}
 	else {
-		res = (doy1 == doy0 + 1) && (doy1 <= 365) && (doy1 > 0);
+		res = (doy1 == doy0 + 1) && (doy0 <= 365) && (doy0 > 0);
 	}
 	return res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
@@ -641,6 +654,18 @@ int main() {
 		{
 			.name = "mon13_convert: Tranquility Year 0",
 			.prop1 = convert_tq_year0,
+			.type_info = &tq_year0_info,
+			.seed = seed
+		},
+		{
+			.name = "mon13_convert: Gregorian Year 0 (Reverse)",
+			.prop1 = convert_gr_year0_reverse,
+			.type_info = &gr_year0_info,
+			.seed = seed
+		},
+		{
+			.name = "mon13_convert: Tranquility Year 0 (Reverse)",
+			.prop1 = convert_tq_year0_reverse,
 			.type_info = &tq_year0_info,
 			.seed = seed
 		},
@@ -753,8 +778,8 @@ int main() {
 			.prop4 = compare_nearby,
 			.type_info = {
 				&gr_year0_info,
-				&random_info,
-				&add_mode_info,
+				&random_nonzero_info,
+				&add_mode_nonzero_info,
 				&gr_year0_cal_info
 			},
 			.seed = seed

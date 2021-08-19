@@ -33,6 +33,10 @@ struct floor_res floor_div(int32_t a, int32_t b) {
 	return res;
 }
 
+unsigned clock_modulo(unsigned a, unsigned b) {
+	return ((a - 1) % b) + 1;
+}
+
 bool is_leap(int32_t year, const struct mon13_cal* cal) {
 	int y = year;
 	int c = cal->leap_cycle.year_count;
@@ -209,7 +213,7 @@ struct mon13_date norm_month(struct mon13_date d, const struct mon13_cal* cal) {
 
 	struct mon13_date res;
 	res.year = d.year + (m / month_max);
-	res.month = m + ((m - 1) % month_max) + 1; //Don't want res.month == 0.
+	res.month = clock_modulo(m, month_max); //Don't want res.month == 0.
 	res.day = d.day;
 	return res;
 }
@@ -280,13 +284,13 @@ bool yz_needs_adjustment(int32_t y, const struct mon13_cal* cal) {
 }
 
 struct mon13_date yz_to_no_yz(struct mon13_date d, const struct mon13_cal* cal) {
-	int32_t y = yz_needs_adjustment(d.year, cal) ? (d.year + 1) : d.year;
+	int32_t y = yz_needs_adjustment(d.year, cal) ? (d.year - 1) : d.year;
 	struct mon13_date res = {.year = y, .month = d.month, .day = d.day};
 	return res;
 }
 
 struct mon13_date no_yz_to_yz(struct mon13_date d, const struct mon13_cal* cal) {
-	int32_t y = yz_needs_adjustment(d.year, cal) ? (d.year - 1) : d.year;
+	int32_t y = yz_needs_adjustment(d.year, cal) ? (d.year + 1) : d.year;
 	struct mon13_date res = {.year = y, .month = d.month, .day = d.day};
 	return res;
 }
@@ -298,13 +302,77 @@ struct mon13_date add_days(struct mon13_date d, int32_t offset, const struct mon
 	return res;
 }
 
-struct mon13_date add_years(struct mon13_date d, int32_t offset, const struct mon13_cal* cal) {
+struct mon13_date add_years(struct mon13_date d, int32_t offset) {
 	struct mon13_date res = {.year = d.year + offset, .month = d.month, .day = d.day};
 	return res;
 }
 
 struct mon13_date add_months(struct mon13_date d, int32_t offset, const struct mon13_cal* cal) {
+	bool must_change_month = (d.month == 0);
+	uint8_t max_month = 0;
+	size_t matching_i = 0;
+	size_t pre_matching_i = 0;
+	size_t post_matching_i = 0;
+	size_t max_i = 0;
+	const struct lkup* lookup_list = is_leap(d.year, cal) ? cal->leap_lookup_list : cal->common_lookup_list;
+	for(size_t i = 0; (lookup_list[i].flags & LKUP_SENTINEL) == 0; i++) {
+		const struct lkup segment = lookup_list[i];
+		if(max_month < segment.month) {
+			max_month = segment.month;
+		}
+		if(d.month == segment.month) {
+			if(d.day >= segment.day_start && d.day <= segment.day_end) {
+				matching_i = i;
+			}
+		}
+		else if(must_change_month){
+			if(matching_i == 0) {
+				pre_matching_i = i;
+			}
+			else if(post_matching_i == 0) {
+				post_matching_i = i;
+			}
+		}
+		max_i = i;
+	}
 
+	struct floor_res f_year = floor_div(offset, max_month);
+	struct mon13_date sum_year = add_years(d, f_year.quot);
+	int month_diff = f_year.rem;
+	if(month_diff == 0) {
+		return sum_year;
+	}
+
+	if(must_change_month) {
+		if(pre_matching_i == 0) {
+			sum_year.month = lookup_list[post_matching_i].month;
+			sum_year.day = lookup_list[post_matching_i].day_start;
+		}
+		else {
+			sum_year.month = lookup_list[pre_matching_i].month;
+			sum_year.day = lookup_list[pre_matching_i].day_end;
+		}
+	}
+
+	int sum_month = sum_year.month + month_diff;
+	struct mon13_date res;
+	res.year = (sum_month > max_month) ? (sum_year.year + 1) : sum_year.year;
+	res.month = clock_modulo(sum_month, max_month);
+	res.day = sum_year.day;
+	
+	const struct lkup* res_lookup_list = is_leap(sum_year.year, cal) ? cal->leap_lookup_list : cal->common_lookup_list;
+	for(size_t i = 0; (res_lookup_list[i].flags & LKUP_SENTINEL) == 0; i++) {
+		const struct lkup segment = res_lookup_list[i];
+		if(res.month == segment.month) {
+			if(sum_year.day >= segment.day_start && sum_year.day <= segment.day_end) {
+				res.day = sum_year.day;
+			}
+			else if(sum_year.day > segment.day_end) {
+				res.day = segment.day_end;
+			}
+		}
+	}
+	return res;
 }
 
 
@@ -343,7 +411,8 @@ struct mon13_date mon13_add(
 	switch(mode) {
 		case MON13_ADD_NONE: res_yz = d_norm;
 		case MON13_ADD_DAYS: res_yz = add_days(d, offset, cal); break;
-		case MON13_ADD_YEARS: res_yz = add_years(d, offset, cal); break;
+		case MON13_ADD_MONTHS: res_yz = add_months(d, offset, cal); break;
+		case MON13_ADD_YEARS: res_yz = add_years(d, offset); break;
 		default: {
 			res_yz.year = 0;
 			res_yz.month = 0;
