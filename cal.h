@@ -17,7 +17,8 @@ enum intercalary_flags {
 
 enum cal_flags {
 	CAL_NONE = 0,
-	CAL_YEAR_ZERO = 1 << 0
+	CAL_YEAR_ZERO = 1 << 0,
+	CAL_PERENNIAL = 1 << 1
 };
 
 enum leap_flags {
@@ -69,6 +70,8 @@ struct mon13_cal {
 	struct leap_cycle_info leap_cycle;
 	int32_t epoch_mjd;
 	int32_t flags;
+	uint8_t week_length;
+	uint8_t start_weekday;
 };
 
 #endif //MON13_CAL_H

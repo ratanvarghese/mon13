@@ -81,7 +81,9 @@ const struct mon13_cal mon13_gregorian = {
 		.leap_days = 1
 	},
 	.epoch_mjd = -678575, //1 Jan, 1 CE
-	.flags = CAL_NONE
+	.flags = CAL_NONE,
+	.week_length = 7,
+	.start_weekday = MON13_NO_WEEKDAY
 };
 
 const struct mon13_cal mon13_gregorian_year_zero = {
@@ -102,7 +104,9 @@ const struct mon13_cal mon13_gregorian_year_zero = {
 		.leap_days = 1
 	},
 	.epoch_mjd = -678575, //1 Jan, 1 CE
-	.flags = CAL_YEAR_ZERO
+	.flags = CAL_YEAR_ZERO,
+	.week_length = 7,
+	.start_weekday = MON13_NO_WEEKDAY
 };
 
 //Tranquility Calendar
@@ -194,7 +198,9 @@ const struct mon13_cal mon13_tranquility = {
 		.leap_days = 1
 	},
 	.epoch_mjd = 40423, //1 day after Moon Landing Day
-	.flags = CAL_NONE
+	.flags = CAL_PERENNIAL,
+	.week_length = 7,
+	.start_weekday = MON13_FRIDAY
 };
 
 const struct mon13_cal mon13_tranquility_year_zero = {
@@ -215,5 +221,7 @@ const struct mon13_cal mon13_tranquility_year_zero = {
 		.leap_days = 1
 	},
 	.epoch_mjd = 40423, //1 day after Moon Landing Day
-	.flags = CAL_YEAR_ZERO
+	.flags = CAL_YEAR_ZERO | CAL_PERENNIAL,
+	.week_length = 7,
+	.start_weekday = MON13_FRIDAY
 };

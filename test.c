@@ -506,8 +506,8 @@ enum theft_trial_res extract_day_of_week_gr(struct theft* t, void* test_input) {
 
 	int dow0 = mon13_extract(sum0, c, MON13_DAY_OF_WEEK);
 	int dow1 = mon13_extract(sum1, c, MON13_DAY_OF_WEEK);
-	if(dow0 == 6) {
-		return dow1 == 0 ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	if(dow0 == MON13_SUNDAY) {
+		return dow1 == MON13_MONDAY ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 	}
 	else {
 		return dow1 == (dow0 + 1) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
@@ -521,12 +521,23 @@ enum theft_trial_res extract_day_of_week_tq(struct theft* t, void* test_input) {
 	struct mon13_date sum = mon13_add(*d, c, 0, MON13_ADD_DAYS);
 
 	int dow = mon13_extract(sum, c, MON13_DAY_OF_WEEK);
+	int expected;
 	if(sum.month == 0) {
-		return dow == 0 ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+		expected = MON13_NO_WEEKDAY;
 	}
 	else {
-		return dow == (sum.day % 7) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+		switch(sum.day % 7) {
+			case 0: expected = MON13_THURSDAY; break;
+			case 1: expected = MON13_FRIDAY; break;
+			case 2: expected = MON13_SATURDAY; break;
+			case 3: expected = MON13_SUNDAY; break;
+			case 4: expected = MON13_MONDAY; break;
+			case 5: expected = MON13_TUESDAY; break;
+			case 6: expected = MON13_WEDNESDAY; break;
+			default: expected = -1;
+		}
 	}
+	return dow == expected ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res extract_day_of_year_add_one(struct theft* t, void* a1, void* a2) {

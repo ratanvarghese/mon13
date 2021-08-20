@@ -127,6 +127,16 @@ struct mon13_date doy_to_month_day(struct doy_date d, const struct mon13_cal* ca
 	return last_day_of_year(d.year, cal);
 }
 
+const struct intercalary* seek_ic(struct mon13_date d, const struct mon13_cal* cal) {
+	for(int i = 0; (cal->intercalary_list[i].flags & IC_SENTINEL) == 0; i++) {
+		const struct intercalary* res = &(cal->intercalary_list[i]);
+		if(res->month == d.month && res->day == d.day) {
+			return res;
+		}
+	}
+	return NULL;
+}
+
 //MJD conversions
 struct doy_date mjd_to_doy(int32_t mjd, const struct mon13_cal* cal) {
 	const struct leap_cycle_info lc = cal->leap_cycle;
@@ -375,6 +385,25 @@ struct mon13_date add_months(struct mon13_date d, int32_t offset, const struct m
 	return res;
 }
 
+//Day of Week
+enum mon13_weekday get_day_of_week(struct mon13_date d, const struct mon13_cal* cal) {
+	struct floor_res f_week;
+	if((cal->flags & CAL_PERENNIAL) == 0) {
+		int32_t mjd = doy_to_mjd(month_day_to_doy(d, cal), cal);
+		f_week = floor_div(mjd, cal->week_length);
+		return clock_modulo(f_week.rem + MON13_WEDNESDAY, cal->week_length);
+	}
+	else {
+		const struct intercalary* ic = seek_ic(d, cal);
+		if(ic != NULL) {
+			return MON13_NO_WEEKDAY;
+		}
+
+		f_week = floor_div(d.day, cal->week_length);
+		return clock_modulo(f_week.rem + cal->start_weekday - 1, cal->week_length);
+	}
+}
+
 
 //Public functions
 struct mon13_date mon13_convert(
@@ -462,6 +491,7 @@ int mon13_extract(
 	struct mon13_date norm_d = normalize(no_yz_to_yz(d, cal), cal);
 	switch(mode) {
 		case MON13_DAY_OF_YEAR: return month_day_to_doy(norm_d, cal).doy;
+		case MON13_DAY_OF_WEEK: return get_day_of_week(norm_d, cal);
 		case MON13_IS_LEAP_YEAR: return is_leap(norm_d.year, cal);
 		default: return 0;
 	}

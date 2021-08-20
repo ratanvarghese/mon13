@@ -18,6 +18,17 @@ enum mon13_extract_mode {
 	MON13_IS_LEAP_YEAR
 };
 
+enum mon13_weekday {
+	MON13_NO_WEEKDAY = 0,
+	MON13_MONDAY = 1,
+	MON13_TUESDAY = 2,
+	MON13_WEDNESDAY = 3,
+	MON13_THURSDAY = 4,
+	MON13_FRIDAY = 5,
+	MON13_SATURDAY = 6,
+	MON13_SUNDAY = 7
+};
+
 //Structures
 struct mon13_date {
 	int32_t year;
