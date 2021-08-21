@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "theft.h"
 #include "mon13.h"
@@ -173,6 +174,23 @@ bool less_year_month_day(struct mon13_date d0, struct mon13_date d1) {
 		return true;
 	}
 	return false;
+}
+
+const char* contained(char* needle, const char** haystack, size_t maxlen, char placeholder) {
+	for(int i = 0; haystack[i] != NULL; i++) {
+		const char* expected = haystack[i]; 
+		size_t len = strlen(expected);
+		if(strncmp(needle, expected, maxlen) == 0) {
+			if(needle[len + 1] == '\0' && needle[len + 2] == placeholder) {
+				return expected;
+			}
+		}
+	}
+	return NULL;
+}
+
+bool format_res_check(size_t res, const char* expected) {
+	return (expected != NULL) && (res == strlen(expected));
 }
 
 //Theft trials: convert
@@ -580,6 +598,91 @@ enum theft_trial_res extract_day_of_year_split(struct theft* t, void* a1, void* 
 	return doy0 == doy3 ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res format_percent(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
+	
+	char buf[3];
+	memset(buf, placeholder, 3);
+
+	int res = mon13_format(*d, c, n, "%%", buf, 3);
+	if(!format_res_check(res, "%")) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(buf[0] != '%') {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(buf[1] != '\0') {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(buf[2] != placeholder) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res format_weekday(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
+
+
+	int day = mon13_extract(*d, c, MON13_DAY_OF_WEEK);
+	if(day == MON13_NO_WEEKDAY) {
+		return THEFT_TRIAL_SKIP;
+	}
+
+	char buf[20];
+	memset(buf, placeholder, 20);
+
+	int res = mon13_format(*d, c, n, "%A", buf, 20);
+	const char* expected = contained(buf, n->weekday_list, 10, placeholder);
+	return format_res_check(res, expected) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res format_month(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
+
+	if(d->month == 0) {
+		return THEFT_TRIAL_SKIP;
+	}
+
+	char buf[100];
+	memset(buf, placeholder, 100);
+
+	int res = mon13_format(*d, c, n, "%B", buf, 100);
+	const char* expected = contained(buf, n->month_list, 100, placeholder);
+	return format_res_check(res, expected) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res format_day_of_month(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
+
+	char buf[4];
+	memset(buf, placeholder, 4);
+
+	int res = mon13_format(*d, c, n, "%d", buf, 4);
+	char* endptr = buf;
+	long parsed = strtol(buf, &endptr, 10);
+	if(parsed != d->day || res != 2) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(endptr[0] != '\0' && endptr[1] != placeholder && &(endptr[0]) != &(buf[2])) {
+		return THEFT_TRIAL_FAIL;
+	}
+	return THEFT_TRIAL_PASS;
+}
+
 //Theft type info
 struct theft_type_info gr2tq_oa_info = {
 	.alloc = select_gr2tq_oa, //nothing to free
@@ -637,6 +740,16 @@ struct theft_type_info tq_year0_info = {
 	.free = theft_generic_free_cb,
 	.print = print_date,
 	.env = (void*)&mon13_tranquility_year_zero
+};
+
+struct theft_type_info gr_year0_name_info = {
+	.alloc = select_env, //nothing to free
+	.env = (void*)&mon13_gregorian_names_en_US
+};
+
+struct theft_type_info tq_year0_name_info = {
+	.alloc = select_env, //nothing to free
+	.env = (void*)&mon13_tranquility_names_en_US
 };
 
 int main() {
@@ -882,6 +995,86 @@ int main() {
 				&tq_year0_cal_info
 			},
 			.seed = seed
+		},
+		{
+			.name = "mon13_format: %%, Gregorian Year 0 (en_US)",
+			.prop4 = format_percent,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %%, Tranquility Year 0 (en_US)",
+			.prop4 = format_percent,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %A, Gregorian Year 0 (en_US)",
+			.prop4 = format_weekday,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %A, Tranquility Year 0 (en_US)",
+			.prop4 = format_weekday,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %B, Gregorian Year 0 (en_US)",
+			.prop4 = format_month,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %B, Tranquility Year 0 (en_US)",
+			.prop4 = format_month,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %d, Gregorian Year 0 (en_US)",
+			.prop4 = format_month,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %d, Tranquility Year 0 (en_US)",
+			.prop4 = format_month,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&random_info
+			}
 		}
 	};
 	//bool all_passed = true;
