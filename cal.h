@@ -41,8 +41,6 @@ struct lkup {
 };
 
 struct intercalary {
-	const char* name;
-	const char* alt_name;
 	int16_t flags;
 	int16_t day_of_year;
 	int8_t month;
@@ -63,10 +61,6 @@ struct mon13_cal {
 	const struct intercalary* intercalary_list;
 	const struct lkup* common_lookup_list;
 	const struct lkup* leap_lookup_list;
-	const char** month_list;
-	const char** weekday_list;
-	const char** era_list;
-	const char* name;
 	struct leap_cycle_info leap_cycle;
 	int32_t epoch_mjd;
 	int32_t flags;

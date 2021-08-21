@@ -10,25 +10,70 @@
 #define WKDY_FRI "Friday"
 #define WKDY_SAT "Saturday"
 
-//Gregorian Calendar
-const struct intercalary gregorian_ic[] = {
-	{
-		.flags = IC_SENTINEL
-	}
-};
+//NAME LISTS
 
-const char* gregorian_months[] = {
+//Gregorian Calendar
+const char* gregorian_month_list_en_US[] = {
 	"January", "February", "March", "April",
 	"May", "June", "July", "August",
 	"September", "October", "November", "December", NULL
 };
 
-const char* gregorian_weekdays[] = {
-	WKDY_SUN, WKDY_MON, WKDY_TUE, WKDY_WED, WKDY_THU, WKDY_FRI, WKDY_SAT, NULL
+const char* gregorian_weekday_list_en_US[] = {
+		WKDY_SUN, WKDY_MON, WKDY_TUE, WKDY_WED, WKDY_THU, WKDY_FRI, WKDY_SAT, NULL
 };
 
-const char* gregorian_eras[] = {
-	"Before Common Era", "Common Era", NULL
+const char* gregorian_era_list_en_US[] = {"Before Common Era", "Common Era", NULL};
+
+const struct mon13_name_list mon13_gregorian_names_en_US = {
+	.month_list = gregorian_month_list_en_US,
+	.weekday_list = gregorian_weekday_list_en_US,
+	.era_list = gregorian_era_list_en_US,
+	.intercalary_list = NULL,
+	.alt_intercalary_list = NULL,
+	.calendar_name = "Gregorian"
+};
+
+//Tranquility Calendar
+const char* tranquility_month_list_en_US[] = {
+	"Archimedes", "Brahe", "Copernicus", "Darwin", "Einstein",
+	"Faraday", "Galileo", "Hippocrates", "Imhotep", "Jung",
+	"Kepler", "Lavoisier", "Mendel", NULL	
+};
+
+const char* tranquility_weekday_list_en_US[] = {
+	WKDY_FRI, WKDY_SAT, WKDY_SUN, WKDY_MON, WKDY_TUE, WKDY_WED, WKDY_THU, NULL
+};
+
+const char* tranquility_era_list_en_US[] = {
+	"Before Tranquility", "After Tranquility", NULL
+};
+
+const char* tranquility_intercalary_list_en_US[] = {
+	"Armstrong Day", "Aldrin Day", NULL
+};
+
+const char* tranquility_alt_intercalary_list_en_US[] = {
+	"Moon Landing Day", "", NULL
+};
+
+const struct mon13_name_list mon13_tranquility_names_en_US = {
+	.month_list = tranquility_month_list_en_US,
+	.weekday_list = tranquility_weekday_list_en_US,
+	.era_list = tranquility_era_list_en_US,
+	.intercalary_list = tranquility_intercalary_list_en_US,
+	.alt_intercalary_list = tranquility_alt_intercalary_list_en_US,
+	.calendar_name = "Tranquility"
+};
+
+
+//CALENDARS
+
+//Gregorian Calendar
+const struct intercalary gregorian_ic[] = {
+	{
+		.flags = IC_SENTINEL
+	}
 };
 
 const struct lkup gregorian_common_lookup[] = {
@@ -67,10 +112,6 @@ const struct mon13_cal mon13_gregorian = {
 	.intercalary_list = gregorian_ic,
 	.common_lookup_list = gregorian_common_lookup,
 	.leap_lookup_list = gregorian_leap_lookup,
-	.month_list = gregorian_months,
-	.weekday_list = gregorian_weekdays,
-	.era_list = gregorian_eras,
-	.name = "Gregorian",
 	.leap_cycle = {
 		.year_count = 4,
 		.leap_year_count = 1,
@@ -90,10 +131,6 @@ const struct mon13_cal mon13_gregorian_year_zero = {
 	.intercalary_list = gregorian_ic,
 	.common_lookup_list = gregorian_common_lookup,
 	.leap_lookup_list = gregorian_leap_lookup,
-	.month_list = gregorian_months,
-	.weekday_list = gregorian_weekdays,
-	.era_list = gregorian_eras,
-	.name = "Gregorian",
 	.leap_cycle = {
 		.year_count = 4,
 		.leap_year_count = 1,
@@ -112,34 +149,16 @@ const struct mon13_cal mon13_gregorian_year_zero = {
 //Tranquility Calendar
 const struct intercalary tranquility_ic[] = {
 	{
-		.name = "Armstrong Day",
-		.alt_name = "Moon Landing Day",
 		.flags = IC_YEAR | IC_ERA_START_ALT_NAME,
 		.month = 0, .day = 1, .day_of_year = 365
 	},
 	{
-		.name = "Aldrin Day",
-		.alt_name = NULL,
 		.flags = IC_LEAP,
 		.month = 0, .day = 2, .day_of_year = 224
 	},
 	{
 		.flags = IC_SENTINEL
 	}
-};
-
-const char* tranquility_months[] = {
-	"Archimedes", "Brahe", "Copernicus", "Darwin", "Einstein",
-	"Faraday", "Galileo", "Hippocrates", "Imhotep", "Jung",
-	"Kepler", "Lavoisier", "Mendel", NULL
-};
-
-const char* tranquility_weekdays[] = {
-	WKDY_FRI, WKDY_SAT, WKDY_SUN, WKDY_MON, WKDY_TUE, WKDY_WED, WKDY_THU, NULL
-};
-
-const char* tranquility_eras[] = {
-	"Before Tranquility", "After Tranquility", NULL
 };
 
 const struct lkup tranquility_common_lookup[] = {
@@ -184,10 +203,6 @@ const struct mon13_cal mon13_tranquility = {
 	.intercalary_list = tranquility_ic,
 	.common_lookup_list = tranquility_common_lookup,
 	.leap_lookup_list = tranquility_leap_lookup,
-	.month_list = tranquility_months,
-	.weekday_list = tranquility_weekdays,
-	.era_list = tranquility_eras,
-	.name = "Tranquility",
 	.leap_cycle = {
 		.year_count = 4,
 		.leap_year_count = 1,
@@ -207,10 +222,6 @@ const struct mon13_cal mon13_tranquility_year_zero = {
 	.intercalary_list = tranquility_ic,
 	.common_lookup_list = tranquility_common_lookup,
 	.leap_lookup_list = tranquility_leap_lookup,
-	.month_list = tranquility_months,
-	.weekday_list = tranquility_weekdays,
-	.era_list = tranquility_eras,
-	.name = "Tranquility",
 	.leap_cycle = {
 		.year_count = 4,
 		.leap_year_count = 1,

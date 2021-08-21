@@ -36,6 +36,15 @@ struct mon13_date {
 	uint8_t day;
 };
 
+struct mon13_name_list {
+	const char** month_list;
+	const char** weekday_list;
+	const char** era_list;
+	const char** intercalary_list;
+	const char** alt_intercalary_list;
+	const char* calendar_name;
+};
+
 struct mon13_cal;
 
 //Functions
@@ -67,10 +76,15 @@ int mon13_extract(
 int mon13_format(
 	const struct mon13_date d,
 	const struct mon13_cal* cal,
+	const struct mon13_name_list* nlist,
 	const char* fmt,
 	char* buf,
 	const size_t buflen
 );
+
+//Predefined name lists
+extern const struct mon13_name_list mon13_gregorian_names_en_US;
+extern const struct mon13_name_list mon13_tranquility_names_en_US;
 
 //Predefined calendars
 extern const struct mon13_cal mon13_gregorian;
