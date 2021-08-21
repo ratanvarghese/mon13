@@ -20,7 +20,7 @@ const char* gregorian_month_list_en_US[] = {
 };
 
 const char* gregorian_weekday_list_en_US[] = {
-		WKDY_SUN, WKDY_MON, WKDY_TUE, WKDY_WED, WKDY_THU, WKDY_FRI, WKDY_SAT, NULL
+	WKDY_SUN, WKDY_MON, WKDY_TUE, WKDY_WED, WKDY_THU, WKDY_FRI, WKDY_SAT, NULL
 };
 
 const char* gregorian_era_list_en_US[] = {"Before Common Era", "Common Era", NULL};
@@ -32,6 +32,27 @@ const struct mon13_name_list mon13_gregorian_names_en_US = {
 	.intercalary_list = NULL,
 	.alt_intercalary_list = NULL,
 	.calendar_name = "Gregorian"
+};
+
+const char* gregorian_month_list_fr_FR[] = {
+	"Janvier", "Février", "Mars", "Avril",
+	"Mai", "Juin", "Juillet", "Août",
+	"Septembre", "Octobre", "Novembre", "Décembre", NULL
+};
+
+const char* gregorian_weekday_list_fr_FR[] = {
+	"Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche", NULL
+};
+
+const char* gregorian_era_list_fr_FR[] = {"Ère commune", "Avant l'ère commune", NULL};
+
+const struct mon13_name_list mon13_gregorian_names_fr_FR = {
+	.month_list = gregorian_month_list_fr_FR,
+	.weekday_list = gregorian_weekday_list_fr_FR,
+	.era_list = gregorian_era_list_fr_FR,
+	.intercalary_list = NULL,
+	.alt_intercalary_list = NULL,
+	.calendar_name = "Grégorien"
 };
 
 //Tranquility Calendar

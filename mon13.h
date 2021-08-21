@@ -84,6 +84,8 @@ int mon13_format(
 
 //Predefined name lists
 extern const struct mon13_name_list mon13_gregorian_names_en_US;
+extern const struct mon13_name_list mon13_gregorian_names_fr_FR;
+
 extern const struct mon13_name_list mon13_tranquility_names_en_US;
 
 //Predefined calendars

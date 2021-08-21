@@ -747,6 +747,11 @@ struct theft_type_info gr_year0_name_info = {
 	.env = (void*)&mon13_gregorian_names_en_US
 };
 
+struct theft_type_info gr_year0_name_fr_info = {
+	.alloc = select_env, //nothing to free
+	.env = (void*)&mon13_gregorian_names_fr_FR
+};
+
 struct theft_type_info tq_year0_name_info = {
 	.alloc = select_env, //nothing to free
 	.env = (void*)&mon13_tranquility_names_en_US
@@ -1007,6 +1012,16 @@ int main() {
 			}
 		},
 		{
+			.name = "mon13_format: %%, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_percent,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
+				&random_info
+			}
+		},
+		{
 			.name = "mon13_format: %%, Tranquility Year 0 (en_US)",
 			.prop4 = format_percent,
 			.type_info = {
@@ -1023,6 +1038,16 @@ int main() {
 				&gr_year0_info,
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %A, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_weekday,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
 				&random_info
 			}
 		},
@@ -1047,6 +1072,16 @@ int main() {
 			}
 		},
 		{
+			.name = "mon13_format: %B, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_month,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
+				&random_info
+			}
+		},
+		{
 			.name = "mon13_format: %B, Tranquility Year 0 (en_US)",
 			.prop4 = format_month,
 			.type_info = {
@@ -1063,6 +1098,16 @@ int main() {
 				&gr_year0_info,
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %d, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_month,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
 				&random_info
 			}
 		},
