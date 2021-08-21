@@ -4,7 +4,7 @@
 
 CC=gcc
 
-CFLAGS=-std=c99 -fPIC
+CFLAGS=-std=c99 -fPIC -Wall -Werror
 #CFLAGS=-std=c99 -ggdb
 #TESTCFLAGS=-fprofile-arcs -ftest-coverage
 

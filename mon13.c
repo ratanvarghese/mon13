@@ -109,7 +109,6 @@ struct doy_date month_day_to_doy(struct mon13_date d, const struct mon13_cal* ca
 struct mon13_date doy_to_month_day(struct doy_date d, const struct mon13_cal* cal) {
 	//Assuming d is normalized.
 	const bool leap = is_leap(d.year, cal);
-	const unsigned doy_max = year_len(leap, cal);
 	const struct lkup* lookup_list = leap ? cal->leap_lookup_list : cal->common_lookup_list;
 
 	for(size_t i = 0; (lookup_list[i].flags & LKUP_SENTINEL) == 0; i++) {
@@ -142,7 +141,7 @@ struct doy_date mjd_to_doy(int32_t mjd, const struct mon13_cal* cal) {
 	const struct leap_cycle_info lc = cal->leap_cycle;
 
 	const int day_total = mjd - cal->epoch_mjd - lc.offset_days;
-	struct floor_res f_400, f_100, f_cycle, f_common, f_leap;
+	struct floor_res f_400, f_100, f_cycle, f_common;
 	if(lc.flags & LEAP_GREGORIAN_SKIP) {
 		const int common_400 = year_len(false, cal) * 400;
 		const int leap_400 = (100 - 3) * lc.leap_days;
@@ -323,7 +322,6 @@ struct mon13_date add_months(struct mon13_date d, int32_t offset, const struct m
 	size_t matching_i = 0;
 	size_t pre_matching_i = 0;
 	size_t post_matching_i = 0;
-	size_t max_i = 0;
 	const struct lkup* lookup_list = is_leap(d.year, cal) ? cal->leap_lookup_list : cal->common_lookup_list;
 	for(size_t i = 0; (lookup_list[i].flags & LKUP_SENTINEL) == 0; i++) {
 		const struct lkup segment = lookup_list[i];
@@ -343,7 +341,6 @@ struct mon13_date add_months(struct mon13_date d, int32_t offset, const struct m
 				post_matching_i = i;
 			}
 		}
-		max_i = i;
 	}
 
 	struct floor_res f_year = floor_div(offset, max_month);

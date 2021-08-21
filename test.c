@@ -98,7 +98,7 @@ void print_date(FILE* f, const void* instance, void* env)
 void print_random(FILE* f, const void* instance, void* env)
 {
 	uint64_t i = (uint64_t) instance;
-	fprintf(f, "%u", i);
+	fprintf(f, "%lu", i);
 }
 
 void print_add_mode(FILE* f, const void* instance, void* env)
@@ -645,51 +645,51 @@ int main() {
 		{
 			.name = "mon13_convert: Gregorian<->Tranquility (OA)",
 			.prop1 = convert_known,
-			.type_info = &gr2tq_oa_info,
+			.type_info = {&gr2tq_oa_info},
 			.seed = seed,
 			.trials = SIZEOF_ARR(gr2tq_oa)
 		},
 		{
 			.name = "mon13_convert: Gregorian<->Tranquility (Handy)",
 			.prop1 = convert_known,
-			.type_info = &gr2tq_handy_info,
+			.type_info = {&gr2tq_handy_info},
 			.seed = seed,
 			.trials = SIZEOF_ARR(gr2tq_handy)
 		},
 		{
 			.name = "mon13_convert: Gregorian Year 0",
 			.prop1 = convert_gr_year0,
-			.type_info = &gr_year0_info,
+			.type_info = {&gr_year0_info},
 			.seed = seed
 		},
 		{
 			.name = "mon13_convert: Tranquility Year 0",
 			.prop1 = convert_tq_year0,
-			.type_info = &tq_year0_info,
+			.type_info = {&tq_year0_info},
 			.seed = seed
 		},
 		{
 			.name = "mon13_convert: Gregorian Year 0 (Reverse)",
 			.prop1 = convert_gr_year0_reverse,
-			.type_info = &gr_year0_info,
+			.type_info = {&gr_year0_info},
 			.seed = seed
 		},
 		{
 			.name = "mon13_convert: Tranquility Year 0 (Reverse)",
 			.prop1 = convert_tq_year0_reverse,
-			.type_info = &tq_year0_info,
+			.type_info = {&tq_year0_info},
 			.seed = seed
 		},
 		{
 			.name = "mon13_add: 1 Day, Gregorian Year 0",
 			.prop1 = add_1day_gr,
-			.type_info = &gr_year0_info,
+			.type_info = {&gr_year0_info},
 			.seed = seed
 		},
 		{
 			.name = "mon13_add: 1 Day, Tranquility Year 0",
 			.prop1 = add_1day_tq,
-			.type_info = &tq_year0_info,
+			.type_info = {&tq_year0_info},
 			.seed = seed
 		},
 		{
@@ -735,13 +735,13 @@ int main() {
 		{
 			.name = "mon13_add: 1 Month, Gregorian Year 0",
 			.prop1 = add_1month_gr,
-			.type_info = &gr_year0_info,
+			.type_info = {&gr_year0_info},
 			.seed = seed
 		},
 		{
 			.name = "mon13_add: 1 Month, Tranquility Year 0",
 			.prop1 = add_1month_tq,
-			.type_info = &tq_year0_info,
+			.type_info = {&tq_year0_info},
 			.seed = seed
 		},
 		{
@@ -836,13 +836,13 @@ int main() {
 		{
 			.name = "mon13_extract: DAY_OF_WEEK, Gregorian Year 0",
 			.prop1 = extract_day_of_week_gr,
-			.type_info = &gr_year0_info,
+			.type_info = {&gr_year0_info},
 			.seed = seed
 		},
 		{
 			.name = "mon13_extract: DAY_OF_WEEK, Tranquility Year 0",
 			.prop1 = extract_day_of_week_tq,
-			.type_info = &tq_year0_info,
+			.type_info = {&tq_year0_info},
 			.seed = seed
 		},
 		{
@@ -884,10 +884,10 @@ int main() {
 			.seed = seed
 		}
 	};
-	bool all_passed = true;
+	//bool all_passed = true;
 	for(int i = 0; i < SIZEOF_ARR(config); i++) {
 		if(theft_run(&(config[i])) != THEFT_RUN_PASS) {
-			all_passed = false;
+			//all_passed = false;
 		}
 	}
 	//return all_passed ? EXIT_SUCCESS : EXIT_FAILURE;
