@@ -44,7 +44,7 @@ const char* gregorian_weekday_list_fr_FR[] = {
 	"Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche", NULL
 };
 
-const char* gregorian_era_list_fr_FR[] = {"Ère commune", "Avant l'ère commune", NULL};
+const char* gregorian_era_list_fr_FR[] = {"Avant l'ère commune", "Ère commune", NULL};
 
 const struct mon13_name_list mon13_gregorian_names_fr_FR = {
 	.month_list = gregorian_month_list_fr_FR,
