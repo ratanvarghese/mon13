@@ -487,9 +487,9 @@ int mon13_extract(
 ) {
 	struct mon13_date norm_d = normalize(no_yz_to_yz(d, cal), cal);
 	switch(mode) {
-		case MON13_DAY_OF_YEAR: return month_day_to_doy(norm_d, cal).doy;
-		case MON13_DAY_OF_WEEK: return get_day_of_week(norm_d, cal);
-		case MON13_IS_LEAP_YEAR: return is_leap(norm_d.year, cal);
+		case MON13_EXTRACT_DAY_OF_YEAR: return month_day_to_doy(norm_d, cal).doy;
+		case MON13_EXTRACT_DAY_OF_WEEK: return get_day_of_week(norm_d, cal);
+		case MON13_EXTRACT_IS_LEAP_YEAR: return is_leap(norm_d.year, cal);
 		default: return 0;
 	}
 }

@@ -298,11 +298,11 @@ enum theft_trial_res add_1day_tq(struct theft* t, void* test_input)
 	}
 	else if(res.month == 0 && res.day == 2) {
 		bool correct_start = (d->month == 8) && (d->day == 27);
-		bool leap = mon13_extract(res, c, MON13_IS_LEAP_YEAR);
+		bool leap = mon13_extract(res, c, MON13_EXTRACT_IS_LEAP_YEAR);
 		bool stable_y = (res.year == d->year);
 		correct_res = (correct_start && leap && stable_y); 
 	}
-	else if(res.month == 8 && res.day == 28 && mon13_extract(res, c, MON13_IS_LEAP_YEAR)) {
+	else if(res.month == 8 && res.day == 28 && mon13_extract(res, c, MON13_EXTRACT_IS_LEAP_YEAR)) {
 		bool correct_start = (d->month == 0) && (d->day == 2);
 		bool stable_y = (res.year == d->year);
 		correct_res = (correct_start && stable_y); 
@@ -507,7 +507,7 @@ enum theft_trial_res extract_is_leap(struct theft* t, void* a1, void* a2)
 	int leap_count = 0;
 	for(int i = 1; i < 9; i++) {
 		struct mon13_date sum = mon13_add(*d, c, i, MON13_ADD_YEARS);
-		if(mon13_extract(sum, c, MON13_IS_LEAP_YEAR)) {
+		if(mon13_extract(sum, c, MON13_EXTRACT_IS_LEAP_YEAR)) {
 			leap_count++;
 		}
 	}
@@ -522,8 +522,8 @@ enum theft_trial_res extract_day_of_week_gr(struct theft* t, void* test_input) {
 	struct mon13_date sum0 = mon13_add(*d, c, 0, MON13_ADD_DAYS);
 	struct mon13_date sum1 = mon13_add(*d, c, 1, MON13_ADD_DAYS);
 
-	int dow0 = mon13_extract(sum0, c, MON13_DAY_OF_WEEK);
-	int dow1 = mon13_extract(sum1, c, MON13_DAY_OF_WEEK);
+	int dow0 = mon13_extract(sum0, c, MON13_EXTRACT_DAY_OF_WEEK);
+	int dow1 = mon13_extract(sum1, c, MON13_EXTRACT_DAY_OF_WEEK);
 	if(dow0 == MON13_SUNDAY) {
 		return dow1 == MON13_MONDAY ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 	}
@@ -538,7 +538,7 @@ enum theft_trial_res extract_day_of_week_tq(struct theft* t, void* test_input) {
 	
 	struct mon13_date sum = mon13_add(*d, c, 0, MON13_ADD_DAYS);
 
-	int dow = mon13_extract(sum, c, MON13_DAY_OF_WEEK);
+	int dow = mon13_extract(sum, c, MON13_EXTRACT_DAY_OF_WEEK);
 	int expected;
 	if(sum.month == 0) {
 		expected = MON13_NO_WEEKDAY;
@@ -564,9 +564,9 @@ enum theft_trial_res extract_day_of_year_add_one(struct theft* t, void* a1, void
 
 	struct mon13_date sum = mon13_add(*d, c, 1, MON13_ADD_DAYS);
 
-	int doy0 = mon13_extract(*d, c, MON13_DAY_OF_YEAR);
-	int doy1 = mon13_extract(sum, c, MON13_DAY_OF_YEAR);
-	bool leap = mon13_extract(*d, c, MON13_IS_LEAP_YEAR);
+	int doy0 = mon13_extract(*d, c, MON13_EXTRACT_DAY_OF_YEAR);
+	int doy1 = mon13_extract(sum, c, MON13_EXTRACT_DAY_OF_YEAR);
+	bool leap = mon13_extract(*d, c, MON13_EXTRACT_IS_LEAP_YEAR);
 	bool res = false;
 	if(leap && doy0 == 366) {
 		res = (doy1 == 1);
@@ -592,8 +592,8 @@ enum theft_trial_res extract_day_of_year_split(struct theft* t, void* a1, void* 
 	struct mon13_date res2 = mon13_add(res1, c, offset/2, MON13_ADD_DAYS);
 	struct mon13_date res3 = mon13_add(res2, c, offset%2, MON13_ADD_DAYS);
 
-	int doy0 = mon13_extract(res0, c, MON13_DAY_OF_YEAR);
-	int doy3 = mon13_extract(res3, c, MON13_DAY_OF_YEAR);
+	int doy0 = mon13_extract(res0, c, MON13_EXTRACT_DAY_OF_YEAR);
+	int doy3 = mon13_extract(res3, c, MON13_EXTRACT_DAY_OF_YEAR);
 
 	return doy0 == doy3 ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
@@ -631,7 +631,7 @@ enum theft_trial_res format_weekday(struct theft* t, void* a1, void* a2, void* a
 	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
 
 
-	int day = mon13_extract(*d, c, MON13_DAY_OF_WEEK);
+	int day = mon13_extract(*d, c, MON13_EXTRACT_DAY_OF_WEEK);
 	if(day == MON13_NO_WEEKDAY) {
 		return THEFT_TRIAL_SKIP;
 	}
@@ -711,7 +711,7 @@ enum theft_trial_res format_doy(struct theft* t, void* a1, void* a2, void* a3, v
 	const struct mon13_name_list* n = a3;
 	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
 
-	int doy = mon13_extract(*d, c, MON13_DAY_OF_YEAR);
+	int doy = mon13_extract(*d, c, MON13_EXTRACT_DAY_OF_YEAR);
 	
 	char buf[5];
 	memset(buf, placeholder, 5);
