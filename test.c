@@ -674,10 +674,199 @@ enum theft_trial_res format_day_of_month(struct theft* t, void* a1, void* a2, vo
 	int res = mon13_format(*d, c, n, "%d", buf, 4);
 	char* endptr = buf;
 	long parsed = strtol(buf, &endptr, 10);
-	if(parsed != d->day || res != 2) {
+	if(parsed != d->day || res < 1 || res > 2) {
 		return THEFT_TRIAL_FAIL;
 	}
-	if(endptr[0] != '\0' && endptr[1] != placeholder && &(endptr[0]) != &(buf[2])) {
+	if(endptr[0] != '\0' && endptr[1] != placeholder && &(endptr[0]) != &(buf[res])) {
+		return THEFT_TRIAL_FAIL;
+	}
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res format_cal(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
+
+	char buf[100];
+	memset(buf, placeholder, 100);
+
+	int res = mon13_format(*d, c, n, "%f", buf, 4);
+	if(res != strlen(n->calendar_name)) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(strncmp(buf, n->calendar_name, 50)) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(buf[res + 1] != '\0' && buf[res + 2] != placeholder) {
+		return THEFT_TRIAL_FAIL;
+	}
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res format_doy(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
+
+	int doy = mon13_extract(*d, c, MON13_DAY_OF_YEAR);
+	
+	char buf[5];
+	memset(buf, placeholder, 5);
+
+	int res = mon13_format(*d, c, n, "%j", buf, 5);
+	char* endptr = buf;
+	long parsed = strtol(buf, &endptr, 10);
+	if(parsed != doy || res < 1 || res > 3) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(endptr[0] != '\0' && endptr[1] != placeholder && &(endptr[0]) != &(buf[res])) {
+		return THEFT_TRIAL_FAIL;
+	}
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res format_month_number(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
+	
+	char buf[5];
+	memset(buf, placeholder, 5);
+
+	int res = mon13_format(*d, c, n, "%m", buf, 5);
+	char* endptr = buf;
+	long parsed = strtol(buf, &endptr, 10);
+	if(parsed != d->month || res < 1 || res > 2) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(endptr[0] != '\0' && endptr[1] != placeholder && &(endptr[0]) != &(buf[res])) {
+		return THEFT_TRIAL_FAIL;
+	}
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res format_newline(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
+	
+	char buf[3];
+	memset(buf, placeholder, 3);
+
+	int res = mon13_format(*d, c, n, "%n", buf, 3);
+	if(!format_res_check(res, "%")) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(buf[0] != '\n') {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(buf[1] != '\0') {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(buf[2] != placeholder) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res format_era(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
+
+	if(d->month == 0) {
+		return THEFT_TRIAL_SKIP;
+	}
+
+	const char* expected = (d->year > 0) ? n->era_list[0] : n->era_list[1];
+
+	char buf[100];
+	memset(buf, placeholder, 100);
+
+	int res = mon13_format(*d, c, n, "%q", buf, 4);
+	if(res != strlen(expected)) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(strncmp(buf, expected, 50)) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(buf[res + 1] != '\0' && buf[res + 2] != placeholder) {
+		return THEFT_TRIAL_FAIL;
+	}
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res format_tab(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
+	
+	char buf[3];
+	memset(buf, placeholder, 3);
+
+	int res = mon13_format(*d, c, n, "%t", buf, 3);
+	if(!format_res_check(res, "%")) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(buf[0] != '\t') {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(buf[1] != '\0') {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(buf[2] != placeholder) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res format_weekday_number(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
+	
+	char buf[3];
+	memset(buf, placeholder, 3);
+
+	int res = mon13_format(*d, c, n, "%u", buf, 5);
+	char* endptr = buf;
+	long parsed = strtol(buf, &endptr, 10);
+	if(parsed > 7 || parsed < 0 || res != 1) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(endptr[0] != '\0' && endptr[1] != placeholder && &(endptr[0]) != &(buf[1])) {
+		return THEFT_TRIAL_FAIL;
+	}
+	return THEFT_TRIAL_PASS;
+}
+
+
+enum theft_trial_res format_year(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
+	
+	char buf[100];
+	memset(buf, placeholder, 100);
+
+	int res = mon13_format(*d, c, n, "%Y", buf, 5);
+	char* endptr = buf;
+	long parsed = strtol(buf, &endptr, 10);
+	if(parsed != d->year || res < 1) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(endptr[0] != '\0' && endptr[1] != placeholder) {
 		return THEFT_TRIAL_FAIL;
 	}
 	return THEFT_TRIAL_PASS;
@@ -1114,6 +1303,246 @@ int main() {
 		{
 			.name = "mon13_format: %d, Tranquility Year 0 (en_US)",
 			.prop4 = format_month,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %f, Gregorian Year 0 (en_US)",
+			.prop4 = format_cal,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %f, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_cal,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %f, Tranquility Year 0 (en_US)",
+			.prop4 = format_cal,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %j, Gregorian Year 0 (en_US)",
+			.prop4 = format_doy,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %j, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_doy,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %j, Tranquility Year 0 (en_US)",
+			.prop4 = format_doy,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %m, Gregorian Year 0 (en_US)",
+			.prop4 = format_month_number,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %m, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_month_number,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %m, Tranquility Year 0 (en_US)",
+			.prop4 = format_month_number,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %n, Gregorian Year 0 (en_US)",
+			.prop4 = format_newline,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %n, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_newline,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %n, Tranquility Year 0 (en_US)",
+			.prop4 = format_newline,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %q, Gregorian Year 0 (en_US)",
+			.prop4 = format_era,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %q, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_era,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %q, Tranquility Year 0 (en_US)",
+			.prop4 = format_era,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %t, Gregorian Year 0 (en_US)",
+			.prop4 = format_tab,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %t, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_tab,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %t, Tranquility Year 0 (en_US)",
+			.prop4 = format_tab,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %u, Gregorian Year 0 (en_US)",
+			.prop4 = format_weekday_number,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %u, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_weekday_number,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %u, Tranquility Year 0 (en_US)",
+			.prop4 = format_weekday_number,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %Y, Gregorian Year 0 (en_US)",
+			.prop4 = format_year,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %Y, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_year,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
+				&random_info
+			}
+		},
+		{
+			.name = "mon13_format: %Y, Tranquility Year 0 (en_US)",
+			.prop4 = format_year,
 			.type_info = {
 				&tq_year0_info,
 				&tq_year0_cal_info,
