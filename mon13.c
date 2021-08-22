@@ -407,7 +407,7 @@ enum mon13_weekday get_day_of_week(struct mon13_date d, const struct mon13_cal* 
 int64_t date_to_unix(struct mon13_date d, const struct mon13_cal* cal) {
 	mjd_t mjd = doy_to_mjd(month_day_to_doy(d, cal), cal);
 	daycount_t unix_days = mjd - UNIX_EPOCH_IN_MJD;
-	return 24 * 60 * 60 * unix_days;
+	return 24 * 60 * 60 * ((int64_t)unix_days);
 }
 
 struct mon13_date unix_to_date(int64_t u, const struct mon13_cal* cal) {

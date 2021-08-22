@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 
 #include "theft.h"
 #include "mon13.h"
@@ -208,13 +209,33 @@ enum theft_trial_res import_mjd(struct theft* t, void* a1, void* a2, void* a3) {
 enum theft_trial_res import_unix(struct theft* t, void* a1, void* a2, void* a3) {
 	const struct mon13_cal* c = a1;
 	int64_t u0 = ((int64_t)a2) % (INT32_MAX/2);
-	int32_t offset = (int32_t) ((int64_t)a3 % (INT32_MAX % 2));
+	int32_t offset = (int32_t) ((int64_t)a3 % (INT32_MAX/2));
 
-	struct mon13_date d0 = mon13_import(c, &u0, MON13_IMPORT_UNIX);
+	int64_t u0_cut = u0 - (u0 % (24 * 60 * 60));
+
+	struct mon13_date d0 = mon13_import(c, &u0_cut, MON13_IMPORT_UNIX);
 	struct mon13_date d1 = mon13_add(d0, c, offset, MON13_ADD_DAYS);
 	int64_t u1 = mon13_extract(d1, c, MON13_EXTRACT_UNIX);
-	int32_t udiff_days = (u1 - u0) / (24 * 60 * 60);
-	return (udiff_days == offset) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	int64_t udiff = (u1 - u0_cut);
+	int64_t udiff_days =  udiff / (24 * 60 * 60);
+	if(udiff_days == offset) {
+		return THEFT_TRIAL_PASS;
+	}
+
+	return THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res import_unix_epoch_start(struct theft* t, void* a1) {
+	const struct mon13_cal* c = &mon13_gregorian_year_zero;
+	int64_t u0 = ((int64_t)a1) % (24 * 60 * 60);
+
+	struct mon13_date d0 = mon13_import(c, &u0, MON13_IMPORT_UNIX);
+	if(d0.year == 1970 && d0.month == 1 && d0.day == 1) {
+		return THEFT_TRIAL_PASS;
+	}
+	else {
+		return THEFT_TRIAL_FAIL;
+	}
 }
 
 //Theft trials: convert
@@ -874,7 +895,6 @@ enum theft_trial_res format_weekday_number(struct theft* t, void* a1, void* a2, 
 	return THEFT_TRIAL_PASS;
 }
 
-
 enum theft_trial_res format_year(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
 	const struct mon13_date* d = a1;
 	const struct mon13_cal* c = a2;
@@ -891,6 +911,34 @@ enum theft_trial_res format_year(struct theft* t, void* a1, void* a2, void* a3, 
 		return THEFT_TRIAL_FAIL;
 	}
 	if(endptr[0] != '\0' && endptr[1] != placeholder) {
+		return THEFT_TRIAL_FAIL;
+	}
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res format_strftime_ymd(struct theft* t, void* a1, void* a2) {
+	time_t unix = (time_t) (((int64_t)a1) % (INT64_MAX/1024));
+	const char placeholder = (char) (((uint64_t)a2) % CHAR_MAX);
+	const struct mon13_cal* c = &mon13_gregorian_year_zero;
+	const struct mon13_name_list* n = &mon13_gregorian_names_en_US;
+
+	unix = (unix > 0) ? unix : -unix;
+	const struct tm* gmt_u = gmtime(&unix);
+	int64_t unix64 = (int64_t)unix;
+	struct mon13_date d = mon13_import(c, &unix64, MON13_IMPORT_UNIX);
+
+	char buf0[100];
+	char buf1[100];
+	memset(buf0, placeholder, 100);
+	memset(buf1, placeholder, 100);
+
+	int res0 = strftime(buf0, 100, "%Y-%m-%d", gmt_u);
+	int res1 = mon13_format(d, c, n, "%Y-%m-%d", buf1, 100);
+
+	if(res0 != res1) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(strncmp(buf0, buf1, 100)) {
 		return THEFT_TRIAL_FAIL;
 	}
 	return THEFT_TRIAL_PASS;
@@ -1009,6 +1057,14 @@ int main() {
 			.type_info = {
 				&tq_year0_cal_info,
 				&random_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_import: Unix time start epoch",
+			.prop1 = import_unix_epoch_start,
+			.type_info = {
 				&random_info
 			},
 			.seed = seed
@@ -1262,7 +1318,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %%, Gregorian Year 0 (fr_FR)",
@@ -1272,7 +1329,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_fr_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %%, Tranquility Year 0 (en_US)",
@@ -1282,7 +1340,8 @@ int main() {
 				&tq_year0_cal_info,
 				&tq_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %A, Gregorian Year 0 (en_US)",
@@ -1292,7 +1351,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %A, Gregorian Year 0 (fr_FR)",
@@ -1302,7 +1362,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_fr_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %A, Tranquility Year 0 (en_US)",
@@ -1312,7 +1373,8 @@ int main() {
 				&tq_year0_cal_info,
 				&tq_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %B, Gregorian Year 0 (en_US)",
@@ -1322,7 +1384,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %B, Gregorian Year 0 (fr_FR)",
@@ -1332,7 +1395,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_fr_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %B, Tranquility Year 0 (en_US)",
@@ -1342,7 +1406,8 @@ int main() {
 				&tq_year0_cal_info,
 				&tq_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %d, Gregorian Year 0 (en_US)",
@@ -1352,7 +1417,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %d, Gregorian Year 0 (fr_FR)",
@@ -1362,7 +1428,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_fr_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %d, Tranquility Year 0 (en_US)",
@@ -1372,7 +1439,8 @@ int main() {
 				&tq_year0_cal_info,
 				&tq_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %f, Gregorian Year 0 (en_US)",
@@ -1382,7 +1450,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %f, Gregorian Year 0 (fr_FR)",
@@ -1392,7 +1461,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_fr_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %f, Tranquility Year 0 (en_US)",
@@ -1402,7 +1472,8 @@ int main() {
 				&tq_year0_cal_info,
 				&tq_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %j, Gregorian Year 0 (en_US)",
@@ -1412,7 +1483,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %j, Gregorian Year 0 (fr_FR)",
@@ -1422,7 +1494,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_fr_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %j, Tranquility Year 0 (en_US)",
@@ -1432,7 +1505,8 @@ int main() {
 				&tq_year0_cal_info,
 				&tq_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %m, Gregorian Year 0 (en_US)",
@@ -1442,7 +1516,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %m, Gregorian Year 0 (fr_FR)",
@@ -1452,7 +1527,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_fr_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %m, Tranquility Year 0 (en_US)",
@@ -1462,7 +1538,8 @@ int main() {
 				&tq_year0_cal_info,
 				&tq_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %n, Gregorian Year 0 (en_US)",
@@ -1472,7 +1549,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %n, Gregorian Year 0 (fr_FR)",
@@ -1482,7 +1560,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_fr_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %n, Tranquility Year 0 (en_US)",
@@ -1492,7 +1571,8 @@ int main() {
 				&tq_year0_cal_info,
 				&tq_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %q, Gregorian Year 0 (en_US)",
@@ -1502,7 +1582,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %q, Gregorian Year 0 (fr_FR)",
@@ -1512,7 +1593,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_fr_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %q, Tranquility Year 0 (en_US)",
@@ -1522,7 +1604,8 @@ int main() {
 				&tq_year0_cal_info,
 				&tq_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %t, Gregorian Year 0 (en_US)",
@@ -1532,7 +1615,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %t, Gregorian Year 0 (fr_FR)",
@@ -1542,7 +1626,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_fr_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %t, Tranquility Year 0 (en_US)",
@@ -1552,7 +1637,8 @@ int main() {
 				&tq_year0_cal_info,
 				&tq_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %u, Gregorian Year 0 (en_US)",
@@ -1562,7 +1648,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %u, Gregorian Year 0 (fr_FR)",
@@ -1572,7 +1659,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_fr_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %u, Tranquility Year 0 (en_US)",
@@ -1582,7 +1670,8 @@ int main() {
 				&tq_year0_cal_info,
 				&tq_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %Y, Gregorian Year 0 (en_US)",
@@ -1592,7 +1681,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %Y, Gregorian Year 0 (fr_FR)",
@@ -1602,7 +1692,8 @@ int main() {
 				&gr_year0_cal_info,
 				&gr_year0_name_fr_info,
 				&random_info
-			}
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_format: %Y, Tranquility Year 0 (en_US)",
@@ -1612,7 +1703,17 @@ int main() {
 				&tq_year0_cal_info,
 				&tq_year0_name_info,
 				&random_info
-			}
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: %Y-%m-%d, compare with strftime",
+			.prop2 = format_strftime_ymd,
+			.type_info = {
+				&random_info,
+				&random_info
+			},
+			.seed = seed
 		}
 	};
 	//bool all_passed = true;
