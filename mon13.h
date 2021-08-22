@@ -15,7 +15,14 @@ enum mon13_add_mode {
 enum mon13_extract_mode {
 	MON13_EXTRACT_DAY_OF_YEAR,
 	MON13_EXTRACT_DAY_OF_WEEK,
-	MON13_EXTRACT_IS_LEAP_YEAR
+	MON13_EXTRACT_IS_LEAP_YEAR,
+	MON13_EXTRACT_MJD,
+	MON13_EXTRACT_UNIX
+};
+
+enum mon13_import_mode {
+	MON13_IMPORT_MJD,
+	MON13_IMPORT_UNIX
 };
 
 enum mon13_weekday {
@@ -48,6 +55,12 @@ struct mon13_name_list {
 struct mon13_cal;
 
 //Functions
+struct mon13_date mon13_import(
+	const struct mon13_cal* cal,
+	const void* input,
+	const enum mon13_import_mode mode
+);
+
 struct mon13_date mon13_convert(
 	const struct mon13_date d,
 	const struct mon13_cal* src,
@@ -67,7 +80,7 @@ int mon13_compare(
 	const struct mon13_cal* cal
 );
 
-int mon13_extract(
+int64_t mon13_extract(
 	const struct mon13_date d,
 	const struct mon13_cal* cal,
 	const enum mon13_extract_mode mode

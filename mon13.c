@@ -5,10 +5,12 @@
 #include "mon13.h"
 #include "cal.h"
 
+const mjd_t UNIX_EPOCH_IN_MJD = 40587;
+
 //Helper structs
 struct floor_res {
-	int quot;
-	int rem;
+	int64_t quot;
+	int64_t rem;
 };
 
 struct doy_date {
@@ -17,7 +19,7 @@ struct doy_date {
 };
 
 //Generic helpers
-struct floor_res floor_div(int32_t a, int32_t b) {
+struct floor_res floor_div(int64_t a, int64_t b) {
 	struct floor_res res;
 	res.quot = a / b;
 	res.rem = a % b;
@@ -137,18 +139,18 @@ const struct intercalary* seek_ic(struct mon13_date d, const struct mon13_cal* c
 }
 
 //MJD conversions
-struct doy_date mjd_to_doy(int32_t mjd, const struct mon13_cal* cal) {
+struct doy_date mjd_to_doy(mjd_t mjd, const struct mon13_cal* cal) {
 	const struct leap_cycle_info lc = cal->leap_cycle;
 
-	const int day_total = mjd - cal->epoch_mjd - lc.offset_days;
+	const daycount_t day_total = mjd - cal->epoch_mjd - lc.offset_days;
 	struct floor_res f_400, f_100, f_cycle, f_common;
 	if(lc.flags & LEAP_GREGORIAN_SKIP) {
-		const int common_400 = year_len(false, cal) * 400;
-		const int leap_400 = (100 - 3) * lc.leap_days;
+		const daycount_t common_400 = year_len(false, cal) * 400;
+		const daycount_t leap_400 = (100 - 3) * lc.leap_days;
 		f_400 = floor_div(day_total, common_400 + leap_400);
 
-		const int common_100 = year_len(false, cal) * 100;
-		const int leap_100 = ((100/lc.year_count) - 1) * lc.leap_days;
+		const daycount_t common_100 = year_len(false, cal) * 100;
+		const daycount_t leap_100 = ((100/lc.year_count) - 1) * lc.leap_days;
 		f_100 = floor_div(f_400.rem, common_100 + leap_100);
 	}
 	else {
@@ -158,8 +160,8 @@ struct doy_date mjd_to_doy(int32_t mjd, const struct mon13_cal* cal) {
 		f_100.rem = day_total;
 	}
 
-	const int common_cycle = year_len(false, cal) * lc.year_count;
-	const int leap_cycle = lc.leap_year_count * lc.leap_days;
+	const daycount_t common_cycle = year_len(false, cal) * lc.year_count;
+	const daycount_t leap_cycle = lc.leap_year_count * lc.leap_days;
 	f_cycle = floor_div(f_100.rem, common_cycle + leap_cycle);
 	f_common = floor_div(f_cycle.rem, year_len(false, cal));
 
@@ -177,14 +179,14 @@ struct doy_date mjd_to_doy(int32_t mjd, const struct mon13_cal* cal) {
 	return res;
 }
 
-int32_t doy_to_mjd(struct doy_date doy, const struct mon13_cal* cal) {
+mjd_t doy_to_mjd(struct doy_date doy, const struct mon13_cal* cal) {
 	const struct leap_cycle_info lc = cal->leap_cycle;
 
 	const int32_t off_year = doy.year - 1 - lc.offset_years;
-	const int32_t common_days = off_year * lc.common_days;
+	const daycount_t common_days = off_year * lc.common_days;
 	
 	struct floor_res f_leap = floor_div(off_year, lc.year_count);
-	int32_t leap_days = lc.leap_year_count * f_leap.quot * lc.leap_days;
+	daycount_t leap_days = lc.leap_year_count * f_leap.quot * lc.leap_days;
 
 	if(lc.flags & LEAP_GREGORIAN_SKIP) {
 		struct floor_res f_100 = floor_div(off_year, 100);
@@ -192,8 +194,8 @@ int32_t doy_to_mjd(struct doy_date doy, const struct mon13_cal* cal) {
 		leap_days += ((f_400.quot - f_100.quot) * lc.leap_days);
 	}
 
-	const int32_t total_days = common_days + leap_days + lc.offset_days;
-	const int32_t mjd = total_days + cal->epoch_mjd - 1;
+	const daycount_t total_days = common_days + leap_days + lc.offset_days;
+	const mjd_t mjd = total_days + cal->epoch_mjd - 1;
 
 	return mjd + doy.doy;
 }
@@ -306,7 +308,7 @@ struct mon13_date no_yz_to_yz(struct mon13_date d, const struct mon13_cal* cal) 
 
 //Adding
 struct mon13_date add_days(struct mon13_date d, int32_t offset, const struct mon13_cal* cal) {
-	int32_t mjd = doy_to_mjd(month_day_to_doy(d, cal), cal);
+	mjd_t mjd = doy_to_mjd(month_day_to_doy(d, cal), cal);
 	struct mon13_date res = doy_to_month_day(mjd_to_doy(mjd + offset, cal), cal);
 	return res;
 }
@@ -386,7 +388,7 @@ struct mon13_date add_months(struct mon13_date d, int32_t offset, const struct m
 enum mon13_weekday get_day_of_week(struct mon13_date d, const struct mon13_cal* cal) {
 	struct floor_res f_week;
 	if((cal->flags & CAL_PERENNIAL) == 0) {
-		int32_t mjd = doy_to_mjd(month_day_to_doy(d, cal), cal);
+		mjd_t mjd = doy_to_mjd(month_day_to_doy(d, cal), cal);
 		f_week = floor_div(mjd, cal->week_length);
 		return clock_modulo(f_week.rem + MON13_WEDNESDAY, cal->week_length);
 	}
@@ -401,8 +403,43 @@ enum mon13_weekday get_day_of_week(struct mon13_date d, const struct mon13_cal* 
 	}
 }
 
+//Unix Time
+int64_t date_to_unix(struct mon13_date d, const struct mon13_cal* cal) {
+	mjd_t mjd = doy_to_mjd(month_day_to_doy(d, cal), cal);
+	daycount_t unix_days = mjd - UNIX_EPOCH_IN_MJD;
+	return 24 * 60 * 60 * unix_days;
+}
+
+struct mon13_date unix_to_date(int64_t u, const struct mon13_cal* cal) {
+	daycount_t unix_days = u / (24 * 60 * 60);
+	mjd_t mjd = unix_days + UNIX_EPOCH_IN_MJD;
+	return doy_to_month_day(mjd_to_doy(mjd, cal), cal);
+}
 
 //Public functions
+struct mon13_date mon13_import(
+	const struct mon13_cal* cal,
+	const void* input,
+	const enum mon13_import_mode mode
+) {
+	switch(mode) {
+		case MON13_IMPORT_MJD: {
+			const int64_t* raw = input;
+			mjd_t mjd = (mjd_t) *raw;
+			return doy_to_month_day(mjd_to_doy(mjd, cal), cal);
+		}
+		case MON13_IMPORT_UNIX: {
+			const int64_t* u = input;
+			return unix_to_date(*u, cal);
+		}
+		default: {
+			struct mon13_date res = {.year = 1, .month = 1, .day = 1};
+			return res;
+		}
+	}
+}
+
+
 struct mon13_date mon13_convert(
 	const struct mon13_date d,
 	const struct mon13_cal* src,
@@ -418,7 +455,7 @@ struct mon13_date mon13_convert(
 		return src_norm;
 	}
 
-	int32_t mjd = doy_to_mjd(month_day_to_doy(src_norm, src), src);
+	mjd_t mjd = doy_to_mjd(month_day_to_doy(src_norm, src), src);
 	struct mon13_date res_yz = doy_to_month_day(mjd_to_doy(mjd, dest), dest);
 	struct mon13_date res = yz_to_no_yz(res_yz, dest);
 	return res;
@@ -480,7 +517,7 @@ int mon13_compare(
 	}
 }
 
-int mon13_extract(
+int64_t mon13_extract(
 	const struct mon13_date d,
 	const struct mon13_cal* cal,
 	const enum mon13_extract_mode mode
@@ -490,6 +527,8 @@ int mon13_extract(
 		case MON13_EXTRACT_DAY_OF_YEAR: return month_day_to_doy(norm_d, cal).doy;
 		case MON13_EXTRACT_DAY_OF_WEEK: return get_day_of_week(norm_d, cal);
 		case MON13_EXTRACT_IS_LEAP_YEAR: return is_leap(norm_d.year, cal);
+		case MON13_EXTRACT_MJD: return doy_to_mjd(month_day_to_doy(d, cal), cal);
+		case MON13_EXTRACT_UNIX: return date_to_unix(d, cal);
 		default: return 0;
 	}
 }

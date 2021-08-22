@@ -6,6 +6,10 @@
 #include <stdint.h>
 #include "mon13.h"
 
+//Typedefs
+typedef int32_t daycount_t;
+typedef daycount_t mjd_t;
+
 //Enumerations
 enum intercalary_flags {
 	IC_NONE = 0,
@@ -62,7 +66,7 @@ struct mon13_cal {
 	const struct lkup* common_lookup_list;
 	const struct lkup* leap_lookup_list;
 	struct leap_cycle_info leap_cycle;
-	int32_t epoch_mjd;
+	mjd_t epoch_mjd;
 	int32_t flags;
 	uint8_t week_length;
 	uint8_t start_weekday;
