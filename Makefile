@@ -19,14 +19,17 @@ all: libmon13.so libmon13.a test
 cal.o: cal.c mon13.h cal.h
 	$(CC) -c $(CFLAGS) $(TESTCFLAGS) cal.c
 
-mon13.o: cal.o mon13.c mon13.h cal.h
-	$(CC) -c $(CFLAGS) $(TESTCFLAGS) mon13.c
+calc.o: calc.c mon13.h cal.h
+	$(CC) -c $(CFLAGS) $(TESTCFLAGS) calc.c
 
-libmon13.a: cal.o mon13.o
-	ar rcs libmon13.a cal.o mon13.o
+format.o: format.c mon13.h cal.h
+	$(CC) -c $(CFLAGS) $(TESTCFLAGS) format.c
 
-libmon13.so: cal.o mon13.o
-	$(CC) -shared cal.o mon13.o -o libmon13.so
+libmon13.a: cal.o calc.o format.o
+	ar rcs libmon13.a cal.o calc.o format.o
+
+libmon13.so: cal.o calc.o format.o
+	$(CC) -shared cal.o calc.o format.o -o libmon13.so
 
 test.o: test.c mon13.h known.h
 	$(CC) -c $(CFLAGS) $(TESTCFLAGS) test.c -I./ -I$(THEFTDIR)/inc
@@ -34,7 +37,7 @@ test.o: test.c mon13.h known.h
 test: libmon13.so test.o
 	$(CC) -o test test.o $(TESTLFLAGS)
 	LD_LIBRARY_PATH=. ./test > test.log
-#	gcov mon13.c >> test.log
+#	gcov calc.c >> test.log
 
 clean:
 #	rm *.o test test.log *.gcov *.gcda *.gcno *.so *.a
