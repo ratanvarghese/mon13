@@ -922,23 +922,22 @@ enum theft_trial_res format_strftime_ymd(struct theft* t, void* a1, void* a2) {
 	const struct mon13_cal* c = &mon13_gregorian_year_zero;
 	const struct mon13_name_list* n = &mon13_gregorian_names_en_US;
 
-	unix = (unix > 0) ? unix : -unix;
 	const struct tm* gmt_u = gmtime(&unix);
 	int64_t unix64 = (int64_t)unix;
 	struct mon13_date d = mon13_import(c, &unix64, MON13_IMPORT_UNIX);
 
-	char buf0[100];
-	char buf1[100];
-	memset(buf0, placeholder, 100);
-	memset(buf1, placeholder, 100);
+	char buf0[500];
+	char buf1[500];
+	memset(buf0, placeholder, 500);
+	memset(buf1, placeholder, 500);
 
-	int res0 = strftime(buf0, 100, "%Y-%m-%d", gmt_u);
-	int res1 = mon13_format(d, c, n, "%Y-%m-%d", buf1, 100);
+	int res0 = strftime(buf0, 500, "%Y-%m-%d", gmt_u);
+	int res1 = mon13_format(d, c, n, "%Y-%m-%d", buf1, 500);
 
 	if(res0 != res1) {
 		return THEFT_TRIAL_FAIL;
 	}
-	if(strncmp(buf0, buf1, 100)) {
+	if(strncmp(buf0, buf1, 500)) {
 		return THEFT_TRIAL_FAIL;
 	}
 	return THEFT_TRIAL_PASS;
