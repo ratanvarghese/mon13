@@ -6,6 +6,7 @@
 #include "cal.h"
 
 const mjd_t UNIX_EPOCH_IN_MJD = 40587;
+const mjd_t RD_EPOCH_IN_MJD = -678576;
 
 //Helper structs
 struct floor_res {
@@ -416,6 +417,18 @@ struct mon13_date unix_to_date(int64_t u, const struct mon13_cal* cal) {
 	return doy_to_month_day(mjd_to_doy(mjd, cal), cal);
 }
 
+//Rata Die
+int64_t date_to_rd(struct mon13_date d, const struct mon13_cal* cal) {
+	mjd_t mjd = doy_to_mjd(month_day_to_doy(d, cal), cal);
+	daycount_t rata_die = mjd - RD_EPOCH_IN_MJD;
+	return rata_die;
+}
+
+struct mon13_date rd_to_date(int64_t rd, const struct mon13_cal* cal) {
+	mjd_t mjd = rd + RD_EPOCH_IN_MJD;
+	return doy_to_month_day(mjd_to_doy(mjd, cal), cal);
+}
+
 //Public functions
 struct mon13_date mon13_import(
 	const struct mon13_cal* cal,
@@ -432,8 +445,12 @@ struct mon13_date mon13_import(
 			const int64_t* u = input;
 			return unix_to_date(*u, cal);
 		}
+		case MON13_IMPORT_RD: {
+			const int64_t* rd = input;
+			return rd_to_date(*rd, cal);
+		}
 		default: {
-			struct mon13_date res = {.year = 1, .month = 1, .day = 1};
+			struct mon13_date res = {.year = 0, .month = 0, .day = 0};
 			return res;
 		}
 	}
@@ -529,6 +546,7 @@ int64_t mon13_extract(
 		case MON13_EXTRACT_IS_LEAP_YEAR: return is_leap(norm_d.year, cal);
 		case MON13_EXTRACT_MJD: return doy_to_mjd(month_day_to_doy(d, cal), cal);
 		case MON13_EXTRACT_UNIX: return date_to_unix(d, cal);
+		case MON13_EXTRACT_RD: return date_to_rd(d, cal);
 		default: return 0;
 	}
 }

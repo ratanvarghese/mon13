@@ -238,6 +238,17 @@ enum theft_trial_res import_unix_epoch_start(struct theft* t, void* a1) {
 	}
 }
 
+enum theft_trial_res import_rd(struct theft* t, void* a1, void* a2, void* a3) {
+	const struct mon13_cal* c = a1;
+	int64_t rd0 = ((int64_t)a2) % (INT32_MAX/2);
+	int32_t offset = (int32_t) ((int64_t)a3 % (INT32_MAX % 2));
+
+	struct mon13_date d0 = mon13_import(c, &rd0, MON13_IMPORT_RD);
+	struct mon13_date d1 = mon13_add(d0, c, offset, MON13_ADD_DAYS);
+	int64_t rd1 = mon13_extract(d1, c, MON13_EXTRACT_RD);
+	return ((rd1 - rd0) == offset) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
 //Theft trials: convert
 enum theft_trial_res convert_known(struct theft* t, void* test_input)
 {
@@ -1064,6 +1075,26 @@ int main() {
 			.name = "mon13_import: Unix time start epoch",
 			.prop1 = import_unix_epoch_start,
 			.type_info = {
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_import: Gregorian<->RD",
+			.prop3 = import_rd,
+			.type_info = {
+				&gr_year0_cal_info,
+				&random_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_import: Tranquility<->RD",
+			.prop3 = import_rd,
+			.type_info = {
+				&tq_year0_cal_info,
+				&random_info,
 				&random_info
 			},
 			.seed = seed
