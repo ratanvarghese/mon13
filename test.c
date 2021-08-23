@@ -11,6 +11,7 @@
 #include "known.h"
 
 #define SIZEOF_ARR(arr) sizeof(arr)/sizeof(*arr)
+#define STRFTIME_BUF 500
 
 //Theft allocators
 enum theft_alloc_res select_gr2tq_oa(struct theft* t, void* env, void** instance)
@@ -80,6 +81,34 @@ enum theft_alloc_res alloc_year0(struct theft* t, void* env, void** instance)
 	return THEFT_ALLOC_OK;
 }
 
+enum theft_alloc_res alloc_strftime_fmt(struct theft* t, void* env, void** instance) {
+	char fmt_list[] = "%ABdjmntuY";
+	size_t fmt_len = theft_random_choice(t, STRFTIME_BUF/10);
+	fmt_len = (fmt_len > 0) ? fmt_len : 1;
+	char* res = malloc(fmt_len * sizeof(char));
+	if(res == NULL) {
+		return THEFT_ALLOC_ERROR;
+	}
+	for(int i = 0; i < (fmt_len - 1); i++) { //leave 1 more, for null character 
+		if(i < (fmt_len - 2) && theft_random_choice(t, 4) == 0) {
+			size_t fmt_i = theft_random_choice(t, SIZEOF_ARR(fmt_list) - 1);
+			res[i] = '%';
+			res[i+1] = fmt_list[fmt_i];
+			i++;
+		}
+		else {
+			res[i] = theft_random_choice(t, 127);
+			if(res[i] < 32 || res[i] == '%') {
+				res[i] = ' ';
+			}
+		}
+
+	}
+	res[fmt_len - 1] = '\0';
+	*instance = res;
+	return THEFT_ALLOC_OK;
+}
+
 //Theft printers
 void print_known(FILE* f, const void* instance, void* env)
 {
@@ -115,6 +144,12 @@ void print_add_mode(FILE* f, const void* instance, void* env)
 		default:				m_str = "INVALID";
 	}
 	fprintf(f, "%s", m_str);
+}
+
+void print_strftime_fmt(FILE* f, const void* instance, void* env)
+{
+	const char* s = instance;
+	fprintf(f, "%s", s);
 }
 
 //Theft trials: helpers
@@ -927,9 +962,10 @@ enum theft_trial_res format_year(struct theft* t, void* a1, void* a2, void* a3, 
 	return THEFT_TRIAL_PASS;
 }
 
-enum theft_trial_res format_strftime_ymd(struct theft* t, void* a1, void* a2) {
+enum theft_trial_res format_strftime_ymd(struct theft* t, void* a1, void* a2, void* a3) {
 	time_t unix = (time_t) (((int64_t)a1) % (INT64_MAX/1024));
 	const char placeholder = (char) (((uint64_t)a2) % CHAR_MAX);
+	const char* fmt = a3;
 	const struct mon13_cal* c = &mon13_gregorian_year_zero;
 	const struct mon13_name_list* n = &mon13_gregorian_names_en_US;
 
@@ -937,18 +973,18 @@ enum theft_trial_res format_strftime_ymd(struct theft* t, void* a1, void* a2) {
 	int64_t unix64 = (int64_t)unix;
 	struct mon13_date d = mon13_import(c, &unix64, MON13_IMPORT_UNIX);
 
-	char buf0[500];
-	char buf1[500];
-	memset(buf0, placeholder, 500);
-	memset(buf1, placeholder, 500);
+	char buf0[STRFTIME_BUF];
+	char buf1[STRFTIME_BUF];
+	memset(buf0, placeholder, STRFTIME_BUF);
+	memset(buf1, placeholder, STRFTIME_BUF);
 
-	int res0 = strftime(buf0, 500, "%Y-%m-%d", gmt_u);
-	int res1 = mon13_format(d, c, n, "%Y-%m-%d", buf1, 500);
+	int res0 = strftime(buf0, STRFTIME_BUF, fmt, gmt_u);
+	int res1 = mon13_format(d, c, n, fmt, buf1, STRFTIME_BUF);
 
 	if(res0 != res1) {
 		return THEFT_TRIAL_FAIL;
 	}
-	if(strncmp(buf0, buf1, 500)) {
+	if(strncmp(buf0, buf1, STRFTIME_BUF)) {
 		return THEFT_TRIAL_FAIL;
 	}
 	return THEFT_TRIAL_PASS;
@@ -1011,6 +1047,12 @@ struct theft_type_info tq_year0_info = {
 	.free = theft_generic_free_cb,
 	.print = print_date,
 	.env = (void*)&mon13_tranquility_year_zero
+};
+
+struct theft_type_info strftime_fmt_info = {
+	.alloc = alloc_strftime_fmt,
+	.free = theft_generic_free_cb,
+	.print = print_strftime_fmt
 };
 
 struct theft_type_info gr_year0_name_info = {
@@ -1737,11 +1779,12 @@ int main() {
 			.seed = seed
 		},
 		{
-			.name = "mon13_format: %Y-%m-%d, compare with strftime",
-			.prop2 = format_strftime_ymd,
+			.name = "mon13_format: compare with strftime",
+			.prop3 = format_strftime_ymd,
 			.type_info = {
 				&random_info,
-				&random_info
+				&random_info,
+				&strftime_fmt_info
 			},
 			.seed = seed
 		}
