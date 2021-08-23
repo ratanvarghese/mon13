@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 #include "theft.h"
 #include "mon13.h"
@@ -109,6 +110,31 @@ enum theft_alloc_res alloc_strftime_fmt(struct theft* t, void* env, void** insta
 	return THEFT_ALLOC_OK;
 }
 
+enum theft_alloc_res alloc_numeric_fmt(struct theft* t, void* env, void** instance) {
+	char flag_list[] = "-_0";
+	char width_list[] = "0123456789";
+	char fmt_list[] = "djmuY";
+	
+	char* res = malloc(5 * sizeof(char));
+	if(res == NULL) {
+		return THEFT_ALLOC_ERROR;
+	}
+	res[0] = '%';
+
+	size_t flag_i = theft_random_choice(t, SIZEOF_ARR(flag_list) - 1);
+	res[1] = flag_list[flag_i];
+
+	size_t width_i = theft_random_choice(t, SIZEOF_ARR(width_list) - 1);
+	res[2] = width_list[width_i];
+
+	size_t fmt_i = theft_random_choice(t, SIZEOF_ARR(fmt_list) - 1);
+	res[3] = fmt_list[fmt_i];
+
+	res[4] = '\0';
+	*instance = res;
+	return THEFT_ALLOC_OK;
+}
+
 //Theft printers
 void print_known(FILE* f, const void* instance, void* env)
 {
@@ -146,7 +172,7 @@ void print_add_mode(FILE* f, const void* instance, void* env)
 	fprintf(f, "%s", m_str);
 }
 
-void print_strftime_fmt(FILE* f, const void* instance, void* env)
+void print_s(FILE* f, const void* instance, void* env)
 {
 	const char* s = instance;
 	fprintf(f, "%s", s);
@@ -962,7 +988,7 @@ enum theft_trial_res format_year(struct theft* t, void* a1, void* a2, void* a3, 
 	return THEFT_TRIAL_PASS;
 }
 
-enum theft_trial_res format_strftime_ymd(struct theft* t, void* a1, void* a2, void* a3) {
+enum theft_trial_res format_strftime(struct theft* t, void* a1, void* a2, void* a3) {
 	time_t unix = (time_t) (((int64_t)a1) % (INT64_MAX/1024));
 	const char placeholder = (char) (((uint64_t)a2) % CHAR_MAX);
 	const char* fmt = a3;
@@ -988,6 +1014,65 @@ enum theft_trial_res format_strftime_ymd(struct theft* t, void* a1, void* a2, vo
 		return THEFT_TRIAL_FAIL;
 	}
 	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res format_numeric_padding(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char* fmt = a4;
+	char placeholder = ' ';
+
+	char flag = fmt[1];
+	int min_width = (flag == '-') ? 0 : fmt[2] - '0'; //Assumes ASCII or UTF8.
+	int targ;
+	switch(fmt[3]) {
+		case 'd': targ = d->day; break;
+		case 'j': targ = mon13_extract(*d, c, MON13_EXTRACT_DAY_OF_YEAR); break;
+		case 'm': targ = d->month; break;
+		case 'u': targ = mon13_extract(*d, c, MON13_EXTRACT_DAY_OF_WEEK); break;
+		case 'Y': d->year = d->year % 9999; targ = d->year; break;
+		default: targ = 0;
+	}
+	int digits = floor(log10(targ)) + 1;
+
+	char buf[20];
+	memset(buf, placeholder, 20);
+	int res = mon13_format(*d, c, n, fmt, buf, 20);
+
+	if(digits >= min_width && res != digits) {
+		return THEFT_TRIAL_FAIL;
+	}
+	else if(digits < min_width) {
+		if(res != min_width) {
+			return THEFT_TRIAL_FAIL;
+		}
+		else if(flag == '0' && buf[0] != '0') {
+			return THEFT_TRIAL_FAIL;
+		}
+		else if(flag == '_' && buf[0] != ' ') {
+			return THEFT_TRIAL_FAIL;
+		}
+	}
+
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res format_numeric_null(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char* fmt = a4;
+	char placeholder0 = ' ';
+	char placeholder1 = '\t';
+
+	char buf0[20];
+	char buf1[20];
+	memset(buf0, placeholder0, 20);
+	memset(buf1, placeholder1, 20);
+	int res0 = mon13_format(*d, c, n, fmt, buf0, 20);
+	int res1 = mon13_format(*d, c, NULL, fmt, buf1, 20);
+	return (res0 == res1) && !strncmp(buf0, buf1, 20) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 //Theft type info
@@ -1052,7 +1137,13 @@ struct theft_type_info tq_year0_info = {
 struct theft_type_info strftime_fmt_info = {
 	.alloc = alloc_strftime_fmt,
 	.free = theft_generic_free_cb,
-	.print = print_strftime_fmt
+	.print = print_s
+};
+
+struct theft_type_info numeric_fmt_info = {
+	.alloc = alloc_numeric_fmt,
+	.free = theft_generic_free_cb,
+	.print = print_s
 };
 
 struct theft_type_info gr_year0_name_info = {
@@ -1780,11 +1871,77 @@ int main() {
 		},
 		{
 			.name = "mon13_format: compare with strftime",
-			.prop3 = format_strftime_ymd,
+			.prop3 = format_strftime,
 			.type_info = {
 				&random_info,
 				&random_info,
 				&strftime_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: numeric padding flags, Gregorian Year 0 (en_US)",
+			.prop4 = format_numeric_padding,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&numeric_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: numeric padding flags, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_numeric_padding,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
+				&numeric_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: numeric padding flags, Tranquility Year 0 (en_US)",
+			.prop4 = format_numeric_padding,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&numeric_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: null names, Gregorian Year 0 (en_US)",
+			.prop4 = format_numeric_null,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_info,
+				&numeric_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: null names, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_numeric_null,
+			.type_info = {
+				&gr_year0_info,
+				&gr_year0_cal_info,
+				&gr_year0_name_fr_info,
+				&numeric_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: null names, Tranquility Year 0 (en_US)",
+			.prop4 = format_numeric_null,
+			.type_info = {
+				&tq_year0_info,
+				&tq_year0_cal_info,
+				&tq_year0_name_info,
+				&numeric_fmt_info
 			},
 			.seed = seed
 		}

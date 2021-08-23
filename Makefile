@@ -10,7 +10,7 @@ CFLAGS=-std=c99 -fPIC -Wall -Werror
 
 THEFTDIR=./theft
 #TESTLDLIBS=-ltheft -lgcov -lmon13
-TESTLDLIBS=-ltheft -lmon13
+TESTLDLIBS=-ltheft -lmon13 -lm
 #TESTLFLAGS=-L$(THEFTDIR)/build/ -L./ --coverage $(TESTLDLIBS)
 TESTLFLAGS=-L$(THEFTDIR)/build/ -L. $(TESTLDLIBS)
 
