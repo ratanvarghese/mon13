@@ -38,6 +38,12 @@ enum mon13_weekday {
 	MON13_SUNDAY = 7
 };
 
+enum mon13_error {
+	MON13_ERROR_NULL_CALENDAR = -1,
+	MON13_ERROR_NULL_NAME_LIST = -2,
+	MON13_ERROR_NULL_FORMAT = -3
+};
+
 //Structures
 struct mon13_date {
 	int32_t year;

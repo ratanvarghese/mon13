@@ -19,10 +19,10 @@ all: libmon13.so libmon13.a test
 cal.o: cal.c mon13.h cal.h
 	$(CC) -c $(CFLAGS) $(TESTCFLAGS) cal.c
 
-calc.o: calc.c mon13.h cal.h
+calc.o: calc.c mon13.h cal.h calc.h
 	$(CC) -c $(CFLAGS) $(TESTCFLAGS) calc.c
 
-format.o: format.c mon13.h cal.h
+format.o: format.c mon13.h cal.h calc.h
 	$(CC) -c $(CFLAGS) $(TESTCFLAGS) format.c
 
 libmon13.a: cal.o calc.o format.o

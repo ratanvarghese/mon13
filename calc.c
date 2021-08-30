@@ -283,7 +283,7 @@ struct mon13_date norm_day(struct mon13_date d, const struct mon13_cal* cal) {
 	return doy_to_month_day(norm_day_of_year(dd, cal), cal);
 }
 
-struct mon13_date normalize(struct mon13_date d, const struct mon13_cal* cal) {
+struct mon13_date mon13_normalize(struct mon13_date d, const struct mon13_cal* cal) {
 	struct mon13_date d_norm_month = norm_month(d, cal);
 	struct mon13_date d_norm_day = norm_day(d_norm_month, cal);
 	return d_norm_day;
@@ -467,7 +467,7 @@ struct mon13_date mon13_convert(
 	}
 
 	struct mon13_date src_yz = no_yz_to_yz(d, src);
-	struct mon13_date src_norm = normalize(src_yz, src);
+	struct mon13_date src_norm = mon13_normalize(src_yz, src);
 	if(src == dest) {
 		return src_norm;
 	}
@@ -486,7 +486,7 @@ struct mon13_date mon13_add(
 ) {
 	
 	struct mon13_date d_yz = no_yz_to_yz(d, cal);
-	struct mon13_date d_norm = normalize(d_yz, cal);
+	struct mon13_date d_norm = mon13_normalize(d_yz, cal);
 	struct mon13_date res_yz;
 	switch(mode) {
 		case MON13_ADD_NONE: res_yz = d_norm;
@@ -514,8 +514,8 @@ int mon13_compare(
 		d1_norm = *d1;
 	}
 	else {
-		d0_norm = normalize(no_yz_to_yz(*d0, cal), cal);
-		d1_norm = normalize(no_yz_to_yz(*d1, cal), cal);
+		d0_norm = mon13_normalize(no_yz_to_yz(*d0, cal), cal);
+		d1_norm = mon13_normalize(no_yz_to_yz(*d1, cal), cal);
 	}
 
 	if(d0_norm.year != d1_norm.year) {
@@ -539,7 +539,7 @@ int64_t mon13_extract(
 	const struct mon13_cal* cal,
 	const enum mon13_extract_mode mode
 ) {
-	struct mon13_date norm_d = normalize(no_yz_to_yz(d, cal), cal);
+	struct mon13_date norm_d = mon13_normalize(no_yz_to_yz(d, cal), cal);
 	switch(mode) {
 		case MON13_EXTRACT_DAY_OF_YEAR: return month_day_to_doy(norm_d, cal).doy;
 		case MON13_EXTRACT_DAY_OF_WEEK: return get_day_of_week(norm_d, cal);
