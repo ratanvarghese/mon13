@@ -1,6 +1,6 @@
 *.o
-test
-test.log
+ctest/test
+ctest/test.log
 *.gcov
 *.gcda
 *.gcno
