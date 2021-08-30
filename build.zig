@@ -7,10 +7,10 @@ pub fn build(b: *std.build.Builder) void {
 
     const c_options = &[_][]const u8{ "-std=c99", "-fPIC", "-Wall", "-Werror", "-I./include" };
 
-    const lib = b.addSharedLibrary("mon13", "src/main.zig", b.version(0, 1, 1));
+    const lib = b.addSharedLibrary("mon13", "src/format.zig", b.version(0, 1, 1));
+    lib.addIncludeDir("include");
     lib.addCSourceFile("src/cal.c", c_options);
     lib.addCSourceFile("src/calc.c", c_options);
-    lib.addCSourceFile("src/format.c", c_options);
 
     lib.setBuildMode(mode);
     lib.install();
