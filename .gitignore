@@ -1,9 +1,6 @@
-*.o
 ctest/test
 ctest/test.log
-*.gcov
-*.gcda
-*.gcno
+ctest/*.o
 plan
-*.a
-*.so
+zig-cache
+zig-out
