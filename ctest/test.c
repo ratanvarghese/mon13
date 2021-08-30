@@ -440,6 +440,13 @@ enum theft_trial_res add_day_roundtrip(struct theft* t, void* a1, void* a2, void
 	int32_t offset = (int32_t) ((int64_t)a2);
 	const struct mon13_cal* c = a3;
 
+	if(offset > (INT32_MAX/4)) {
+		offset = INT32_MAX/4;
+	}
+	if(offset < -(INT32_MAX/4)) {
+		offset = -INT32_MAX/4;
+	}
+
 	struct mon13_date res0 = mon13_add(*d, c, offset, MON13_ADD_DAYS);
 	struct mon13_date res1 = mon13_add(res0, c, -offset, MON13_ADD_DAYS);
 
@@ -451,6 +458,11 @@ enum theft_trial_res add_day_split(struct theft* t, void* a1, void* a2, void* a3
 	const struct mon13_date* d = a1;
 	uint32_t offset = (uint32_t) ((uint64_t)a2);
 	const struct mon13_cal* c = a3;
+
+
+	if(offset > (UINT32_MAX / 32)) {
+		offset = (UINT32_MAX / 32);
+	}
 
 	struct mon13_date res0 = mon13_add(*d, c, offset, MON13_ADD_DAYS);
 
@@ -561,8 +573,8 @@ enum theft_trial_res compare_nearby(struct theft* t, void* a1, void* a2, void* a
 	const struct mon13_cal* c = a4;
 
 	offset = offset >= 0 ? offset : -offset;
-	if(offset > (INT32_MAX/2)) {
-		offset = INT32_MAX/4;
+	if(offset > (INT32_MAX/16)) {
+		offset = INT32_MAX/16;
 	}
 	
 	struct mon13_date sum[5];
@@ -702,6 +714,10 @@ enum theft_trial_res extract_day_of_year_split(struct theft* t, void* a1, void* 
 	const struct mon13_date* d = a1;
 	uint32_t offset = (uint32_t) ((uint64_t)a2);
 	const struct mon13_cal* c = a3;
+
+	if(offset > (UINT32_MAX/16)) {
+		offset = (UINT32_MAX/16);
+	}
 
 	struct mon13_date res0 = mon13_add(*d, c, offset, MON13_ADD_DAYS);
 
