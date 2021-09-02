@@ -45,9 +45,9 @@ pub export const mon13_gregorian = base.mon13_cal{
         .offset_days = 0,
         .LEAP_GREGORIAN_SKIP = true,
     },
-    .week_length = 7,
     .start_weekday = base.mon13_weekday.MON13_NO_WEEKDAY,
     .epoch_mjd = -678575, //1 Jan, 1 CE
+    .week_length = 7,
     .CAL_YEAR_ZERO = false,
     .CAL_PERENNIAL = false,
 };
@@ -66,8 +66,8 @@ pub export const mon13_gregorian_year_zero = base.mon13_cal{
         .LEAP_GREGORIAN_SKIP = true,
     },
     .epoch_mjd = -678575, //1 Jan, 1 CE
-    .week_length = 7,
     .start_weekday = base.mon13_weekday.MON13_NO_WEEKDAY,
+    .week_length = 7,
     .CAL_YEAR_ZERO = true,
     .CAL_PERENNIAL = false,
 };
@@ -143,8 +143,8 @@ pub export const mon13_tranquility = base.mon13_cal{
         .LEAP_GREGORIAN_SKIP = true,
     },
     .epoch_mjd = 40423, //1 day after Moon Landing Day
-    .week_length = 7,
     .start_weekday = base.mon13_weekday.MON13_FRIDAY,
+    .week_length = 7,
     .CAL_YEAR_ZERO = false,
     .CAL_PERENNIAL = true,
 };
@@ -163,8 +163,8 @@ pub export const mon13_tranquility_year_zero = base.mon13_cal{
         .LEAP_GREGORIAN_SKIP = true,
     },
     .epoch_mjd = 40423, //1 day after Moon Landing Day
-    .week_length = 7,
     .start_weekday = base.mon13_weekday.MON13_FRIDAY,
+    .week_length = 7,
     .CAL_YEAR_ZERO = true,
     .CAL_PERENNIAL = true,
 };

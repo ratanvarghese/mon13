@@ -37,9 +37,6 @@ pub const mon13_weekday = extern enum {
     MON13_SUNDAY = 7,
 };
 
-pub const daycount_t = i32;
-pub const mjd_t = daycount_t;
-
 pub const mon13_date = extern struct {
     year: i32,
     month: u8,
@@ -77,9 +74,9 @@ pub const mon13_cal = extern struct {
     common_lookup_list: [*:null]const ?lkup,
     leap_lookup_list: [*:null]const ?lkup,
     leap_cycle: leap_cycle_info,
-    epoch_mjd: mjd_t,
-    week_length: u8,
+    epoch_mjd: i32,
     start_weekday: mon13_weekday,
+    week_length: u8,
     CAL_YEAR_ZERO: bool,
     CAL_PERENNIAL: bool,
 };
