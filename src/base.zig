@@ -52,7 +52,7 @@ pub const intercalary = packed struct {
     IC_LEAP: bool,
 };
 
-pub const lkup = packed struct {
+pub const segment = packed struct {
     offset: u16,
     month: u8,
     day_start: u8,
@@ -71,8 +71,8 @@ pub const leap_cycle_info = packed struct {
 
 pub const mon13_cal = extern struct {
     intercalary_list: ?[*:null]const ?intercalary,
-    common_lookup_list: [*:null]const ?lkup,
-    leap_lookup_list: [*:null]const ?lkup,
+    common_lookup_list: [*:null]const ?segment,
+    leap_lookup_list: [*:null]const ?segment,
     leap_cycle: leap_cycle_info,
     epoch_mjd: i32,
     start_weekday: mon13_weekday,

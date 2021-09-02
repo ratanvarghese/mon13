@@ -2,7 +2,7 @@ const base = @import("base.zig");
 
 //Gregorian
 
-var gregorian_common_lookup = [_:null]?base.lkup{
+var gregorian_common_lookup = [_:null]?base.segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 31 },
     .{ .offset = 31, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 59, .month = 3, .day_start = 1, .day_end = 31 },
@@ -17,7 +17,7 @@ var gregorian_common_lookup = [_:null]?base.lkup{
     .{ .offset = 334, .month = 12, .day_start = 1, .day_end = 31 },
 };
 
-var gregorian_leap_lookup = [_:null]?base.lkup{
+var gregorian_leap_lookup = [_:null]?base.segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 31 },
     .{ .offset = 31, .month = 2, .day_start = 1, .day_end = 29 },
     .{ .offset = 60, .month = 3, .day_start = 1, .day_end = 31 },
@@ -34,8 +34,8 @@ var gregorian_leap_lookup = [_:null]?base.lkup{
 
 pub export const mon13_gregorian = base.mon13_cal{
     .intercalary_list = null,
-    .common_lookup_list = @as([*:null]?base.lkup, &gregorian_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.lkup, &gregorian_leap_lookup),
+    .common_lookup_list = @as([*:null]?base.segment, &gregorian_common_lookup),
+    .leap_lookup_list = @as([*:null]?base.segment, &gregorian_leap_lookup),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
@@ -54,8 +54,8 @@ pub export const mon13_gregorian = base.mon13_cal{
 
 pub export const mon13_gregorian_year_zero = base.mon13_cal{
     .intercalary_list = null,
-    .common_lookup_list = @as([*:null]?base.lkup, &gregorian_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.lkup, &gregorian_leap_lookup),
+    .common_lookup_list = @as([*:null]?base.segment, &gregorian_common_lookup),
+    .leap_lookup_list = @as([*:null]?base.segment, &gregorian_leap_lookup),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
@@ -93,7 +93,7 @@ var tranquility_ic = [_:null]?base.intercalary{
     },
 };
 
-var tranquility_common_lookup = [_:null]?base.lkup{
+var tranquility_common_lookup = [_:null]?base.segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 28 },
     .{ .offset = 28, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 56, .month = 3, .day_start = 1, .day_end = 28 },
@@ -110,7 +110,7 @@ var tranquility_common_lookup = [_:null]?base.lkup{
     .{ .offset = 364, .month = 0, .day_start = 1, .day_end = 1 },
 };
 
-var tranquility_leap_lookup = [_:null]?base.lkup{
+var tranquility_leap_lookup = [_:null]?base.segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 28 },
     .{ .offset = 28, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 56, .month = 3, .day_start = 1, .day_end = 28 },
@@ -131,8 +131,8 @@ var tranquility_leap_lookup = [_:null]?base.lkup{
 
 pub export const mon13_tranquility = base.mon13_cal{
     .intercalary_list = @as([*:null]?base.intercalary, &tranquility_ic),
-    .common_lookup_list = @as([*:null]?base.lkup, &tranquility_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.lkup, &tranquility_leap_lookup),
+    .common_lookup_list = @as([*:null]?base.segment, &tranquility_common_lookup),
+    .leap_lookup_list = @as([*:null]?base.segment, &tranquility_leap_lookup),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
@@ -151,8 +151,8 @@ pub export const mon13_tranquility = base.mon13_cal{
 
 pub export const mon13_tranquility_year_zero = base.mon13_cal{
     .intercalary_list = @as([*:null]?base.intercalary, &tranquility_ic),
-    .common_lookup_list = @as([*:null]?base.lkup, &tranquility_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.lkup, &tranquility_leap_lookup),
+    .common_lookup_list = @as([*:null]?base.segment, &tranquility_common_lookup),
+    .leap_lookup_list = @as([*:null]?base.segment, &tranquility_leap_lookup),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
