@@ -430,69 +430,85 @@ struct mon13_date rd_to_date(int64_t rd, const struct mon13_cal* cal) {
 }
 
 //Public functions
-struct mon13_date mon13_import(
+int mon13_import(
 	const struct mon13_cal* cal,
 	const void* input,
-	const enum mon13_import_mode mode
+	const enum mon13_import_mode mode,
+	struct mon13_date* result
 ) {
-	// switch(mode) {
-	// 	case MON13_IMPORT_MJD: {
-	// 		const int64_t* raw = input;
-	// 		mjd_t mjd = (mjd_t) *raw;
-	// 		return doy_to_month_day(mjd_to_doy(mjd, cal), cal);
-	// 	}
-	// 	case MON13_IMPORT_UNIX: {
-	// 		const int64_t* u = input;
-	// 		return unix_to_date(*u, cal);
-	// 	}
-	// 	case MON13_IMPORT_RD: {
-	// 		const int64_t* rd = input;
-	// 		return rd_to_date(*rd, cal);
-	// 	}
-	// 	default: {
-			struct mon13_date res = {.year = 1, .month = 2, .day = 3};
-			return res;
-	// 	}
-	// }
+	struct mon13_date d = {.year = 1, .month = 2, .day = 3};
+	switch(mode) {
+		case MON13_IMPORT_MJD: {
+			const int64_t* raw = input;
+			mjd_t mjd = (mjd_t) *raw;
+			d = doy_to_month_day(mjd_to_doy(mjd, cal), cal);
+			break;
+		}
+		case MON13_IMPORT_UNIX: {
+			const int64_t* u = input;
+			d = unix_to_date(*u, cal);
+			break;
+		}
+		case MON13_IMPORT_RD: {
+			const int64_t* rd = input;
+			d = rd_to_date(*rd, cal);
+			break;
+		}
+	}
+	result->year = d.year;
+	result->month = d.month;
+	result->day = d.day;
+	return 0;
 }
 
-
-struct mon13_date mon13_convert(
-	const struct mon13_date d,
+int mon13_convert(
+	const struct mon13_date* d,
 	const struct mon13_cal* src,
-	const struct mon13_cal* dest
+	const struct mon13_cal* dest,
+	struct mon13_date* result
 ) {
 	if(src == NULL || dest == NULL) {
-		return d;
+		result->year = d->year;
+		result->month = d->month;
+		result->day = d->day;
+		return 0;
 	}
 
-	struct mon13_date src_yz = no_yz_to_yz(d, src);
+	struct mon13_date src_yz = no_yz_to_yz(*d, src);
 	struct mon13_date src_norm = mon13_normalize(src_yz, src);
 	if(src == dest) {
-		return src_norm;
+		result->year = src_norm.year;
+		result->month = src_norm.month;
+		result->day = src_norm.day;
+		return 0;
 	}
 
 	mjd_t mjd = doy_to_mjd(month_day_to_doy(src_norm, src), src);
 	struct mon13_date res_yz = doy_to_month_day(mjd_to_doy(mjd, dest), dest);
 	struct mon13_date res = yz_to_no_yz(res_yz, dest);
-	return res;
+	
+	result->year = res.year;
+	result->month = res.month;
+	result->day = res.day;
+	return 0;
 }
 
-struct mon13_date mon13_add(
-	const struct mon13_date d,
+int mon13_add(
+	const struct mon13_date* d,
 	const struct mon13_cal* cal,
 	const int32_t offset,
-	const enum mon13_add_mode mode
+	const enum mon13_add_mode mode,
+	struct mon13_date* result
 ) {
 	
-	struct mon13_date d_yz = no_yz_to_yz(d, cal);
+	struct mon13_date d_yz = no_yz_to_yz(*d, cal);
 	struct mon13_date d_norm = mon13_normalize(d_yz, cal);
 	struct mon13_date res_yz;
 	switch(mode) {
 		case MON13_ADD_NONE: res_yz = d_norm;
-		case MON13_ADD_DAYS: res_yz = add_days(d, offset, cal); break;
-		case MON13_ADD_MONTHS: res_yz = add_months(d, offset, cal); break;
-		case MON13_ADD_YEARS: res_yz = add_years(d, offset); break;
+		case MON13_ADD_DAYS: res_yz = add_days(d_norm, offset, cal); break;
+		case MON13_ADD_MONTHS: res_yz = add_months(d_norm, offset, cal); break;
+		case MON13_ADD_YEARS: res_yz = add_years(d_norm, offset); break;
 		default: {
 			res_yz.year = 0;
 			res_yz.month = 0;
@@ -500,7 +516,10 @@ struct mon13_date mon13_add(
 		}
 	}
 	struct mon13_date res = yz_to_no_yz(res_yz, cal);
-	return res;
+	result->year = res.year;
+	result->month = res.month;
+	result->day = res.day;
+	return 0;
 }
 
 int mon13_compare(
@@ -535,18 +554,18 @@ int mon13_compare(
 }
 
 int64_t mon13_extract(
-	const struct mon13_date d,
+	const struct mon13_date* d,
 	const struct mon13_cal* cal,
 	const enum mon13_extract_mode mode
 ) {
-	struct mon13_date norm_d = mon13_normalize(no_yz_to_yz(d, cal), cal);
+	struct mon13_date norm_d = mon13_normalize(no_yz_to_yz(*d, cal), cal);
 	switch(mode) {
 		case MON13_EXTRACT_DAY_OF_YEAR: return month_day_to_doy(norm_d, cal).doy;
 		case MON13_EXTRACT_DAY_OF_WEEK: return get_day_of_week(norm_d, cal);
 		case MON13_EXTRACT_IS_LEAP_YEAR: return is_leap(norm_d.year, cal);
-		case MON13_EXTRACT_MJD: return doy_to_mjd(month_day_to_doy(d, cal), cal);
-		case MON13_EXTRACT_UNIX: return date_to_unix(d, cal);
-		case MON13_EXTRACT_RD: return date_to_rd(d, cal);
+		case MON13_EXTRACT_MJD: return doy_to_mjd(month_day_to_doy(norm_d, cal), cal);
+		case MON13_EXTRACT_UNIX: return date_to_unix(norm_d, cal);
+		case MON13_EXTRACT_RD: return date_to_rd(norm_d, cal);
 		default: return 0;
 	}
 }

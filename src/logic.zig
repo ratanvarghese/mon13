@@ -529,56 +529,69 @@ fn rd_to_date(rd: i64, cal: *const base.mon13_cal) Err!base.mon13_date {
     return res;
 }
 
+//Public functions
 pub export fn mon13_import(
     raw_cal: ?*const base.mon13_cal,
     raw_input: ?*const c_void,
     mode: base.mon13_import_mode,
-) base.mon13_date {
+    result: *base.mon13_date
+) c_int {
     var bad_res: base.mon13_date = .{ .year = 1, .month = 2, .day = 3 };
-    // const cal = raw_cal orelse return bad_res;
-    // switch (mode) {
-    //     base.mon13_import_mode.MON13_IMPORT_MJD => {
-    //         if (@ptrCast(?*const i64, @alignCast(@alignOf(i64), raw_input))) |input_mjd| {
-    //             if (input_mjd.* > maxInt(i32) or input_mjd.* < minInt(i32)) {
-    //                 return bad_res;
-    //             }
-    //             const mjd_32 = @intCast(i32, input_mjd.*);
-    //             const doy = mjd_to_doy(mjd_32, cal) catch return bad_res;
-    //             var res = doy_to_month_day(doy, cal) catch bad_res;
-    //             return res;
-    //         }
-    //     },
-    //     base.mon13_import_mode.MON13_IMPORT_UNIX => {
-    //         if (@ptrCast(?*const i64, @alignCast(@alignOf(i64), raw_input))) |input_unix| {
-    //             return unix_to_date(input_unix.*, cal) catch bad_res;
-    //         }
-    //     },
-    //     base.mon13_import_mode.MON13_IMPORT_RD => {
-    //         if (@ptrCast(?*const i64, @alignCast(@alignOf(i64), raw_input))) |input_rd| {
-    //             return rd_to_date(input_rd.*, cal) catch bad_res;
-    //         }
-    //     },
-    // }
-    return bad_res;
+    result.* = bad_res;
+    if(raw_cal) |cal| {
+        switch (mode) {
+            base.mon13_import_mode.MON13_IMPORT_MJD => {
+                if (@ptrCast(?*const i64, @alignCast(@alignOf(i64), raw_input))) |input_mjd| {
+                    if (input_mjd.* > maxInt(i32) or input_mjd.* < minInt(i32)) {
+                        return 0;
+                    }
+                    const mjd_32 = @intCast(i32, input_mjd.*);
+                    const doy = mjd_to_doy(mjd_32, cal) catch return 0;
+                    var res = doy_to_month_day(doy, cal) catch bad_res;
+                    result.* = res;
+                    return 0;
+                }
+            },
+            base.mon13_import_mode.MON13_IMPORT_UNIX => {
+                if (@ptrCast(?*const i64, @alignCast(@alignOf(i64), raw_input))) |input_unix| {
+                    var res = unix_to_date(input_unix.*, cal) catch bad_res;
+                    result.* = res;
+                    return 0;
+                }
+            },
+            base.mon13_import_mode.MON13_IMPORT_RD => {
+                if (@ptrCast(?*const i64, @alignCast(@alignOf(i64), raw_input))) |input_rd| {
+                    var res = rd_to_date(input_rd.*, cal) catch bad_res;
+                    result.* = res;
+                    return 0;
+                }
+            },
+        }
+    }
+    return 0;
 }
 
 pub export fn mon13_convert(
-    d: base.mon13_date,
+    d: *base.mon13_date,
     src: ?*const base.mon13_cal,
     dest: ?*const base.mon13_cal,
-) base.mon13_date {
-    return base.mon13_date{ .year = 0, .month = 0, .day = 9 };
+    result: *base.mon13_date
+) c_int {
+    result.* = base.mon13_date{ .year = 0, .month = 0, .day = 9 };
+    return 0;
 }
 pub export fn mon13_add(
-    d: base.mon13_date,
+    d: *base.mon13_date,
     raw_cal: ?*const base.mon13_cal,
     offset: i32,
     mode: base.mon13_add_mode,
-) base.mon13_date {
+    result: *base.mon13_date
+) c_int {
     const bad_res: base.mon13_date = .{ .year = 0, .month = 0, .day = 0 };
-    const cal = raw_cal orelse return bad_res;
+    result.* = bad_res;
+    const cal = raw_cal orelse return 0;
 
-    const d_yz = no_yz_to_yz(d, cal);
+    const d_yz = no_yz_to_yz(d.*, cal);
     const d_norm = normalize(d_yz, cal);
     var res_yz: base.mon13_date = bad_res;
     switch (mode) {
@@ -596,7 +609,8 @@ pub export fn mon13_add(
         },
     }
     const res = yz_to_no_yz(res_yz, cal);
-    return res;
+    result.* = res;
+    return 0;
 }
 pub export fn mon13_compare(
     d0: ?*const base.mon13_date,
@@ -606,12 +620,12 @@ pub export fn mon13_compare(
     return 0;
 }
 pub export fn mon13_extract(
-    d: base.mon13_date,
+    d: *base.mon13_date,
     raw_cal: ?*const base.mon13_cal,
     mode: base.mon13_extract_mode,
 ) i64 {
     const cal = raw_cal orelse return 0;
-    const d_norm = normalize(no_yz_to_yz(d, cal), cal);
+    const d_norm = normalize(no_yz_to_yz(d.*, cal), cal);
     switch (mode) {
         base.mon13_extract_mode.MON13_EXTRACT_DAY_OF_YEAR => {
             const d_doy = month_day_to_doy(d_norm, cal) catch return 0;
@@ -638,7 +652,7 @@ pub export fn mon13_extract(
     return 0;
 }
 pub export fn mon13_format(
-    d: base.mon13_date,
+    d: *base.mon13_date,
     cal: ?*const base.mon13_cal,
     nlist: ?*const base.mon13_name_list,
     fmt: [*]const u8,
