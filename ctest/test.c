@@ -259,12 +259,16 @@ bool format_res_check(size_t res, const char* expected) {
 enum theft_trial_res import_mjd(struct theft* t, void* a1, void* a2, void* a3) {
 	const struct mon13_cal* c = a1;
 	int64_t mjd0 = ((int64_t)a2) % (INT32_MAX/2);
-	int32_t offset = (int32_t) ((int64_t)a3 % (INT32_MAX % 2));
+	//int32_t offset = (int32_t) ((int64_t)a3 % (INT32_MAX % 2));
 
 	struct mon13_date d0 = mon13_import(c, &mjd0, MON13_IMPORT_MJD);
-	struct mon13_date d1 = mon13_add(d0, c, offset, MON13_ADD_DAYS);
-	int64_t mjd1 = mon13_extract(d1, c, MON13_EXTRACT_MJD);
-	return ((mjd1 - mjd0) == offset) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	printf("FINDME d0:");
+	print_date(stdout, &d0, NULL);
+	printf("\n");
+	return THEFT_TRIAL_FAIL;
+	//struct mon13_date d1 = mon13_add(d0, c, offset, MON13_ADD_DAYS);
+	//int64_t mjd1 = mon13_extract(d1, c, MON13_EXTRACT_MJD);
+	//return ((mjd1 - mjd0) == offset) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res import_unix(struct theft* t, void* a1, void* a2, void* a3) {

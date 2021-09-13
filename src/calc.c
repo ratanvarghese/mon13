@@ -435,25 +435,25 @@ struct mon13_date mon13_import(
 	const void* input,
 	const enum mon13_import_mode mode
 ) {
-	switch(mode) {
-		case MON13_IMPORT_MJD: {
-			const int64_t* raw = input;
-			mjd_t mjd = (mjd_t) *raw;
-			return doy_to_month_day(mjd_to_doy(mjd, cal), cal);
-		}
-		case MON13_IMPORT_UNIX: {
-			const int64_t* u = input;
-			return unix_to_date(*u, cal);
-		}
-		case MON13_IMPORT_RD: {
-			const int64_t* rd = input;
-			return rd_to_date(*rd, cal);
-		}
-		default: {
-			struct mon13_date res = {.year = 0, .month = 0, .day = 0};
+	// switch(mode) {
+	// 	case MON13_IMPORT_MJD: {
+	// 		const int64_t* raw = input;
+	// 		mjd_t mjd = (mjd_t) *raw;
+	// 		return doy_to_month_day(mjd_to_doy(mjd, cal), cal);
+	// 	}
+	// 	case MON13_IMPORT_UNIX: {
+	// 		const int64_t* u = input;
+	// 		return unix_to_date(*u, cal);
+	// 	}
+	// 	case MON13_IMPORT_RD: {
+	// 		const int64_t* rd = input;
+	// 		return rd_to_date(*rd, cal);
+	// 	}
+	// 	default: {
+			struct mon13_date res = {.year = 1, .month = 2, .day = 3};
 			return res;
-		}
-	}
+	// 	}
+	// }
 }
 
 

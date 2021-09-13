@@ -39,8 +39,13 @@ pub const mon13_weekday = extern enum {
 
 pub const mon13_date = extern struct {
     year: i32,
+    reserved3: u32 = 0,
+    reserved4: u32 = 0,
+    reserved5: u32 = 0,
     month: u8,
     day: u8,
+    reserved1: u8 = 0,
+    reserved2: u8 = 0,
 };
 
 pub const intercalary = packed struct {
