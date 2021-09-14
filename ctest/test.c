@@ -262,8 +262,14 @@ enum theft_trial_res import_mjd(struct theft* t, void* a1, void* a2, void* a3) {
 	int32_t offset = (int32_t) ((int64_t)a3 % (INT32_MAX % 2));
 
 	struct mon13_date d0, d1;
-	mon13_import(c, &mjd0, MON13_IMPORT_MJD, &d0);
-	mon13_add(&d0, c, offset, MON13_ADD_DAYS, &d1);
+	int impres = mon13_import(c, &mjd0, MON13_IMPORT_MJD, &d0);
+	if(impres) {
+		return THEFT_TRIAL_SKIP;
+	}
+	int addres = mon13_add(&d0, c, offset, MON13_ADD_DAYS, &d1);
+	if(addres) {
+		return THEFT_TRIAL_SKIP;
+	}
 	int64_t mjd1 = mon13_extract(&d1, c, MON13_EXTRACT_MJD);
 	return ((mjd1 - mjd0) == offset) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
@@ -274,7 +280,6 @@ enum theft_trial_res import_unix(struct theft* t, void* a1, void* a2, void* a3) 
 	int32_t offset = (int32_t) ((int64_t)a3 % (INT32_MAX/2));
 
 	int64_t u0_cut = u0 - (u0 % (24 * 60 * 60));
-
 	struct mon13_date d0, d1;
 	mon13_import(c, &u0_cut, MON13_IMPORT_UNIX, &d0);
 	mon13_add(&d0, c, offset, MON13_ADD_DAYS, &d1);
@@ -319,8 +324,12 @@ enum theft_trial_res convert_known(struct theft* t, void* test_input)
 {
 	const struct known_convert_date* kcd = test_input;
 	struct mon13_date res0, res1;
-	mon13_convert(&(kcd->d1), kcd->c1, kcd->c0, &res0);
-	mon13_convert(&(kcd->d0), kcd->c0, kcd->c1, &res1);
+	if(mon13_convert(&(kcd->d1), kcd->c1, kcd->c0, &res0)) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(mon13_convert(&(kcd->d0), kcd->c0, kcd->c1, &res1)) {
+		return THEFT_TRIAL_FAIL;
+	}
 	if(mon13_compare(&res0, &(kcd->d0), kcd->c0)) {
 		return THEFT_TRIAL_FAIL;
 	}
@@ -334,12 +343,15 @@ enum theft_trial_res convert_tq_year0(struct theft* t, void* test_input)
 {
 	const struct mon13_date* d = test_input;
 	struct mon13_date res;
-	mon13_convert(
+	int c_ret = mon13_convert(
 		d,
 		&mon13_tranquility_year_zero,
 		&mon13_tranquility,
 		&res
 	);
+	if(c_ret) {
+		return THEFT_TRIAL_SKIP;
+	}
 	return year0_convert_correct(*d, res) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
@@ -347,12 +359,15 @@ enum theft_trial_res convert_gr_year0(struct theft* t, void* test_input)
 {
 	const struct mon13_date* d = test_input;
 	struct mon13_date res;
-	mon13_convert(
+	int c_ret = mon13_convert(
 		d,
 		&mon13_gregorian_year_zero,
 		&mon13_gregorian,
 		&res
 	);
+	if(c_ret) {
+		return THEFT_TRIAL_SKIP;
+	}
 	return year0_convert_correct(*d, res) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
@@ -360,12 +375,15 @@ enum theft_trial_res convert_tq_year0_reverse(struct theft* t, void* test_input)
 {
 	const struct mon13_date* d = test_input;
 	struct mon13_date res;
-	mon13_convert(
+	int c_ret = mon13_convert(
 		d,
 		&mon13_tranquility,
 		&mon13_tranquility_year_zero,
 		&res
 	);
+	if(c_ret) {
+		return THEFT_TRIAL_SKIP;
+	}
 	return year0_convert_correct(res, *d) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
@@ -373,12 +391,15 @@ enum theft_trial_res convert_gr_year0_reverse(struct theft* t, void* test_input)
 {
 	const struct mon13_date* d = test_input;
 	struct mon13_date res;
-	mon13_convert(
+	int c_ret = mon13_convert(
 		d,
 		&mon13_gregorian,
 		&mon13_gregorian_year_zero,
 		&res
 	);
+	if(c_ret) {
+		return THEFT_TRIAL_SKIP;
+	}
 	return year0_convert_correct(res, *d) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
@@ -551,7 +572,10 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3)
 	const struct mon13_cal* c = a3;
 
 	struct mon13_date res;
-	mon13_add(d, c, offset, MON13_ADD_YEARS, &res);
+	int status = mon13_add(d, c, offset, MON13_ADD_YEARS, &res);
+	if(status) {
+		return THEFT_TRIAL_SKIP;
+	}
 	return res.year == (d->year + offset) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
