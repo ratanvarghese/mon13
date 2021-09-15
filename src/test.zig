@@ -159,3 +159,21 @@ test "strange add gregorian" {
         try expect(res.year == (d.year + offset));
     }
 }
+
+test "add zero years" {
+    var d = mon13.mon13_date{ .year = -89712, .month = 02, .day = 29 };
+    const c = &mon13.mon13_gregorian;
+    var res = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
+    var status = mon13.mon13_add(
+        &d,
+        c,
+        0,
+        mon13.mon13_add_mode.MON13_ADD_YEARS,
+        &res,
+    );
+    if (status == 0) {
+        try expect(mon13.mon13_compare(&d, &res, c) == 0);
+    } else {
+        unreachable;
+    }
+}
