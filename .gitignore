@@ -1,5 +1,5 @@
 ctest/test
-ctest/test.log
+ctest/test*.log
 ctest/*.o
 plan
 zig-cache
