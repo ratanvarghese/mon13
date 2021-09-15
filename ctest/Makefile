@@ -4,7 +4,7 @@
 MON13DIR=..
 THEFTDIR=./theft
 
-MON13LIB=mon13c
+MON13LIB=mon13
 
 CC=gcc
 CFLAGS=-std=c99 -fPIC -Wall -Werror
