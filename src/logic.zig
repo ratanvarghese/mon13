@@ -536,22 +536,22 @@ pub export fn mon13_import(raw_cal: ?*const base.mon13_cal, raw_input: ?*const c
                     }
                     const mjd_32 = @intCast(i32, input_mjd.*);
                     const doy = mjd_to_doy(mjd_32, cal) catch return 1;
-                    var res = doy_to_month_day(doy, cal) catch return 2;
-                    result.* = res;
+                    var res_yz = doy_to_month_day(doy, cal) catch return 2;
+                    result.* = yz_to_no_yz(res_yz, cal);
                     return 0;
                 }
             },
             base.mon13_import_mode.MON13_IMPORT_UNIX => {
                 if (@ptrCast(?*const i64, @alignCast(@alignOf(i64), raw_input))) |input_unix| {
-                    var res = unix_to_date(input_unix.*, cal) catch bad_res;
-                    result.* = res;
+                    var res_yz = unix_to_date(input_unix.*, cal) catch return 3;
+                    result.* = yz_to_no_yz(res_yz, cal);
                     return 0;
                 }
             },
             base.mon13_import_mode.MON13_IMPORT_RD => {
                 if (@ptrCast(?*const i64, @alignCast(@alignOf(i64), raw_input))) |input_rd| {
-                    var res = rd_to_date(input_rd.*, cal) catch bad_res;
-                    result.* = res;
+                    var res_yz = rd_to_date(input_rd.*, cal) catch return 4;
+                    result.* = yz_to_no_yz(res_yz, cal);
                     return 0;
                 }
             },
