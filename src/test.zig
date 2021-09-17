@@ -161,7 +161,7 @@ test "strange add gregorian" {
 }
 
 test "add zero years" {
-    var d = mon13.mon13_date{ .year = -89712, .month = 02, .day = 29 };
+    var d = mon13.mon13_date{ .year = -89712, .month = 2, .day = 29 };
     const c = &mon13.mon13_gregorian;
     var res = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
     var status = mon13.mon13_add(

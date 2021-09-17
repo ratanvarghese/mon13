@@ -395,7 +395,7 @@ enum theft_trial_res convert_tq_year0(struct theft* t, void* test_input)
 		&res
 	);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return THEFT_TRIAL_FAIL;
 	}
 	return year0_convert_correct(*d, res) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
@@ -411,7 +411,7 @@ enum theft_trial_res convert_gr_year0(struct theft* t, void* test_input)
 		&res
 	);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return THEFT_TRIAL_FAIL;
 	}
 	return year0_convert_correct(*d, res) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
@@ -427,7 +427,7 @@ enum theft_trial_res convert_tq_year0_reverse(struct theft* t, void* test_input)
 		&res
 	);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return THEFT_TRIAL_FAIL;
 	}
 	return year0_convert_correct(res, *d) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
@@ -443,7 +443,7 @@ enum theft_trial_res convert_gr_year0_reverse(struct theft* t, void* test_input)
 		&res
 	);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return THEFT_TRIAL_FAIL;
 	}
 	return year0_convert_correct(res, *d) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
@@ -679,10 +679,57 @@ enum theft_trial_res add_zero(struct theft* t, void* a1, void* a2, void* a3)
 	else if(!equal_year_month_day(res0, res1)) {
 		return THEFT_TRIAL_FAIL;
 	}
-	else if(!equal_year_month_day(res0, *d)) {
+	//equal_year_month_day(*d, res0) does not account for normalization.
+
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res add_like_other_cal(struct theft* t, void* a1, void* a2, void* a3, void* a4, void* a5) {
+	const struct mon13_date* d = a1;
+	enum mon13_add_mode m = (enum mon13_add_mode) ((uint64_t) a2);
+	const struct mon13_cal* c_yz = a3;
+	const struct mon13_cal* c = a4;
+	int32_t offset = (int32_t) ((uint64_t)a5 % INT32_MAX);
+
+	struct mon13_date d_yz, res_yz, res0, res1;
+	int status;
+	status = mon13_convert(d, c, c_yz, &d_yz);
+	if(status) {
 		return THEFT_TRIAL_FAIL;
 	}
+	status = mon13_add(&d_yz, c_yz, offset, m, &res_yz);
+	if(status) {
+		return THEFT_TRIAL_SKIP;
+	}
+	status = mon13_add(d, c, offset, m, &res0);
+	if(status) {
+		return THEFT_TRIAL_FAIL; //If add(,c_yz,) worked, add(,c,) should work.
+	}
+	status = mon13_convert(&res_yz, c_yz, c, &res1);
+	if(status) {
+		return skip_import(((int64_t)res_yz.year)*366) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+	}
+
+	if(mon13_compare(&res0, &res1, c)) {
+		return THEFT_TRIAL_FAIL;
+	}
+
 	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res add_no_year_zero(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	const struct mon13_date* d = a1;
+	enum mon13_add_mode m = (enum mon13_add_mode) ((uint64_t) a2);
+	const struct mon13_cal* c = a3;
+	int32_t offset = (int32_t) ((uint64_t)a4 % INT32_MAX);
+
+	struct mon13_date res;
+	int status;
+	status = mon13_add(d, c, offset, m, &res);
+	if(status) {
+		return THEFT_TRIAL_SKIP;
+	}
+	return (res.year == 0) ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS;
 }
 
 //Theft trials: compare
@@ -1685,6 +1732,52 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
+			.name = "mon13_add: Gregorian like Gregorian Year 0",
+			.prop5 = add_like_other_cal,
+			.type_info = {
+				&gr_date_info,
+				&add_mode_info,
+				&gr_year0_cal_info,
+				&gr_cal_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Tranquility like Tranquility Year 0",
+			.prop5 = add_like_other_cal,
+			.type_info = {
+				&tq_date_info,
+				&add_mode_info,
+				&tq_year0_cal_info,
+				&tq_cal_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: No Year 0 for Gregorian",
+			.prop4 = add_no_year_zero,
+			.type_info = {
+				&gr_date_info,
+				&add_mode_info,
+				&gr_cal_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: No Year 0 for Tranquility",
+			.prop4 = add_no_year_zero,
+			.type_info = {
+				&tq_date_info,
+				&add_mode_info,
+				&tq_cal_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
 			.name = "mon13_compare: Nearby, Gregorian Year 0",
 			.prop4 = compare_nearby,
 			.type_info = {
@@ -1716,6 +1809,15 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
+			.name = "mon13_compare: Random, Gregorian",
+			.prop2 = compare_random_gr,
+			.type_info = {
+				&gr_date_info,
+				&gr_date_info
+			},
+			.seed = seed
+		},
+		{
 			.name = "mon13_extract: IS_LEAP_YEAR, Gregorian Year 0",
 			.prop2 = extract_is_leap,
 			.type_info = {
@@ -1743,6 +1845,18 @@ int main(int argc, char** argv) {
 			.name = "mon13_extract: DAY_OF_WEEK, Tranquility Year 0",
 			.prop1 = extract_day_of_week_tq,
 			.type_info = {&tq_year0_date_info},
+			.seed = seed
+		},
+		{
+			.name = "mon13_extract: DAY_OF_WEEK, Gregorian",
+			.prop1 = extract_day_of_week_gr,
+			.type_info = {&gr_date_info},
+			.seed = seed
+		},
+		{
+			.name = "mon13_extract: DAY_OF_WEEK, Tranquility",
+			.prop1 = extract_day_of_week_tq,
+			.type_info = {&tq_date_info},
 			.seed = seed
 		},
 		{
