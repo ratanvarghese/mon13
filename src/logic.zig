@@ -345,7 +345,7 @@ fn yz_needs_adjustment(y: i32, cal: *const base.mon13_cal) bool {
     return (!cal.*.CAL_YEAR_ZERO) and (y < 1);
 }
 
-pub fn yz_to_no_yz(d: base.mon13_date, cal: *const base.mon13_cal) base.mon13_date {
+fn yz_to_no_yz(d: base.mon13_date, cal: *const base.mon13_cal) base.mon13_date {
     const y = if (yz_needs_adjustment(d.year, cal)) (d.year -% 1) else d.year;
     return .{ .year = y, .month = d.month, .day = d.day };
 }
@@ -665,15 +665,5 @@ pub export fn mon13_extract(
             return date_to_rd(d_norm, cal) catch return 0;
         },
     }
-    return 0;
-}
-pub export fn mon13_format(
-    d: *base.mon13_date,
-    cal: ?*const base.mon13_cal,
-    nlist: ?*const base.mon13_name_list,
-    fmt: [*]const u8,
-    buf: [*]u8,
-    buflen: u64,
-) c_int {
     return 0;
 }
