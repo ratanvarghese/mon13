@@ -13,6 +13,7 @@
 
 #define SIZEOF_ARR(arr) sizeof(arr)/sizeof(*arr)
 #define STRFTIME_BUF 500
+#define ASCII_COPY_BUF 500
 #define UNIX_DAY 24 * 60 * 60
 
 //Theft allocators
@@ -108,7 +109,7 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance)
 
 enum theft_alloc_res alloc_strftime_fmt(struct theft* t, void* env, void** instance) {
 	char fmt_list[] = "%ABdjmntuY";
-	size_t fmt_len = theft_random_choice(t, STRFTIME_BUF/10);
+	size_t fmt_len = (size_t) theft_random_choice(t, STRFTIME_BUF/10);
 	fmt_len = (fmt_len > 0) ? fmt_len : 1;
 	char* res = malloc(fmt_len * sizeof(char));
 	if(res == NULL) {
@@ -131,6 +132,63 @@ enum theft_alloc_res alloc_strftime_fmt(struct theft* t, void* env, void** insta
 	}
 	res[fmt_len - 1] = '\0';
 	*instance = res;
+	return THEFT_ALLOC_OK;
+}
+
+enum theft_alloc_res alloc_ascii_copy_fmt(struct theft* t, void* env, void** instance) {
+	size_t fmt_len = (size_t) theft_random_choice(t, ASCII_COPY_BUF-1);
+	fmt_len = (fmt_len > 0) ? fmt_len : 1;
+	char* res = malloc(fmt_len * sizeof(char));
+	if(res == NULL) {
+		return THEFT_ALLOC_ERROR;
+	}
+	for(int i = 0; i < (fmt_len - 1); i++) { //Leave 1 more, for null character
+		res[i] = theft_random_choice(t, 127);
+		if(res[i] < 32 || res[i] == '%') {
+			res[i] = ' ';
+		}
+	}
+	res[fmt_len - 1] = '\0';
+	*instance = res;
+	return THEFT_ALLOC_OK;
+}
+
+enum theft_alloc_res alloc_utf8_copy_fmt(struct theft* t, void* env, void** instance) {
+	//Generated from https://onlineunicodetools.com/convert-unicode-to-utf8
+	char smiley[] = {240, 159, 152, 128, 0};
+	char family0[] = {240, 159, 145, 168, 226, 128, 141, 240, 159, 145, 169, 226, 128, 141, 240, 159, 145, 167, 226, 128, 141, 240, 159, 145, 166, 0};
+	char family1[] = {240, 159, 145, 169, 226, 128, 141, 240, 159, 145, 167, 226, 128, 141, 240, 159, 145, 167, 0};
+	char lotus[] = {240, 159, 167, 152, 0};
+	char cook[] = {240, 159, 145, 168, 226, 128, 141, 240, 159, 141, 179, 0};
+	char whale[] = {240, 159, 144, 139, 0};
+	char rice_ball[] = {240, 159, 141, 153, 0};
+	char pawn[] = {226, 153, 159, 239, 184, 143, 0};
+	char plane[] = {226, 156, 136, 239, 184, 143, 0};
+	char swords[] = {226, 154, 148, 239, 184, 143, 0};
+
+	char* choice = NULL;
+	switch(theft_random_choice(t, 10)) {
+		case  0: choice = smiley;    break;
+		case  1: choice = family0;   break;
+		case  2: choice = family1;   break;
+		case  3: choice = lotus;     break;
+		case  4: choice = cook;      break;
+		case  5: choice = whale;     break;
+		case  6: choice = rice_ball; break;
+		case  7: choice = pawn;      break;
+		case  8: choice = plane;     break;
+		case  9: choice = swords;    break;
+		default: choice = smiley;
+	}
+
+	int len = strlen(choice);
+	char* res = malloc(len);
+	if(res == NULL) {
+		return THEFT_ALLOC_ERROR;
+	}
+	memcpy(res, choice, len);
+	*instance = res;
+
 	return THEFT_ALLOC_OK;
 }
 
@@ -1301,6 +1359,19 @@ enum theft_trial_res format_numeric_null(struct theft* t, void* a1, void* a2, vo
 	return (res0 == res1) && !strncmp(buf0, buf1, 20) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res format_simple_copy(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char* fmt = a4;
+	char placeholder = '\t';
+
+	char buf[ASCII_COPY_BUF];
+	memset(buf, placeholder, ASCII_COPY_BUF);
+	mon13_format(d, c, n, fmt, buf, ASCII_COPY_BUF);
+	return !strncmp(fmt, buf, ASCII_COPY_BUF) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
 //Theft type info
 struct theft_type_info gr2tq_oa_info = {
 	.alloc = select_gr2tq_oa, //nothing to free
@@ -1392,6 +1463,18 @@ struct theft_type_info strftime_fmt_info = {
 
 struct theft_type_info numeric_fmt_info = {
 	.alloc = alloc_numeric_fmt,
+	.free = theft_generic_free_cb,
+	.print = print_s
+};
+
+struct theft_type_info ascii_copy_fmt_info = {
+	.alloc = alloc_ascii_copy_fmt,
+	.free = theft_generic_free_cb,
+	.print = print_s
+};
+
+struct theft_type_info utf8_copy_fmt_info = {
+	.alloc= alloc_utf8_copy_fmt,
 	.free = theft_generic_free_cb,
 	.print = print_s
 };
@@ -2366,6 +2449,72 @@ int main(int argc, char** argv) {
 				&tq_year0_cal_info,
 				&tq_name_en_info,
 				&numeric_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: ASCII copy, Gregorian Year 0 (en_US)",
+			.prop4 = format_simple_copy,
+			.type_info = {
+				&gr_year0_date_info,
+				&gr_year0_cal_info,
+				&gr_name_en_info,
+				&ascii_copy_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: ASCII copy, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_simple_copy,
+			.type_info = {
+				&gr_year0_date_info,
+				&gr_year0_cal_info,
+				&gr_name_fr_info,
+				&ascii_copy_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: ASCII copy, Tranquility Year 0 (en_US)",
+			.prop4 = format_simple_copy,
+			.type_info = {
+				&tq_year0_date_info,
+				&tq_year0_cal_info,
+				&tq_name_en_info,
+				&ascii_copy_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: UTF8 copy, Gregorian Year 0 (en_US)",
+			.prop4 = format_simple_copy,
+			.type_info = {
+				&gr_year0_date_info,
+				&gr_year0_cal_info,
+				&gr_name_en_info,
+				&utf8_copy_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: UTF8 copy, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_simple_copy,
+			.type_info = {
+				&gr_year0_date_info,
+				&gr_year0_cal_info,
+				&gr_name_fr_info,
+				&utf8_copy_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: UTF8 copy, Tranquility Year 0 (en_US)",
+			.prop4 = format_simple_copy,
+			.type_info = {
+				&tq_year0_date_info,
+				&tq_year0_cal_info,
+				&tq_name_en_info,
+				&utf8_copy_fmt_info
 			},
 			.seed = seed
 		}
