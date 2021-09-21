@@ -108,7 +108,7 @@ int mon13_format(
 	const struct mon13_name_list* nlist,
 	const char* fmt,
 	char* buf,
-	const uint64_t buflen
+	const uint32_t buflen
 );
 
 //Predefined name lists
