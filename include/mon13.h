@@ -47,13 +47,8 @@ enum mon13_error {
 //Structures
 struct mon13_date {
 	int32_t year;
-	uint32_t reserved3;
-	uint32_t reserved4;
-	uint32_t reserved5;
 	uint8_t month;
 	uint8_t day;
-	uint8_t reserved1;
-	uint8_t reserved2;
 };
 
 struct mon13_name_list {

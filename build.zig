@@ -5,7 +5,7 @@ pub fn build(b: *std.build.Builder) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
 
-    const lib_z = b.addSharedLibrary("mon13", "src/main.zig", b.version(0, 3, 1));
+    const lib_z = b.addSharedLibrary("mon13", "src/main.zig", b.version(0, 4, 1));
 
     lib_z.setBuildMode(mode);
     lib_z.install();
