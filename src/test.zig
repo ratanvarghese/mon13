@@ -32,15 +32,6 @@ test "Gregorian en_US Sanity" {
     }
 
     if (weekdays[0]) |day0| {
-        const day0_name = "Sunday";
-        for (day0_name) |c, i| {
-            try expect(day0[i] == c);
-        }
-    } else {
-        unreachable;
-    }
-
-    if (weekdays[1]) |day0| {
         const day0_name = "Monday";
         for (day0_name) |c, i| {
             try expect(day0[i] == c);
@@ -49,8 +40,17 @@ test "Gregorian en_US Sanity" {
         unreachable;
     }
 
+    if (weekdays[1]) |day0| {
+        const day0_name = "Tuesday";
+        for (day0_name) |c, i| {
+            try expect(day0[i] == c);
+        }
+    } else {
+        unreachable;
+    }
+
     if (weekdays[3]) |day0| {
-        const day0_name = "Wednesday";
+        const day0_name = "Thursday";
         for (day0_name) |c, i| {
             try expect(day0[i] == c);
         }
@@ -59,7 +59,7 @@ test "Gregorian en_US Sanity" {
     }
 
     if (weekdays[6]) |day0| {
-        const day0_name = "Saturday";
+        const day0_name = "Sunday";
         for (day0_name) |c, i| {
             try expect(day0[i] == c);
         }

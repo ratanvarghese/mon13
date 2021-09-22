@@ -25,13 +25,13 @@ var gregorian_month_list = [_:null]?[*:0]const u8{
 };
 
 var gregorian_weekday_list = [_:null]?[*:0]const u8{
-    WKDY_SUN,
     WKDY_MON,
     WKDY_TUE,
     WKDY_WED,
     WKDY_THU,
     WKDY_FRI,
     WKDY_SAT,
+    WKDY_SUN,
 };
 
 var gregorian_era_list = [_:null]?[*:0]const u8{
