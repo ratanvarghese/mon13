@@ -25,7 +25,7 @@ test "Gregorian en_US Sanity" {
         unreachable;
     }
 
-    var weekdays = mon13.mon13_gregorian_names_en_US.weekday_list;
+    const weekdays = mon13.mon13_gregorian_names_en_US.weekday_list;
     var di: u8 = 0;
     while (weekdays[di]) |d| : (di += 1) {
         try expect(d[0] == 'S' or d[0] == 'M' or d[0] == 'T' or d[0] == 'W' or d[0] == 'F');
