@@ -14,6 +14,14 @@ const flag = enum(u8) {
     pad_space = '_',
     pad_zero = '0',
     absolute_value = '|',
+
+    fn get_char(self: flag) ?u8 {
+        return switch (self) {
+            .pad_space => ' ',
+            .pad_zero => '0',
+            else => null,
+        };
+    }
 };
 
 const sequence = enum(u8) {
@@ -28,7 +36,44 @@ const sequence = enum(u8) {
     era_name = 'q',
     tab = 't',
     weekday_number = 'u',
-    year = 'y',
+    year = 'Y',
+
+    fn get_num(self: sequence, d: *const base.mon13_date, cal: *const base.mon13_cal) ?i32 {
+        return switch (self) {
+            .day_of_month => d.*.day,
+            .day_of_year => @intCast(i32, logic.mon13_extract(d, cal, base.mon13_extract_mode.MON13_EXTRACT_DAY_OF_YEAR)),
+            .month_number => d.*.month,
+            .weekday_number => @intCast(i32, logic.mon13_extract(d, cal, base.mon13_extract_mode.MON13_EXTRACT_DAY_OF_WEEK)),
+            .year => d.*.year,
+            else => null,
+        };
+    }
+
+    fn requires_namelist(self: sequence) bool {
+        return switch (self) {
+            .percent => false,
+            .weekday_name => true,
+            .month_name => true,
+            .day_of_month => false,
+            .calendar_name => true,
+            .day_of_year => false,
+            .month_number => false,
+            .newline => false,
+            .era_name => true,
+            .tab => false,
+            .weekday_number => false,
+            .year => false,
+        };
+    }
+
+    fn get_char(self: sequence) ?u8 {
+        return switch (self) {
+            .percent => '%',
+            .newline => '\n',
+            .tab => '\t',
+            else => null,
+        };
+    }
 };
 
 const digit = enum(u8) {
@@ -115,6 +160,30 @@ fn copy_len(c: u8) FormatErr!u8 {
     };
 }
 
+const digit_res = struct {
+    pub const radix = 10;
+    denominator: u32,
+    count: u8,
+};
+
+fn count_digits(n: u32) digit_res {
+    var res = digit_res{ .denominator = 1, .count = 1 };
+    var x = n;
+    while (x >= digit_res.radix) {
+        x = x / digit_res.radix;
+        res.count += 1;
+        res.denominator *= digit_res.radix;
+    }
+    return res;
+}
+
+const fmt_info = struct {
+    pad_char: ?u8 = null,
+    pad_width: u8 = 0,
+    absolute_value: bool = false,
+    seq: sequence = sequence.percent,
+};
+
 pub export fn mon13_format(
     raw_d: ?*const base.mon13_date,
     raw_cal: ?*const base.mon13_cal,
@@ -135,6 +204,8 @@ pub export fn mon13_format(
     var buf_i: u32 = 0;
     var s = state.start;
 
+    var info = fmt_info{};
+
     while (fmt[fmt_i] != 0 and buf_i < buf_limit) {
         const c = fmt[fmt_i];
         s = s.next(c) catch return -5;
@@ -151,10 +222,54 @@ pub export fn mon13_format(
                 s = state.end;
                 break;
             }
-        } else {
-            buf[buf_i] = c;
-            buf_i += 1;
+        } else if (s == state.fmt_prefix) {
             fmt_i += 1;
+        } else if (s == state.fmt_width) {
+            info.pad_width = (info.pad_width * 10) + (c - '0');
+            fmt_i += 1;
+        } else if (s == state.fmt_flag) {
+            const f = @intToEnum(flag, c);
+            if (f == flag.absolute_value) {
+                info.absolute_value = true;
+            } else {
+                info.pad_char = f.get_char();
+            }
+            fmt_i += 1;
+        } else if (s == state.fmt_seq) {
+            info.seq = @intToEnum(sequence, c);
+            if (info.seq.get_char()) |ch| {
+                buf[buf_i] = ch;
+                buf_i += 1;
+            } else if (info.seq.get_num(d, cal)) |n| {
+                var x: u32 = 0;
+                if (n < 0) {
+                    x = @intCast(u32, -n);
+                    if (!info.absolute_value) {
+                        buf[buf_i] = '-';
+                        buf_i += 1;
+                    }
+                } else {
+                    x = @intCast(u32, n);
+                }
+                var x_digit = count_digits(x);
+                if (info.pad_char) |pc| {
+                    var pad_needed = info.pad_width;
+                    while (pad_needed > x_digit.count and buf_i < buf_limit) {
+                        buf[buf_i] = pc;
+                        buf_i += 1;
+                        pad_needed -= 1;
+                    }
+                }
+                while (x_digit.count > 0 and buf_i < buf_limit) {
+                    buf[buf_i] = @intCast(u8, (x / x_digit.denominator)) + '0';
+                    x %= x_digit.denominator;
+                    x_digit.denominator /= digit_res.radix;
+                    buf_i += 1;
+                    x_digit.count -= 1;
+                }
+            } else {}
+            fmt_i += 1;
+            info = fmt_info{};
         }
     }
 

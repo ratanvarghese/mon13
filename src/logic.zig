@@ -636,7 +636,7 @@ pub export fn mon13_compare(
     return d0_norm.day - d1_norm.day;
 }
 pub export fn mon13_extract(
-    d: *base.mon13_date,
+    d: *const base.mon13_date,
     raw_cal: ?*const base.mon13_cal,
     mode: base.mon13_extract_mode,
 ) i64 {

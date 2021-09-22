@@ -181,7 +181,7 @@ enum theft_alloc_res alloc_utf8_copy_fmt(struct theft* t, void* env, void** inst
 		default: choice = smiley;
 	}
 
-	int len = strlen(choice);
+	int len = strlen(choice) + 1;
 	char* res = malloc(len);
 	if(res == NULL) {
 		return THEFT_ALLOC_ERROR;
@@ -1259,7 +1259,7 @@ enum theft_trial_res format_year(struct theft* t, void* a1, void* a2, void* a3, 
 	char buf[100];
 	memset(buf, placeholder, 100);
 
-	int res = mon13_format(d, c, n, "%Y", buf, 5);
+	int res = mon13_format(d, c, n, "%Y", buf, 100);
 	char* endptr = buf;
 	long parsed = strtol(buf, &endptr, 10);
 	if(parsed != d->year || res < 1) {
@@ -1316,9 +1316,12 @@ enum theft_trial_res format_numeric_padding(struct theft* t, void* a1, void* a2,
 		case 'm': targ = d->month; break;
 		case 'u': targ = mon13_extract(d, c, MON13_EXTRACT_DAY_OF_WEEK); break;
 		case 'Y': d->year = d->year % 9999; targ = d->year; break;
-		default: targ = 0;
+		default: {
+			return THEFT_TRIAL_FAIL;
+		}
 	}
-	int digits = floor(log10(targ)) + 1;
+
+	double digits = floor(log10(targ)) + 1;
 
 	char buf[20];
 	memset(buf, placeholder, 20);
@@ -2081,7 +2084,7 @@ int main(int argc, char** argv) {
 		},
 		{
 			.name = "mon13_format: %d, Gregorian Year 0 (en_US)",
-			.prop4 = format_month,
+			.prop4 = format_day_of_month,
 			.type_info = {
 				&gr_year0_date_info,
 				&gr_year0_cal_info,
@@ -2092,7 +2095,7 @@ int main(int argc, char** argv) {
 		},
 		{
 			.name = "mon13_format: %d, Gregorian Year 0 (fr_FR)",
-			.prop4 = format_month,
+			.prop4 = format_day_of_month,
 			.type_info = {
 				&gr_year0_date_info,
 				&gr_year0_cal_info,
@@ -2103,7 +2106,7 @@ int main(int argc, char** argv) {
 		},
 		{
 			.name = "mon13_format: %d, Tranquility Year 0 (en_US)",
-			.prop4 = format_month,
+			.prop4 = format_day_of_month,
 			.type_info = {
 				&tq_year0_date_info,
 				&tq_year0_cal_info,
