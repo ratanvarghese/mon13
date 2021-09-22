@@ -325,7 +325,7 @@ const char* contained(char* needle, const char** haystack, size_t maxlen, char p
 		const char* expected = haystack[i]; 
 		size_t len = strlen(expected);
 		if(strncmp(needle, expected, maxlen) == 0) {
-			if(needle[len + 1] == '\0' && needle[len + 2] == placeholder) {
+			if(needle[len] == '\0' && needle[len + 1] == placeholder) {
 				return expected;
 			}
 		}
@@ -1041,6 +1041,7 @@ enum theft_trial_res format_weekday(struct theft* t, void* a1, void* a2, void* a
 
 	int res = mon13_format(d, c, n, "%A", buf, 20);
 	const char* expected = contained(buf, n->weekday_list, 10, placeholder);
+	//printf("FINDME buf: %s, expected: %s\n", buf, ((expected == NULL) ? "null" : expected));
 	return format_res_check(res, expected) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
@@ -1092,14 +1093,14 @@ enum theft_trial_res format_cal(struct theft* t, void* a1, void* a2, void* a3, v
 	char buf[100];
 	memset(buf, placeholder, 100);
 
-	int res = mon13_format(d, c, n, "%f", buf, 4);
+	int res = mon13_format(d, c, n, "%f", buf, 100);
 	if(res != strlen(n->calendar_name)) {
 		return THEFT_TRIAL_FAIL;
 	}
 	if(strncmp(buf, n->calendar_name, 50)) {
 		return THEFT_TRIAL_FAIL;
 	}
-	if(buf[res + 1] != '\0' && buf[res + 2] != placeholder) {
+	if(buf[res] != '\0' && buf[res + 1] != placeholder) {
 		return THEFT_TRIAL_FAIL;
 	}
 	return THEFT_TRIAL_PASS;
@@ -1185,19 +1186,19 @@ enum theft_trial_res format_era(struct theft* t, void* a1, void* a2, void* a3, v
 		return THEFT_TRIAL_SKIP;
 	}
 
-	const char* expected = (d->year > 0) ? n->era_list[0] : n->era_list[1];
+	const char* expected = (d->year < 0) ? n->era_list[0] : n->era_list[1];
 
 	char buf[100];
 	memset(buf, placeholder, 100);
 
-	int res = mon13_format(d, c, n, "%q", buf, 4);
+	int res = mon13_format(d, c, n, "%q", buf, 100);
 	if(res != strlen(expected)) {
 		return THEFT_TRIAL_FAIL;
 	}
 	if(strncmp(buf, expected, 50)) {
 		return THEFT_TRIAL_FAIL;
 	}
-	if(buf[res + 1] != '\0' && buf[res + 2] != placeholder) {
+	if(buf[res] != '\0' && buf[res + 1] != placeholder) {
 		return THEFT_TRIAL_FAIL;
 	}
 	return THEFT_TRIAL_PASS;
@@ -1321,7 +1322,7 @@ enum theft_trial_res format_numeric_padding(struct theft* t, void* a1, void* a2,
 		}
 	}
 
-	double digits = floor(log10(targ)) + 1;
+	double digits = (targ == 0) ? 1 : floor(log10(targ)) + 1;
 
 	char buf[20];
 	memset(buf, placeholder, 20);

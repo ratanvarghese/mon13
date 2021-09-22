@@ -49,20 +49,44 @@ const sequence = enum(u8) {
         };
     }
 
-    fn requires_namelist(self: sequence) bool {
+    fn get_era_name(year: i32, nlist: *const base.mon13_name_list) ?[*:0]const u8 {
+        const era_list = nlist.*.era_list;
+        if (year < 0) {
+            return era_list[0];
+        } else {
+            return era_list[1];
+        }
+    }
+
+    fn get_weekday_name(d: *const base.mon13_date, cal: *const base.mon13_cal, nlist: *const base.mon13_name_list) ?[*:0]const u8 {
+        const weekday_num = logic.mon13_extract(d, cal, base.mon13_extract_mode.MON13_EXTRACT_DAY_OF_WEEK);
+        const weekday = @intToEnum(base.mon13_weekday, @intCast(c_int, weekday_num));
+        if (weekday == base.mon13_weekday.MON13_NO_WEEKDAY) {
+            return null;
+        } else {
+            const i = @intCast(usize, weekday_num - 1);
+            return nlist.*.weekday_list[i];
+        }
+    }
+
+    fn get_month_name(d: *const base.mon13_date, cal: *const base.mon13_cal, nlist: *const base.mon13_name_list) ?[*:0]const u8 {
+        if (d.*.month == 0) {
+            return null;
+        } else {
+            const i = @intCast(usize, d.*.month - 1);
+            return nlist.*.month_list[i];
+        }
+    }
+
+    fn get_name(self: sequence, d: *const base.mon13_date, cal: *const base.mon13_cal, raw_nlist: ?*const base.mon13_name_list) ?[*:0]const u8 {
+        const nlist = raw_nlist orelse return null;
+
         return switch (self) {
-            .percent => false,
-            .weekday_name => true,
-            .month_name => true,
-            .day_of_month => false,
-            .calendar_name => true,
-            .day_of_year => false,
-            .month_number => false,
-            .newline => false,
-            .era_name => true,
-            .tab => false,
-            .weekday_number => false,
-            .year => false,
+            .weekday_name => get_weekday_name(d, cal, nlist),
+            .month_name => get_month_name(d, cal, nlist),
+            .calendar_name => nlist.calendar_name,
+            .era_name => get_era_name(d.*.year, nlist),
+            else => null,
         };
     }
 
@@ -200,8 +224,8 @@ pub export fn mon13_format(
     }
 
     const buf_limit = buflen - 1; //Leave space for null character.
-    var fmt_i: u32 = 0;
-    var buf_i: u32 = 0;
+    var fmt_i: usize = 0;
+    var buf_i: usize = 0;
     var s = state.start;
 
     var info = fmt_info{};
@@ -219,6 +243,7 @@ pub export fn mon13_format(
             if (buf_i < buf_limit) {
                 std.mem.copy(u8, buf[old_buf_i..buf_i], fmt[old_fmt_i..fmt_i]);
             } else {
+                buf_i = old_buf_i;
                 s = state.end;
                 break;
             }
@@ -267,7 +292,26 @@ pub export fn mon13_format(
                     buf_i += 1;
                     x_digit.count -= 1;
                 }
-            } else {}
+            } else if (info.seq.get_name(d, cal, raw_nlist)) |name| {
+                var name_i: u32 = 0;
+                while (name[name_i] != 0) {
+                    const name_c = name[name_i];
+                    const count = copy_len(name_c) catch return -7;
+                    const old_buf_i = buf_i;
+                    const old_name_i = name_i;
+                    name_i += count;
+                    buf_i += count;
+                    if (buf_i < buf_limit) {
+                        std.mem.copy(u8, buf[old_buf_i..buf_i], name[old_name_i..name_i]);
+                    } else {
+                        buf_i = old_buf_i;
+                        s = state.end;
+                        break;
+                    }
+                }
+            } else {
+                //return -7;
+            }
             fmt_i += 1;
             info = fmt_info{};
         }

@@ -105,13 +105,13 @@ var tranquility_month_list_en_US = [_:null]?[*:0]const u8{
 };
 
 var tranquility_weekday_list_en_US = [_:null]?[*:0]const u8{
-    WKDY_FRI,
-    WKDY_SAT,
-    WKDY_SUN,
     WKDY_MON,
     WKDY_TUE,
     WKDY_WED,
     WKDY_THU,
+    WKDY_FRI,
+    WKDY_SAT,
+    WKDY_SUN,
 };
 
 var tranquility_era_list_en_US = [_:null]?[*:0]const u8{
