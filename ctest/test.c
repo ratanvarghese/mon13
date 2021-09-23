@@ -17,7 +17,7 @@
 #define UNIX_DAY 24 * 60 * 60
 
 //Theft allocators
-bool cal_cmp_ignore_year0(const struct mon13_cal* x, const struct mon13_cal* y) {
+bool cal_eq_ignore_year0(const struct mon13_cal* x, const struct mon13_cal* y) {
 	if(x == y) {
 		return true;
 	}
@@ -89,12 +89,12 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance)
 	select_gr2tq_oa(t, NULL, (void**)&kcd);
 	int32_t offset = (theft_random_choice(t, INT32_MAX) - (INT32_MAX/2));
 
-	if(env == kcd->c0 || cal_cmp_ignore_year0(env, kcd->c0)) {
+	if(env == kcd->c0 || cal_eq_ignore_year0(env, kcd->c0)) {
 		if(mon13_add(&(kcd->d0), kcd->c0, offset, MON13_ADD_DAYS, res)) {
 			return THEFT_ALLOC_ERROR;
 		}
 	}
-	else if(env == kcd->c1 || cal_cmp_ignore_year0(env, kcd->c1)) {
+	else if(env == kcd->c1 || cal_eq_ignore_year0(env, kcd->c1)) {
 		if(mon13_add(&(kcd->d1), kcd->c1, offset, MON13_ADD_DAYS, res)) {
 			return THEFT_ALLOC_ERROR;
 		}
@@ -339,6 +339,19 @@ bool format_res_check(size_t res, const char* expected) {
 
 bool skip_import(int64_t x) {
 	return (x > (INT32_MAX/2)) || (x < -(INT32_MAX/2));
+}
+
+bool is_leap_day(struct mon13_date d, const struct mon13_cal* c) {
+	if(!mon13_extract(&d, c, MON13_EXTRACT_IS_LEAP_YEAR)) {
+		return false;
+	}
+	if(cal_eq_ignore_year0(c, &mon13_gregorian_year_zero)) {
+		return d.month == 2 && d.day == 29;
+	}
+	if(cal_eq_ignore_year0(c, &mon13_tranquility_year_zero)) {
+		return d.month == 0 && d.day == 2;
+	}
+	return false;
 }
 
 //Theft trials: import
@@ -733,7 +746,23 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3)
 	if(status) {
 		return THEFT_TRIAL_SKIP;
 	}
-	return res.year == (d->year + offset) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	if(res.year != (d->year + offset)) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(is_leap_day(*d, c)) {
+		if(is_leap_day(res, c) && (res.month != d->month || res.day != d->day)) {
+			return THEFT_TRIAL_FAIL;
+		}
+		if(!is_leap_day(res, c) && (res.month == d->month && res.day == d->day)) {
+			return THEFT_TRIAL_FAIL;
+		}
+	}
+	else {
+		if(res.month != d->month || res.day != d->day) {
+			return THEFT_TRIAL_FAIL;
+		}
+	}
+	return THEFT_TRIAL_PASS;
 }
 
 enum theft_trial_res add_zero(struct theft* t, void* a1, void* a2, void* a3)
@@ -816,6 +845,26 @@ enum theft_trial_res add_no_year_zero(struct theft* t, void* a1, void* a2, void*
 		return THEFT_TRIAL_SKIP;
 	}
 	return (res.year == 0) ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res add_result_normalized(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+		const struct mon13_date* d = a1;
+	enum mon13_add_mode m = (enum mon13_add_mode) ((uint64_t) a2);
+	const struct mon13_cal* c = a3;
+	int32_t offset = (int32_t) ((uint64_t)a4 % INT32_MAX);
+
+	struct mon13_date res0, res1;
+	int status;
+	status = mon13_add(d, c, offset, m, &res0);
+	if(status) {
+		return THEFT_TRIAL_SKIP;
+	}
+	status = mon13_add(&res0, c, 0, m, &res1);
+	if(status) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	return equal_year_month_day(res0, res1) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 //Theft trials: compare
@@ -1803,7 +1852,8 @@ int main(int argc, char** argv) {
 				&random_info,
 				&gr_year0_cal_info
 			},
-			.seed = seed
+			.seed = seed,
+			.trials = 10000 //Catch a rare bug
 		},
 		{
 			.name = "mon13_add: Year, Tranquility Year 0",
@@ -1813,7 +1863,8 @@ int main(int argc, char** argv) {
 				&random_info,
 				&tq_year0_cal_info
 			},
-			.seed = seed
+			.seed = seed,
+			.trials = 10000 //Catch a rare bug
 		},
 		{
 			.name = "mon13_add: Zero, Gregorian Year 0",
@@ -1900,6 +1951,30 @@ int main(int argc, char** argv) {
 				&random_info
 			},
 			.seed = seed
+		},
+		{
+			.name = "mon13_add: Normalized Result, Gregorian Year 0",
+			.prop4 = add_result_normalized,
+			.type_info = {
+				&gr_date_info,
+				&add_mode_info,
+				&gr_cal_info,
+				&random_info
+			},
+			.seed = seed,
+			.trials = 10000, //catch a rare bug
+		},
+		{
+			.name = "mon13_add: Normalized Result, Tranquility Year 0",
+			.prop4 = add_result_normalized,
+			.type_info = {
+				&tq_date_info,
+				&add_mode_info,
+				&tq_cal_info,
+				&random_info
+			},
+			.seed = seed,
+			.trials = 10000, //catch a rare bug
 		},
 		{
 			.name = "mon13_compare: Nearby, Gregorian Year 0",
