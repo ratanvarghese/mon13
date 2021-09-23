@@ -98,6 +98,15 @@ const sequence = enum(u8) {
             else => null,
         };
     }
+
+    fn default_padding_width(self: sequence) u8 {
+        return switch (self) {
+            .day_of_month => 2,
+            .day_of_year => 3,
+            .month_number => 2,
+            else => 0,
+        };
+    }
 };
 
 const digit = enum(u8) {
@@ -202,10 +211,10 @@ fn count_digits(n: u32) digit_res {
 }
 
 const fmt_info = struct {
-    pad_char: ?u8 = null,
     pad_width: u8 = 0,
     absolute_value: bool = false,
     seq: sequence = sequence.percent,
+    pad_flag: ?flag = null,
 };
 
 pub export fn mon13_format(
@@ -257,7 +266,7 @@ pub export fn mon13_format(
             if (f == flag.absolute_value) {
                 info.absolute_value = true;
             } else {
-                info.pad_char = f.get_char();
+                info.pad_flag = f;
             }
             fmt_i += 1;
         } else if (s == state.fmt_seq) {
@@ -277,8 +286,19 @@ pub export fn mon13_format(
                     x = @intCast(u32, n);
                 }
                 var x_digit = count_digits(x);
-                if (info.pad_char) |pc| {
-                    var pad_needed = info.pad_width;
+
+                var pad_char: ?u8 = null;
+                var pad_width: u8 = 0;
+                if (info.pad_flag) |pf| {
+                    pad_char = pf.get_char();
+                    pad_width = info.pad_width;
+                } else {
+                    pad_char = '0';
+                    pad_width = info.seq.default_padding_width();
+                }
+
+                if (pad_char) |pc| {
+                    var pad_needed = pad_width;
                     while (pad_needed > x_digit.count and buf_i < buf_limit) {
                         buf[buf_i] = pc;
                         buf_i += 1;

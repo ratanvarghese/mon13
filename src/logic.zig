@@ -484,7 +484,7 @@ fn date_to_unix(d: base.mon13_date, cal: *const base.mon13_cal) Err!i64 {
 }
 
 fn unix_to_date(u: i64, cal: *const base.mon13_cal) Err!base.mon13_date {
-    const unix_days = @divTrunc(u, 24 * 60 * 60);
+    const unix_days = @divFloor(u, 24 * 60 * 60);
     if (unix_days > maxInt(i32) or unix_days < minInt(i32)) {
         return Err.Overflow;
     }

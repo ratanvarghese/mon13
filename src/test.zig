@@ -177,3 +177,33 @@ test "add zero years" {
         unreachable;
     }
 }
+
+fn skip_import(x: i64) bool {
+    return (x > (std.math.maxInt(i32) / 2)) or (x < -(std.math.maxInt(i32) / 2));
+}
+
+test "strange convert" {
+    const c = &mon13.mon13_tranquility_year_zero;
+    const rd0: i64 = 5385873414131997696 % std.math.maxInt(i32);
+    const offset: i32 = 6356633119034338304 % std.math.maxInt(i32);
+
+    var d0 = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
+    var d1 = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
+    var status: c_int = 0;
+    status = mon13.mon13_import(c, &rd0, mon13.mon13_import_mode.MON13_IMPORT_RD, &d0);
+    if (status != 0) {
+        try expect(skip_import(rd0));
+        return;
+    }
+    status = mon13.mon13_add(&d0, c, offset, mon13.mon13_add_mode.MON13_ADD_DAYS, &d1);
+    if (status != 0) {
+        return;
+    }
+    const rd1: i64 = mon13.mon13_extract(&d1, c, mon13.mon13_extract_mode.MON13_EXTRACT_RD);
+
+    // const stdout = std.io.getStdOut().writer();
+    // try stdout.print("\nd0: .year = {d}, .month = {d}, .day = {d}", .{ d0.year, d0.month, d0.day });
+    // try stdout.print("\nd1: .year = {d}, .month = {d}, .day = {d}", .{ d1.year, d1.month, d1.day });
+    // try stdout.print("\nrd0: {d}\nrd1: {d}\noffset: {d}\n", .{ rd0, rd1, offset });
+    try expect((rd1 - rd0) == offset);
+}

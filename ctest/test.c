@@ -143,7 +143,7 @@ enum theft_alloc_res alloc_ascii_copy_fmt(struct theft* t, void* env, void** ins
 		return THEFT_ALLOC_ERROR;
 	}
 	for(int i = 0; i < (fmt_len - 1); i++) { //Leave 1 more, for null character
-		res[i] = theft_random_choice(t, 127);
+		res[i] = theft_random_choice(t, 94) + 32; //avoid control codes
 		if(res[i] < 32 || res[i] == '%') {
 			res[i] = ' ';
 		}
@@ -391,6 +391,10 @@ enum theft_trial_res import_unix_epoch_start(struct theft* t, void* a1) {
 	const struct mon13_cal* c = &mon13_gregorian_year_zero;
 	int64_t u0 = ((int64_t)a1) % (UNIX_DAY);
 
+	if(u0 < 0) {
+		u0 = -u0;
+	}
+
 	struct mon13_date d0;
 	if(mon13_import(c, &u0, MON13_IMPORT_UNIX, &d0)) {
 		return THEFT_TRIAL_FAIL; //u0 is too small for error to be allowed
@@ -401,6 +405,30 @@ enum theft_trial_res import_unix_epoch_start(struct theft* t, void* a1) {
 	else {
 		return THEFT_TRIAL_FAIL;
 	}
+}
+
+enum theft_trial_res import_unix_gmtime(struct theft* t, void* a1) {
+	int64_t u0 = ((int64_t)a1) % (((int64_t)INT32_MAX) * UNIX_DAY);
+	const struct mon13_cal* c = &mon13_gregorian_year_zero;
+
+	time_t unix = u0;
+	const struct tm* gmt_u = gmtime(&unix);
+	struct mon13_date d;
+	if(mon13_import(c, &u0, MON13_IMPORT_UNIX, &d)) {
+		return THEFT_TRIAL_SKIP;
+	}
+
+	if(d.day != gmt_u->tm_mday) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if((d.month - 1) != gmt_u->tm_mon) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if((d.year - 1900) != gmt_u->tm_year) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	return THEFT_TRIAL_PASS;
 }
 
 enum theft_trial_res import_rd(struct theft* t, void* a1, void* a2, void* a3) {
@@ -1041,7 +1069,6 @@ enum theft_trial_res format_weekday(struct theft* t, void* a1, void* a2, void* a
 
 	int res = mon13_format(d, c, n, "%A", buf, 20);
 	const char* expected = contained(buf, n->weekday_list, 10, placeholder);
-	//printf("FINDME buf: %s, expected: %s\n", buf, ((expected == NULL) ? "null" : expected));
 	return format_res_check(res, expected) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
@@ -1273,16 +1300,18 @@ enum theft_trial_res format_year(struct theft* t, void* a1, void* a2, void* a3, 
 }
 
 enum theft_trial_res format_strftime(struct theft* t, void* a1, void* a2, void* a3) {
-	time_t unix = (time_t) (((int64_t)a1) % (INT64_MAX/1024));
+	int64_t u0 = ((int64_t)a1) % (((int64_t)INT32_MAX) * UNIX_DAY);
 	const char placeholder = (char) (((uint64_t)a2) % CHAR_MAX);
 	const char* fmt = a3;
 	const struct mon13_cal* c = &mon13_gregorian_year_zero;
 	const struct mon13_name_list* n = &mon13_gregorian_names_en_US;
 
+	time_t unix = u0;
 	const struct tm* gmt_u = gmtime(&unix);
-	int64_t unix64 = (int64_t)unix;
 	struct mon13_date d;
-	mon13_import(c, &unix64, MON13_IMPORT_UNIX, &d);
+	if(mon13_import(c, &u0, MON13_IMPORT_UNIX, &d)) {
+		return THEFT_TRIAL_SKIP;
+	}
 
 	char buf0[STRFTIME_BUF];
 	char buf1[STRFTIME_BUF];
@@ -1591,6 +1620,14 @@ int main(int argc, char** argv) {
 		{
 			.name = "mon13_import: Unix time start epoch",
 			.prop1 = import_unix_epoch_start,
+			.type_info = {
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_import: compare with gmtime",
+			.prop1 = import_unix_gmtime,
 			.type_info = {
 				&random_info
 			},
