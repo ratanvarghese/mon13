@@ -476,11 +476,11 @@ fn get_day_of_week(d: base.mon13_date, cal: *const base.mon13_cal) Err!base.mon1
 fn date_to_unix(d: base.mon13_date, cal: *const base.mon13_cal) Err!i64 {
     const d_doy = try month_day_to_doy(d, cal);
     const d_mjd = try doy_to_mjd(d_doy, cal);
-    var unix_days: i32 = 0;
-    if (@subWithOverflow(i32, d_mjd, UNIX_EPOCH_IN_MJD, &unix_days)) {
+    var unix_days: i64 = 0;
+    if (@subWithOverflow(i64, @intCast(i64, d_mjd), @intCast(i64, UNIX_EPOCH_IN_MJD), &unix_days)) {
         return Err.Overflow;
     }
-    return 24 * 60 * 60 * @intCast(i64, unix_days);
+    return 24 * 60 * 60 * unix_days;
 }
 
 fn unix_to_date(u: i64, cal: *const base.mon13_cal) Err!base.mon13_date {
@@ -502,8 +502,8 @@ fn unix_to_date(u: i64, cal: *const base.mon13_cal) Err!base.mon13_date {
 fn date_to_rd(d: base.mon13_date, cal: *const base.mon13_cal) Err!i64 {
     const d_doy = try month_day_to_doy(d, cal);
     const d_mjd = try doy_to_mjd(d_doy, cal);
-    var rata_die: i32 = 0;
-    if (@subWithOverflow(i32, d_mjd, RD_EPOCH_IN_MJD, &rata_die)) {
+    var rata_die: i64 = 0;
+    if (@subWithOverflow(i64, @intCast(i64, d_mjd), @intCast(i64, RD_EPOCH_IN_MJD), &rata_die)) {
         return Err.Overflow;
     }
     return rata_die;
