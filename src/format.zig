@@ -222,7 +222,7 @@ pub export fn mon13_format(
     raw_cal: ?*const base.mon13_cal,
     raw_nlist: ?*const base.mon13_name_list,
     raw_fmt: ?[*]const u8,
-    buf: [*]u8,
+    raw_buf: ?[*]u8,
     buflen: u32,
 ) c_int {
     const d = raw_d orelse return -1;
@@ -231,6 +231,7 @@ pub export fn mon13_format(
     if (buflen < 1) {
         return -4;
     }
+    var buf = raw_buf orelse return -8;
 
     const buf_limit = buflen - 1; //Leave space for null character.
     var fmt_i: usize = 0;
