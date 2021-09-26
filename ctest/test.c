@@ -16,7 +16,87 @@
 #define ASCII_COPY_BUF 500
 #define UNIX_DAY 24 * 60 * 60
 
-//Theft allocators
+//Theft trials: helpers
+bool valid_tq(const struct mon13_date d) {
+	if(d.month == 0) {
+		return d.day == 1 || d.day == 2;
+	}
+	else {
+		return d.month >= 1 && d.month <= 13 && d.day >= 1 && d.day <= 28;
+	}
+}
+
+bool valid_gr(const struct mon13_date d) {
+	uint8_t month_len[] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+	if(d.month < 0 || d.month > 12) {
+		return false;
+	}
+	else {
+		return d.day >= 1 && d.day <= month_len[d.month - 1];
+	}
+}
+
+bool year0_convert_correct(const struct mon13_date d_y0, const struct mon13_date d) {
+	return (d_y0.year > 0) ? (d.year == d_y0.year) : (d.year == d_y0.year - 1);
+}
+
+bool add_1day_trivial(struct mon13_date d, struct mon13_date res) {
+	bool stable_ym = (res.year == d.year) && (res.month == d.month);
+	bool inc_day = (res.day == d.day + 1);
+	return stable_ym && inc_day;
+}
+
+bool add_1day_month(struct mon13_date d, struct mon13_date res, bool end_of_month) {
+	bool inc_month = (res.month == d.month + 1) && (res.year == d.year);
+	bool start_month = res.day == 1;
+	return end_of_month && inc_month && start_month;
+}
+
+bool add_1day_year(struct mon13_date d, struct mon13_date res, bool end_of_year) {
+	bool inc_year = res.year == d.year + 1;
+	bool start_year = (res.month == 1) && (res.day == 1);
+	return end_of_year && inc_year && start_year; 
+}
+
+bool equal_year_month_day(struct mon13_date d0, struct mon13_date d1) {
+	return d0.year == d1.year && d0.month == d1.month && d0.day == d1.day;
+}
+
+bool less_year_month_day(struct mon13_date d0, struct mon13_date d1) {
+	//Does not consider days without months (ex. in Tranquility calendar)
+	if(d0.year < d1.year) {
+		return true;
+	}
+	else if(d0.month < d1.month) {
+		return true;
+	}
+	else if(d0.day < d1.day) {
+		return true;
+	}
+	return false;
+}
+
+const char* contained(char* needle, const char** haystack, size_t maxlen, char placeholder) {
+	for(int i = 0; haystack[i] != NULL; i++) {
+		const char* expected = haystack[i]; 
+		size_t len = strlen(expected);
+		if(strncmp(needle, expected, maxlen) == 0) {
+			if(needle[len] == '\0' && needle[len + 1] == placeholder) {
+				return expected;
+			}
+		}
+	}
+	return NULL;
+}
+
+bool format_res_check(size_t res, const char* expected) {
+	return (expected != NULL) && (res == strlen(expected));
+}
+
+bool skip_import(int64_t x) {
+	return (x > (INT32_MAX/2)) || (x < -(INT32_MAX/2));
+}
+
 bool cal_eq_ignore_year0(const struct mon13_cal* x, const struct mon13_cal* y) {
 	if(x == y) {
 		return true;
@@ -36,6 +116,20 @@ bool cal_eq_ignore_year0(const struct mon13_cal* x, const struct mon13_cal* y) {
 	return false;
 }
 
+bool is_leap_day(struct mon13_date d, const struct mon13_cal* c) {
+	if(!mon13_extract(&d, c, MON13_EXTRACT_IS_LEAP_YEAR)) {
+		return false;
+	}
+	if(cal_eq_ignore_year0(c, &mon13_gregorian_year_zero)) {
+		return d.month == 2 && d.day == 29;
+	}
+	if(cal_eq_ignore_year0(c, &mon13_tranquility_year_zero)) {
+		return d.month == 0 && d.day == 2;
+	}
+	return false;
+}
+
+//Theft allocators
 enum theft_alloc_res select_gr2tq_oa(struct theft* t, void* env, void** instance)
 {
 	uint64_t i = theft_random_choice(t, SIZEOF_ARR(gr2tq_oa));
@@ -100,6 +194,36 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance)
 		}
 	}
 	else {
+		return THEFT_ALLOC_ERROR;
+	}
+
+	*instance = (void*)res;
+	return THEFT_ALLOC_OK;
+}
+
+enum theft_alloc_res alloc_leap_day(struct theft* t, void* env, void** instance)
+{
+	int32_t y = (theft_random_choice(t, INT32_MAX/4) - (INT32_MAX/8)) * 4;
+	if(y % 100 == 0) {
+		y = 400;
+	}
+	struct mon13_cal* cal = env;
+	struct mon13_date* res = malloc(sizeof(struct mon13_date));
+	if(cal == &mon13_gregorian_year_zero) {
+		res->year = y;
+		res->month = 2;
+		res->day = 29;	
+	}
+	else if(cal == &mon13_tranquility_year_zero) {
+		res->year = y + 31;
+		res->month = 0;
+		res->day = 2;
+	}
+	else {
+		return THEFT_ALLOC_ERROR;
+	}
+
+	if(!mon13_extract(res, cal, MON13_EXTRACT_IS_LEAP_YEAR)) {
 		return THEFT_ALLOC_ERROR;
 	}
 
@@ -258,100 +382,6 @@ void print_s(FILE* f, const void* instance, void* env)
 {
 	const char* s = instance;
 	fprintf(f, "%s", s);
-}
-
-//Theft trials: helpers
-bool valid_tq(const struct mon13_date d) {
-	if(d.month == 0) {
-		return d.day == 1 || d.day == 2;
-	}
-	else {
-		return d.month >= 1 && d.month <= 13 && d.day >= 1 && d.day <= 28;
-	}
-}
-
-bool valid_gr(const struct mon13_date d) {
-	uint8_t month_len[] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-	if(d.month < 0 || d.month > 12) {
-		return false;
-	}
-	else {
-		return d.day >= 1 && d.day <= month_len[d.month - 1];
-	}
-}
-
-bool year0_convert_correct(const struct mon13_date d_y0, const struct mon13_date d) {
-	return (d_y0.year > 0) ? (d.year == d_y0.year) : (d.year == d_y0.year - 1);
-}
-
-bool add_1day_trivial(struct mon13_date d, struct mon13_date res) {
-	bool stable_ym = (res.year == d.year) && (res.month == d.month);
-	bool inc_day = (res.day == d.day + 1);
-	return stable_ym && inc_day;
-}
-
-bool add_1day_month(struct mon13_date d, struct mon13_date res, bool end_of_month) {
-	bool inc_month = (res.month == d.month + 1) && (res.year == d.year);
-	bool start_month = res.day == 1;
-	return end_of_month && inc_month && start_month;
-}
-
-bool add_1day_year(struct mon13_date d, struct mon13_date res, bool end_of_year) {
-	bool inc_year = res.year == d.year + 1;
-	bool start_year = (res.month == 1) && (res.day == 1);
-	return end_of_year && inc_year && start_year; 
-}
-
-bool equal_year_month_day(struct mon13_date d0, struct mon13_date d1) {
-	return d0.year == d1.year && d0.month == d1.month && d0.day == d1.day;
-}
-
-bool less_year_month_day(struct mon13_date d0, struct mon13_date d1) {
-	//Does not consider days without months (ex. in Tranquility calendar)
-	if(d0.year < d1.year) {
-		return true;
-	}
-	else if(d0.month < d1.month) {
-		return true;
-	}
-	else if(d0.day < d1.day) {
-		return true;
-	}
-	return false;
-}
-
-const char* contained(char* needle, const char** haystack, size_t maxlen, char placeholder) {
-	for(int i = 0; haystack[i] != NULL; i++) {
-		const char* expected = haystack[i]; 
-		size_t len = strlen(expected);
-		if(strncmp(needle, expected, maxlen) == 0) {
-			if(needle[len] == '\0' && needle[len + 1] == placeholder) {
-				return expected;
-			}
-		}
-	}
-	return NULL;
-}
-
-bool format_res_check(size_t res, const char* expected) {
-	return (expected != NULL) && (res == strlen(expected));
-}
-
-bool skip_import(int64_t x) {
-	return (x > (INT32_MAX/2)) || (x < -(INT32_MAX/2));
-}
-
-bool is_leap_day(struct mon13_date d, const struct mon13_cal* c) {
-	if(!mon13_extract(&d, c, MON13_EXTRACT_IS_LEAP_YEAR)) {
-		return false;
-	}
-	if(cal_eq_ignore_year0(c, &mon13_gregorian_year_zero)) {
-		return d.month == 2 && d.day == 29;
-	}
-	if(cal_eq_ignore_year0(c, &mon13_tranquility_year_zero)) {
-		return d.month == 0 && d.day == 2;
-	}
-	return false;
 }
 
 //Theft trials: import
@@ -749,16 +779,33 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3)
 	if(res.year != (d->year + offset)) {
 		return THEFT_TRIAL_FAIL;
 	}
-	if(is_leap_day(*d, c)) {
-		if(is_leap_day(res, c) && (res.month != d->month || res.day != d->day)) {
-			return THEFT_TRIAL_FAIL;
-		}
-		if(!is_leap_day(res, c) && (res.month == d->month && res.day == d->day)) {
+	if(!is_leap_day(*d, c) && (res.month != d->month || res.day != d->day)) {
+		return THEFT_TRIAL_FAIL;
+	}
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res add_year_leap(struct theft* t, void* a1, void* a2, void* a3)
+{
+	const struct mon13_date* d = a1;
+	int32_t offset = (int32_t) ((int64_t)a2 % INT32_MAX);
+	const struct mon13_cal* c = a3;
+
+	struct mon13_date res;
+	int status = mon13_add(d, c, offset, MON13_ADD_YEARS, &res);
+	if(status) {
+		return THEFT_TRIAL_SKIP;
+	}
+
+	if(mon13_extract(&res, c, MON13_EXTRACT_IS_LEAP_YEAR)) {
+		if(res.month != d->month || res.day != d->day) {
 			return THEFT_TRIAL_FAIL;
 		}
 	}
 	else {
-		if(res.month != d->month || res.day != d->day) {
+		int64_t doy0 = mon13_extract(d, c, MON13_EXTRACT_DAY_OF_YEAR);
+		int64_t doy1 = mon13_extract(&res, c, MON13_EXTRACT_DAY_OF_YEAR);
+		if(doy0 != doy1) {
 			return THEFT_TRIAL_FAIL;
 		}
 	}
@@ -864,7 +911,16 @@ enum theft_trial_res add_result_normalized(struct theft* t, void* a1, void* a2, 
 		return THEFT_TRIAL_FAIL;
 	}
 
-	return equal_year_month_day(res0, res1) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	if(!equal_year_month_day(res0, res1)) {
+		// printf("FINDME res0: ");
+		// print_date(stdout, &res0, NULL);
+		// printf(" res1: ");
+		// print_date(stdout, &res1, NULL);
+		// printf("\n");
+		return THEFT_TRIAL_FAIL;
+	}
+
+	return THEFT_TRIAL_PASS;
 }
 
 //Theft trials: compare
@@ -1537,6 +1593,20 @@ struct theft_type_info tq_year0_date_info = {
 	.env = (void*)&mon13_tranquility_year_zero
 };
 
+struct theft_type_info gr_year0_leap_info = {
+	.alloc = alloc_leap_day,
+	.free = theft_generic_free_cb,
+	.print = print_date,
+	.env = (void*)&mon13_gregorian_year_zero
+};
+
+struct theft_type_info tq_year0_leap_info = {
+	.alloc = alloc_leap_day,
+	.free = theft_generic_free_cb,
+	.print = print_date,
+	.env = (void*)&mon13_tranquility_year_zero
+};
+
 struct theft_type_info strftime_fmt_info = {
 	.alloc = alloc_strftime_fmt,
 	.free = theft_generic_free_cb,
@@ -1845,6 +1915,18 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
+			.name = "mon13_add: 1 Month On Leap Day, Gregorian Year 0",
+			.prop1 = add_1month_gr,
+			.type_info = {&gr_year0_leap_info},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: 1 Month On Leap Day, Tranquility Year 0",
+			.prop1 = add_1month_tq,
+			.type_info = {&tq_year0_leap_info},
+			.seed = seed
+		},
+		{
 			.name = "mon13_add: Year, Gregorian Year 0",
 			.prop3 = add_year,
 			.type_info = {
@@ -1852,8 +1934,7 @@ int main(int argc, char** argv) {
 				&random_info,
 				&gr_year0_cal_info
 			},
-			.seed = seed,
-			.trials = 10000 //Catch a rare bug
+			.seed = seed
 		},
 		{
 			.name = "mon13_add: Year, Tranquility Year 0",
@@ -1863,8 +1944,27 @@ int main(int argc, char** argv) {
 				&random_info,
 				&tq_year0_cal_info
 			},
-			.seed = seed,
-			.trials = 10000 //Catch a rare bug
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Year On Leap Day, Gregorian Year 0",
+			.prop3 = add_year_leap,
+			.type_info = {
+				&gr_year0_leap_info,
+				&random_info,
+				&gr_year0_cal_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Year On Leap Day, Tranquility Year 0",
+			.prop3 = add_year_leap,
+			.type_info = {
+				&tq_year0_leap_info,
+				&random_info,
+				&tq_year0_cal_info
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_add: Zero, Gregorian Year 0",
@@ -1881,6 +1981,26 @@ int main(int argc, char** argv) {
 			.prop3 = add_zero,
 			.type_info = {
 				&tq_year0_date_info,
+				&add_mode_info,
+				&tq_year0_cal_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Zero On Leap Day, Gregorian Year 0",
+			.prop3 = add_zero,
+			.type_info = {
+				&gr_year0_leap_info,
+				&add_mode_info,
+				&gr_year0_cal_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Zero On Leap Day, Tranquility Year 0",
+			.prop3 = add_zero,
+			.type_info = {
+				&tq_year0_leap_info,
 				&add_mode_info,
 				&tq_year0_cal_info
 			},
@@ -1956,13 +2076,12 @@ int main(int argc, char** argv) {
 			.name = "mon13_add: Normalized Result, Gregorian Year 0",
 			.prop4 = add_result_normalized,
 			.type_info = {
-				&gr_date_info,
+				&gr_year0_date_info,
 				&add_mode_info,
-				&gr_cal_info,
+				&gr_year0_cal_info,
 				&random_info
 			},
-			.seed = seed,
-			.trials = 10000, //catch a rare bug
+			.seed = seed
 		},
 		{
 			.name = "mon13_add: Normalized Result, Tranquility Year 0",
@@ -1973,8 +2092,29 @@ int main(int argc, char** argv) {
 				&tq_cal_info,
 				&random_info
 			},
-			.seed = seed,
-			.trials = 10000, //catch a rare bug
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Normalized Result On Leap Day, Gregorian Year 0",
+			.prop4 = add_result_normalized,
+			.type_info = {
+				&gr_year0_leap_info,
+				&add_mode_info,
+				&gr_year0_cal_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Normalized Result On Leap Day, Tranquility Year 0",
+			.prop4 = add_result_normalized,
+			.type_info = {
+				&tq_year0_leap_info,
+				&add_mode_info,
+				&tq_year0_cal_info,
+				&random_info
+			},
+			.seed = seed
 		},
 		{
 			.name = "mon13_compare: Nearby, Gregorian Year 0",

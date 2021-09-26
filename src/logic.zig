@@ -310,6 +310,15 @@ fn norm_day(d: base.mon13_date, cal: *const base.mon13_cal) base.mon13_date {
         }
     }
 
+    if (seek_ic(d, cal)) |ic| {
+        const dd: doy_date = .{
+            .year = d.year,
+            .doy = ic.day_of_year,
+        };
+        const res = doy_to_month_day(dd, cal) catch last_day_of_year(d.year, cal);
+        return res;
+    }
+
     if (d.day == 0) {
         if (matching_si == 0) {
             return last_day_of_year(d.year -% 1, cal);
@@ -320,10 +329,10 @@ fn norm_day(d: base.mon13_date, cal: *const base.mon13_cal) base.mon13_date {
 
     //At this point, assuming a valid cal, d.day is too big.
     if (segments[matching_si]) |matching_s| {
-        const excess_days = d.day -% matching_s.day_start;
+        //const excess_days = d.day -% matching_s.day_start;
         const dd: doy_date = .{
             .year = d.year,
-            .doy = matching_s.offset +% excess_days,
+            .doy = matching_s.offset +% d.day,
         };
 
         const norm_dd = norm_day_of_year(dd, cal);
@@ -368,13 +377,13 @@ fn add_days(d: base.mon13_date, offset: i32, cal: *const base.mon13_cal) Err!bas
     return res;
 }
 
-fn add_years(d: base.mon13_date, offset: i32) Err!base.mon13_date {
+fn add_years(d: base.mon13_date, offset: i32, cal: *const base.mon13_cal) Err!base.mon13_date {
     var y: i32 = 0;
     if (@addWithOverflow(i32, d.year, offset, &y)) {
         return Err.Overflow;
     }
-    //What about Feb 29, Aldrin Day??
-    return base.mon13_date{ .year = y, .month = d.month, .day = d.day };
+    const res = base.mon13_date{ .year = y, .month = d.month, .day = d.day };
+    return normalize(res, cal);
 }
 
 fn add_months(d: base.mon13_date, offset: i32, cal: *const base.mon13_cal) Err!base.mon13_date {
@@ -406,7 +415,7 @@ fn add_months(d: base.mon13_date, offset: i32, cal: *const base.mon13_cal) Err!b
 
     //Assuming max_month > 0... based on assumption of good calendar
     const f_year_quot = @divFloor(offset, max_month);
-    var sum_year = try add_years(d, f_year_quot);
+    var sum_year = try add_years(d, f_year_quot, cal);
     const month_diff = @mod(offset, max_month);
     if (month_diff == 0) {
         return sum_year;
@@ -586,20 +595,22 @@ pub export fn mon13_add(d: *base.mon13_date, raw_cal: ?*const base.mon13_cal, of
 
     const d_yz = no_yz_to_yz(d.*, cal);
     const d_norm = normalize(d_yz, cal);
-    var res_yz: base.mon13_date = bad_res;
-    switch (mode) {
-        base.mon13_add_mode.MON13_ADD_NONE => {
-            res_yz = d_norm;
-        },
-        base.mon13_add_mode.MON13_ADD_DAYS => {
-            res_yz = add_days(d_norm, offset, cal) catch return 2;
-        },
-        base.mon13_add_mode.MON13_ADD_MONTHS => {
-            res_yz = add_months(d_norm, offset, cal) catch return 3;
-        },
-        base.mon13_add_mode.MON13_ADD_YEARS => {
-            res_yz = add_years(d_norm, offset) catch return 4;
-        },
+    var res_yz = d_norm;
+    if (offset != 0) { //Adding 0 shouldn't cause errors for valid cal.
+        switch (mode) {
+            base.mon13_add_mode.MON13_ADD_NONE => {
+                res_yz = d_norm;
+            },
+            base.mon13_add_mode.MON13_ADD_DAYS => {
+                res_yz = add_days(d_norm, offset, cal) catch return 2;
+            },
+            base.mon13_add_mode.MON13_ADD_MONTHS => {
+                res_yz = add_months(d_norm, offset, cal) catch return 3;
+            },
+            base.mon13_add_mode.MON13_ADD_YEARS => {
+                res_yz = add_years(d_norm, offset, cal) catch return 4;
+            },
+        }
     }
     const res = yz_to_no_yz(res_yz, cal);
     result.* = res;
