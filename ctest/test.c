@@ -772,8 +772,21 @@ enum theft_trial_res add_1month_gr(struct theft* t, void* test_input)
 	}
 
 	bool correct_res = false;
-	if(res.day != d->day && d->day < 29) {
-		correct_res = false;
+	if(res.day != d->day) {
+		if(d->day == 29) {
+			correct_res = (res.month == 3) && (res.day == 1);
+		}
+		else if(d->day == 30) {
+			correct_res = (res.month == 3) && (res.day == 2);
+		}
+		else if(d->day == 31) {
+			bool correct_month = (res.month == d->month + 2);
+			bool correct_day = (res.day < 4);
+			correct_res = correct_month && correct_day;
+		}
+		else {
+			correct_res = false;
+		}
 	}
 	else if(res.year == d->year) {
 		correct_res = (res.month == d->month + 1);
@@ -783,7 +796,6 @@ enum theft_trial_res add_1month_gr(struct theft* t, void* test_input)
 		bool inc_year = (res.year == d->year + 1) && (res.month == 1);
 		correct_res = correct_start && inc_year;
 	}
-
 	return correct_res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
@@ -915,14 +927,17 @@ enum theft_trial_res add_like_other_cal(struct theft* t, void* a1, void* a2, voi
 	if(status) {
 		return THEFT_TRIAL_FAIL;
 	}
+
 	status = mon13_add(&d_yz, c_yz, offset, m, &res_yz);
 	if(status) {
 		return THEFT_TRIAL_SKIP;
 	}
+
 	status = mon13_add(d, c, offset, m, &res0);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //If add(,c_yz,) worked, add(,c,) should work.
 	}
+
 	status = mon13_convert(&res_yz, c_yz, c, &res1);
 	if(status) {
 		return skip_import(((int64_t)res_yz.year)*366) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -971,6 +986,33 @@ enum theft_trial_res add_result_normalized(struct theft* t, void* a1, void* a2, 
 		return THEFT_TRIAL_FAIL;
 	}
 
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res add_month_feb_29(struct theft* t, void* a1, void* a2) {
+	struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	enum mon13_add_mode m = MON13_ADD_MONTHS;
+	int32_t offset = 2 - d->month;
+	d->day = 29;
+
+	struct mon13_date res;
+	int status;
+	status = mon13_add(d, c, offset, m, &res);
+	if(status) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	if(is_leap_day(res, c)) {
+		if (res.year != d->year || res.month != 2 || res.day != 29) {
+			return THEFT_TRIAL_FAIL;
+		}
+	}
+	else {
+		if (res.year != d->year || res.month != 3 || res.day != 1) {
+			return THEFT_TRIAL_FAIL;
+		}
+	}
 	return THEFT_TRIAL_PASS;
 }
 
@@ -2345,6 +2387,24 @@ int main(int argc, char** argv) {
 				&add_mode_info,
 				&tq_year0_cal_info,
 				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Month Onto Feb 29, Gregorian Year 0",
+			.prop2 = add_month_feb_29,
+			.type_info = {
+				&gr_year0_date_info,
+				&gr_year0_cal_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Month Onto Feb 29, Gregorian",
+			.prop2 = add_month_feb_29,
+			.type_info = {
+				&gr_date_info,
+				&gr_cal_info
 			},
 			.seed = seed
 		},

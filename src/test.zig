@@ -207,3 +207,30 @@ test "strange convert" {
     // try stdout.print("\nrd0: {d}\nrd1: {d}\noffset: {d}\n", .{ rd0, rd1, offset });
     try expect((rd1 - rd0) == offset);
 }
+
+// test "strange convert 2" {
+//     var d = mon13.mon13_date{ .year = -2796442, .month = 0, .day = 1 };
+//     const c = &mon13.mon13_tranquility;
+//     const c_yz = &mon13.mon13_tranquility_year_zero;
+
+//     var res = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
+//     var status: c_int = 0;
+//     status = mon13.mon13_convert(&d, c, c_yz, &res);
+//     try expect(status == 0);
+//     const stdout = std.io.getStdOut().writer();
+//     try stdout.print("\nd0: .year = {d}, .month = {d}, .day = {d}\n", .{ res.year, res.month, res.day });
+// }
+
+test "strange add" {
+    var d_yz = mon13.mon13_date{ .year = -2796441, .month = 0, .day = 1 };
+    const c_yz = &mon13.mon13_tranquility_year_zero;
+    const offset: i32 = 544641169;
+    const m = mon13.mon13_add_mode.MON13_ADD_MONTHS;
+
+    var res = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
+    var status: c_int = 0;
+    status = mon13.mon13_add(&d_yz, c_yz, offset, m, &res);
+    try expect(status == 0);
+    // const stdout = std.io.getStdOut().writer();
+    // try stdout.print("\nd0: .year = {d}, .month = {d}, .day = {d}\n", .{ res.year, res.month, res.day });
+}

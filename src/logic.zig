@@ -18,12 +18,8 @@ const Err = error{
 const UNIX_EPOCH_IN_MJD: i32 = 40587;
 const RD_EPOCH_IN_MJD: i32 = -678576;
 
-fn clock_modulo(a: u32, b: u32) u32 {
-    if (a == 0) {
-        return b;
-    } else {
-        return ((a - 1) % b) + 1;
-    }
+fn clock_modulo(a: i32, b: u31) u31 {
+    return @intCast(u31, @mod((a - 1), b)) + 1;
 }
 
 fn is_leap(year: i32, cal: *const base.mon13_cal) Err!bool {
@@ -137,6 +133,31 @@ fn seek_ic(d: base.mon13_date, cal: *const base.mon13_cal) ?base.intercalary {
     return null;
 }
 
+fn roll_month(d: base.mon13_date, offset: i32, cal: *const base.mon13_cal) Err!base.mon13_date {
+    const leap = is_leap(d.year, cal) catch false;
+    const segments = get_segments(leap, cal);
+    var month_max: u8 = 1;
+    var si: u8 = 0;
+    while (segments[si]) |s| : (si += 1) {
+        if (s.month > month_max) {
+            month_max = s.month;
+        }
+    }
+
+    var month_sum: i32 = 0;
+    if (@addWithOverflow(i32, d.month, offset, &month_sum)) {
+        return Err.Overflow;
+    }
+
+    const year_shift = @divFloor((month_sum - 1), month_max); //-1 in case month_sum == month_max
+    const res: base.mon13_date = .{
+        .year = d.year +% year_shift,
+        .month = @intCast(u8, clock_modulo(month_sum, month_max)),
+        .day = d.day,
+    };
+    return res;
+}
+
 //MJD conversions
 fn mjd_to_doy(mjd: i32, cal: *const base.mon13_cal) Err!doy_date {
     const lc = cal.*.leap_cycle;
@@ -246,28 +267,14 @@ fn doy_to_mjd(doy: doy_date, cal: *const base.mon13_cal) Err!i32 {
 //Normalization functions cannot return errors:
 //they must try their best to make a valid mon13_date for any input.
 fn norm_month(d: base.mon13_date, cal: *const base.mon13_cal) base.mon13_date {
-
     //Assuming d.year normalized
-    const leap = is_leap(d.year, cal) catch false;
-    const segments = get_segments(leap, cal);
-
-    var month_max: u8 = 1;
-    var si: u8 = 0;
-    while (segments[si]) |s| : (si += 1) {
-        if (s.month == d.month) {
+    if (d.month == 0) {
+        if (seek_ic(d, cal)) |ic| {
             return d;
         }
-        if (s.month > month_max) {
-            month_max = s.month;
-        }
     }
-
-    const year_shift = d.month / month_max;
-    return .{
-        .year = d.year +% year_shift,
-        .month = @intCast(u8, clock_modulo(d.month, month_max)),
-        .day = d.day,
-    };
+    const res = roll_month(d, 0, cal) catch unreachable;
+    return res;
 }
 
 fn norm_day_of_year(d: doy_date, cal: *const base.mon13_cal) doy_date {
@@ -293,6 +300,21 @@ fn norm_day_of_year(d: doy_date, cal: *const base.mon13_cal) doy_date {
     return .{ .year = year, .doy = d.doy - doy_done };
 }
 
+fn ic_to_common(year: i32, doy_offset: u16, ic: base.intercalary, cal: *const base.mon13_cal) base.mon13_date {
+    var dd_doy = ic.day_of_year;
+    const leap = is_leap(year, cal) catch false;
+    if (leap) {
+        dd_doy = ic.day_of_leap_year;
+    }
+    const dd: doy_date = .{
+        .year = year,
+        .doy = dd_doy +% doy_offset,
+    };
+    const norm_dd = norm_day_of_year(dd, cal);
+    const res = doy_to_month_day(norm_dd, cal) catch last_day_of_year(year, cal);
+    return res;
+}
+
 fn norm_day(d: base.mon13_date, cal: *const base.mon13_cal) base.mon13_date {
 
     //Assuming d.year and d.month normalized
@@ -311,12 +333,7 @@ fn norm_day(d: base.mon13_date, cal: *const base.mon13_cal) base.mon13_date {
     }
 
     if (seek_ic(d, cal)) |ic| {
-        const dd: doy_date = .{
-            .year = d.year,
-            .doy = ic.day_of_year,
-        };
-        const res = doy_to_month_day(dd, cal) catch last_day_of_year(d.year, cal);
-        return res;
+        return ic_to_common(d.year, 0, ic, cal);
     }
 
     if (d.day == 0) {
@@ -387,77 +404,12 @@ fn add_years(d: base.mon13_date, offset: i32, cal: *const base.mon13_cal) Err!ba
 }
 
 fn add_months(d: base.mon13_date, offset: i32, cal: *const base.mon13_cal) Err!base.mon13_date {
-    const must_change_month = (d.month == 0);
-    var max_month: u8 = 0;
-    var matching_si: u8 = 0;
-    var pre_matching_si: u8 = 0;
-    var post_matching_si: u8 = 0;
-    const leap = try is_leap(d.year, cal);
-
-    const segments = get_segments(leap, cal);
-    var si: u8 = 0;
-    while (segments[si]) |s| : (si += 1) {
-        if (max_month < s.month) {
-            max_month = s.month;
-        }
-        if (d.month == s.month) {
-            if (d.day >= s.day_start and d.day <= s.day_end) {
-                matching_si = si;
-            }
-        } else if (must_change_month) {
-            if (matching_si == 0) {
-                pre_matching_si = si;
-            } else if (post_matching_si == 0) {
-                post_matching_si = si;
-            }
-        }
+    if (seek_ic(d, cal)) |ic| {
+        const next_day = ic_to_common(d.year, 1, ic, cal);
+        return add_months(next_day, offset, cal);
     }
-
-    //Assuming max_month > 0... based on assumption of good calendar
-    const f_year_quot = @divFloor(offset, max_month);
-    var sum_year = try add_years(d, f_year_quot, cal);
-    const month_diff = @mod(offset, max_month);
-    if (month_diff == 0) {
-        return sum_year;
-    }
-    if (must_change_month) {
-        if (pre_matching_si == 0) {
-            if (segments[post_matching_si]) |s| {
-                sum_year.month = s.month;
-                sum_year.day = s.day_start;
-            }
-        } else if (segments[pre_matching_si]) |s| {
-            sum_year.month = s.month;
-            sum_year.day = s.day_end;
-        }
-    }
-
-    var y: i32 = 0;
-    const sum_month = sum_year.month + month_diff;
-    if (sum_month > max_month) {
-        y = (sum_year.year + 1);
-    } else {
-        y = sum_year.year;
-    }
-    var res: base.mon13_date = .{
-        .year = y,
-        .month = @intCast(u8, clock_modulo(@intCast(u32, sum_month), max_month)),
-        .day = sum_year.day,
-    };
-
-    const res_leap = try is_leap(sum_year.year, cal);
-    const res_segments = get_segments(res_leap, cal);
-    var res_si: u8 = 0;
-    while (segments[res_si]) |s| : (res_si += 1) {
-        if (res.month == s.month) {
-            if (sum_year.day >= s.day_start and sum_year.day <= s.day_end) {
-                res.day = sum_year.day;
-            } else if (sum_year.day > s.day_end) {
-                res.day = s.day_end;
-            }
-        }
-    }
-    return res;
+    const rolled_d = try roll_month(d, offset, cal);
+    return norm_day(rolled_d, cal);
 }
 
 //Day of Week
@@ -469,14 +421,14 @@ fn get_day_of_week(d: base.mon13_date, cal: *const base.mon13_cal) Err!base.mon1
 
         const f_week_rem = @mod(d.day, cal.*.week_length);
         const shifted_f_week_rem = f_week_rem + @enumToInt(cal.*.start_weekday) - 1;
-        const res = clock_modulo(@intCast(u32, shifted_f_week_rem), cal.*.week_length);
+        const res = clock_modulo(@intCast(i32, shifted_f_week_rem), cal.*.week_length);
         return @intToEnum(base.mon13_weekday, @intCast(u8, res));
     } else {
         const d_doy = try month_day_to_doy(d, cal);
         const d_mjd = try doy_to_mjd(d_doy, cal);
         const f_week_rem = @mod(d_mjd, cal.*.week_length);
         const shifted_f_week_rem = f_week_rem + @enumToInt(base.mon13_weekday.MON13_WEDNESDAY);
-        const res = clock_modulo(@intCast(u32, shifted_f_week_rem), cal.*.week_length);
+        const res = clock_modulo(@intCast(i32, shifted_f_week_rem), cal.*.week_length);
         return @intToEnum(base.mon13_weekday, @intCast(u8, res));
     }
 }

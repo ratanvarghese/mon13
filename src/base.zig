@@ -45,6 +45,7 @@ pub const mon13_date = extern struct {
 
 pub const intercalary = packed struct {
     day_of_year: u16,
+    day_of_leap_year: u16,
     month: u8,
     day: u8,
     IC_YEAR: bool,
