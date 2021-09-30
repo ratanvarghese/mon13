@@ -126,7 +126,7 @@ test "import mjd" {
 }
 
 test "convert year 0" {
-    var d = mon13.mon13_date{ .year = -1639577, .month = 7, .day = 2 };
+    const d = mon13.mon13_date{ .year = -1639577, .month = 7, .day = 2 };
     var res = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
     const status = mon13.mon13_convert(
         &d,
@@ -142,7 +142,7 @@ test "convert year 0" {
 }
 
 test "strange add gregorian" {
-    var d = mon13.mon13_date{ .year = -2055615, .month = 08, .day = 19 };
+    const d = mon13.mon13_date{ .year = -2055615, .month = 08, .day = 19 };
     const a2: i64 = 2763584833174830080;
     const c = &mon13.mon13_gregorian_year_zero;
 
@@ -156,12 +156,12 @@ test "strange add gregorian" {
         &res,
     );
     if (status == 0) {
-        try expect(res.year == (d.year + offset));
+        try expect(res.year == (d.year +% offset));
     }
 }
 
 test "add zero years" {
-    var d = mon13.mon13_date{ .year = -89712, .month = 2, .day = 29 };
+    const d = mon13.mon13_date{ .year = -89712, .month = 2, .day = 29 };
     const c = &mon13.mon13_gregorian;
     var res = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
     var status = mon13.mon13_add(
@@ -208,21 +208,8 @@ test "strange convert" {
     try expect((rd1 - rd0) == offset);
 }
 
-// test "strange convert 2" {
-//     var d = mon13.mon13_date{ .year = -2796442, .month = 0, .day = 1 };
-//     const c = &mon13.mon13_tranquility;
-//     const c_yz = &mon13.mon13_tranquility_year_zero;
-
-//     var res = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
-//     var status: c_int = 0;
-//     status = mon13.mon13_convert(&d, c, c_yz, &res);
-//     try expect(status == 0);
-//     const stdout = std.io.getStdOut().writer();
-//     try stdout.print("\nd0: .year = {d}, .month = {d}, .day = {d}\n", .{ res.year, res.month, res.day });
-// }
-
 test "strange add" {
-    var d_yz = mon13.mon13_date{ .year = -2796441, .month = 0, .day = 1 };
+    const d_yz = mon13.mon13_date{ .year = -2796441, .month = 0, .day = 1 };
     const c_yz = &mon13.mon13_tranquility_year_zero;
     const offset: i32 = 544641169;
     const m = mon13.mon13_add_mode.MON13_ADD_MONTHS;
@@ -236,7 +223,7 @@ test "strange add" {
 }
 
 test "holocene" {
-    var d_gr = mon13.mon13_date{ .year = -9999, .month = 1, .day = 1 };
+    const d_gr = mon13.mon13_date{ .year = -9999, .month = 1, .day = 1 };
     var d_hl = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
     const c_gr = &mon13.mon13_gregorian_year_zero;
     const c_hl = &mon13.mon13_holocene;

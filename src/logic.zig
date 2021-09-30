@@ -485,7 +485,12 @@ fn rd_to_date(rd: i64, cal: *const base.mon13_cal) Err!base.mon13_date {
 }
 
 //Public functions
-pub export fn mon13_import(raw_cal: ?*const base.mon13_cal, raw_input: ?*const c_void, mode: base.mon13_import_mode, raw_result: ?*base.mon13_date) c_int {
+pub export fn mon13_import(
+    raw_cal: ?*const base.mon13_cal,
+    raw_input: ?*const c_void,
+    mode: base.mon13_import_mode,
+    raw_result: ?*base.mon13_date,
+) c_int {
     var result = raw_result orelse return 1;
     const cal = raw_cal orelse return 2;
     var bad_res: base.mon13_date = .{ .year = 0, .month = 0, .day = 0 };
@@ -521,7 +526,12 @@ pub export fn mon13_import(raw_cal: ?*const base.mon13_cal, raw_input: ?*const c
     return 1;
 }
 
-pub export fn mon13_convert(raw_d: ?*base.mon13_date, raw_src: ?*const base.mon13_cal, raw_dest: ?*const base.mon13_cal, raw_result: ?*base.mon13_date) c_int {
+pub export fn mon13_convert(
+    raw_d: ?*const base.mon13_date,
+    raw_src: ?*const base.mon13_cal,
+    raw_dest: ?*const base.mon13_cal,
+    raw_result: ?*base.mon13_date,
+) c_int {
     const d = raw_d orelse return 8;
     var result = raw_result orelse return 7;
     result.* = .{ .year = d.*.year, .month = d.*.month, .day = d.*.day };
@@ -542,7 +552,13 @@ pub export fn mon13_convert(raw_d: ?*base.mon13_date, raw_src: ?*const base.mon1
     result.* = yz_to_no_yz(dest_yz, dest);
     return 0;
 }
-pub export fn mon13_add(raw_d: ?*base.mon13_date, raw_cal: ?*const base.mon13_cal, offset: i32, mode: base.mon13_add_mode, raw_result: ?*base.mon13_date) c_int {
+pub export fn mon13_add(
+    raw_d: ?*const base.mon13_date,
+    raw_cal: ?*const base.mon13_cal,
+    offset: i32,
+    mode: base.mon13_add_mode,
+    raw_result: ?*base.mon13_date,
+) c_int {
     var result = raw_result orelse return 5;
     const bad_res: base.mon13_date = .{ .year = 0, .month = 0, .day = 0 };
     result.* = bad_res;
