@@ -170,3 +170,25 @@ pub export const mon13_tranquility_year_zero = base.mon13_cal{
     .CAL_YEAR_ZERO = true,
     .CAL_PERENNIAL = true,
 };
+
+//Holocene
+
+pub export const mon13_holocene = base.mon13_cal{
+    .intercalary_list = null,
+    .common_lookup_list = @as([*:null]?base.segment, &gregorian_common_lookup),
+    .leap_lookup_list = @as([*:null]?base.segment, &gregorian_leap_lookup),
+    .leap_cycle = .{
+        .year_count = 4,
+        .leap_year_count = 1,
+        .offset_years = 0,
+        .common_days = 365,
+        .leap_days = 1,
+        .offset_days = 0,
+        .LEAP_GREGORIAN_SKIP = true,
+    },
+    .epoch_mjd = -4331000, //1 Jan, 1 HE
+    .start_weekday = base.mon13_weekday.MON13_NO_WEEKDAY,
+    .week_length = 7,
+    .CAL_YEAR_ZERO = true,
+    .CAL_PERENNIAL = false,
+};

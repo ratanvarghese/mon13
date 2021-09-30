@@ -137,3 +137,19 @@ pub export const mon13_tranquility_names_en_US = base.mon13_name_list{
     .alt_intercalary_list = @as([*:null]?[*:0]const u8, &tranquility_alt_intercalary_list_en_US),
     .calendar_name = "Tranquility",
 };
+
+//Holocene Calendar
+
+var holocene_era_list_en_US = [_:null]?[*:0]const u8{
+    "Before Human Era",
+    "Human Era",
+};
+
+pub export const mon13_holocene_names_en_US = base.mon13_name_list{
+    .month_list = @as([*:null]?[*:0]const u8, &gregorian_month_list),
+    .weekday_list = @as([*:null]?[*:0]const u8, &gregorian_weekday_list),
+    .era_list = @as([*:null]?[*:0]const u8, &holocene_era_list_en_US),
+    .intercalary_list = null,
+    .alt_intercalary_list = null,
+    .calendar_name = "Holocene",
+};

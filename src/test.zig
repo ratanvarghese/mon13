@@ -234,3 +234,17 @@ test "strange add" {
     // const stdout = std.io.getStdOut().writer();
     // try stdout.print("\nd0: .year = {d}, .month = {d}, .day = {d}\n", .{ res.year, res.month, res.day });
 }
+
+test "holocene" {
+    var d_gr = mon13.mon13_date{ .year = -9999, .month = 1, .day = 1 };
+    var d_hl = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
+    const c_gr = &mon13.mon13_gregorian_year_zero;
+    const c_hl = &mon13.mon13_holocene;
+    const status = mon13.mon13_convert(&d_gr, c_gr, c_hl, &d_hl);
+    try expect(status == 0);
+    try expect(d_hl.year == 1);
+    try expect(d_hl.month == 1);
+    try expect(d_hl.day == 1);
+}
+
+test "holocene 2" {}

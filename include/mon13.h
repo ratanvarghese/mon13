@@ -112,11 +112,14 @@ extern const struct mon13_name_list mon13_gregorian_names_fr_FR;
 
 extern const struct mon13_name_list mon13_tranquility_names_en_US;
 
+extern const struct mon13_name_list mon13_holocene_names_en_US;
+
 //Predefined calendars
 extern const struct mon13_cal mon13_gregorian;
 extern const struct mon13_cal mon13_gregorian_year_zero;
 extern const struct mon13_cal mon13_tranquility;
 extern const struct mon13_cal mon13_tranquility_year_zero;
+extern const struct mon13_cal mon13_holocene;
 //extern const struct mon13_cal mon13_cotsworth;
 //extern const struct mon13_cal mon13_positivist;
 

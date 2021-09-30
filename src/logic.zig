@@ -531,7 +531,7 @@ pub export fn mon13_convert(raw_d: ?*base.mon13_date, raw_src: ?*const base.mon1
     const src_yz = no_yz_to_yz(d.*, src);
     const src_norm = normalize(src_yz, src);
     if (src == dest) {
-        result.* = .{ .year = src_norm.year, .month = src_norm.month, .day = src_norm.day };
+        result.* = yz_to_no_yz(src_norm, src);
         return 0;
     }
 

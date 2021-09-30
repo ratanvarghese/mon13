@@ -633,6 +633,48 @@ enum theft_trial_res convert_null(struct theft* t, void* a1, void* a2, void* a3)
 	return THEFT_TRIAL_PASS;
 }
 
+enum theft_trial_res convert_same_cal(struct theft* t, void* a1, void* a2) {
+	const struct mon13_date* d = a1;
+	const struct mon13_cal* cal0 = a2;
+	struct mon13_date res;
+	int status = mon13_convert(d, cal0, cal0, &res);
+	if(status) {
+		return THEFT_TRIAL_FAIL;
+	}
+	return equal_year_month_day(*d, res) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res convert_holocene(struct theft* t, void* a1) {
+	const struct mon13_date* d0 = a1;
+	const struct mon13_cal* cal_gr = &mon13_gregorian_year_zero;
+	const struct mon13_cal* cal_hl = &mon13_holocene;
+	struct mon13_date res_hl, res_gr;
+	int status_hl = mon13_convert(d0, cal_gr, cal_hl, &res_hl);
+	int status_gr = mon13_convert(d0, cal_hl, cal_gr, &res_gr);
+	if(status_hl && status_gr) {
+		return THEFT_TRIAL_SKIP;
+	}
+
+	if(!status_hl) {
+		if(res_hl.month != d0->month || res_hl.day != d0->day) {
+			return THEFT_TRIAL_FAIL;
+		}
+		if(res_hl.year != (d0->year + 10000)) {
+			return THEFT_TRIAL_FAIL;
+		}
+	}
+	if(!status_gr) {
+		if(res_gr.month != d0->month || res_gr.day != d0->day) {
+			return THEFT_TRIAL_FAIL;
+		}
+		if(res_gr.year != (d0->year - 10000)) {
+			return THEFT_TRIAL_FAIL;
+		}
+	}
+
+	return THEFT_TRIAL_PASS;
+}
+
 //Theft trials: add
 enum theft_trial_res add_1day_gr(struct theft* t, void* test_input)
 {
@@ -777,7 +819,12 @@ enum theft_trial_res add_1month_gr(struct theft* t, void* test_input)
 			correct_res = (res.month == 3) && (res.day == 1);
 		}
 		else if(d->day == 30) {
-			correct_res = (res.month == 3) && (res.day == 2);
+			if(mon13_extract(d, c, MON13_EXTRACT_IS_LEAP_YEAR)) {
+				correct_res = (res.month == 3) && (res.day == 1);
+			}
+			else {
+				correct_res = (res.month == 3) && (res.day == 2);
+			}
 		}
 		else if(d->day == 31) {
 			bool correct_month = (res.month == d->month + 2);
@@ -1867,7 +1914,7 @@ struct theft_type_info tq_name_en_info = {
 int main(int argc, char** argv) {
 	theft_seed seed;
 	if(argc > 1) {
-		seed = strtol(argv[1], NULL, 10);
+		seed = strtoul(argv[1], NULL, 10);
 	}
 	else {
 		seed = theft_seed_of_time();
@@ -2102,6 +2149,30 @@ int main(int argc, char** argv) {
 				&tq_year0_cal_info,
 				&gr_year0_date_info,
 			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_convert: Same Calendar, Gregorian Year 0",
+			.prop2 = convert_same_cal,
+			.type_info = {
+				&gr_year0_date_info,
+				&gr_year0_cal_info,
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_convert: Same Calendar, Tranquility Year 0",
+			.prop2 = convert_same_cal,
+			.type_info = {
+				&tq_year0_date_info,
+				&tq_year0_cal_info,
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_convert: Holocene <-> Gregorian Year 0",
+			.prop1 = convert_holocene,
+			.type_info = {&gr_year0_date_info},
 			.seed = seed
 		},
 		{
