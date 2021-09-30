@@ -341,26 +341,3 @@ pub export fn mon13_format(
     buf[buf_i] = 0;
     return @intCast(c_int, buf_i);
 }
-
-const testing = std.testing;
-const expect = testing.expect;
-
-test "mytest" {
-    const res0 = try state.fmt_prefix.next('A');
-    try expect(res0 == state.fmt_seq);
-    const res1 = try state.fmt_prefix.next('0');
-    try expect(res1 == state.fmt_flag);
-    if (state.fmt_prefix.next('=')) |res2| {
-        unreachable;
-    } else |err| {}
-
-    const res3 = try state.fmt_seq.next('%');
-    const res4 = try state.copy.next('%');
-    try expect(res3 == res4);
-    try expect(res3 != state.start);
-
-    const res5 = try copy_len('Z');
-    try expect(res5 == 1);
-    const res6 = try copy_len("é"[0]);
-    try expect(res6 == 2);
-}
