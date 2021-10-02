@@ -18,6 +18,7 @@ pub const mon13_import_mode = extern enum {
     MON13_IMPORT_MJD,
     MON13_IMPORT_UNIX,
     MON13_IMPORT_RD,
+    MON13_IMPORT_C99_TM,
 };
 
 pub const mon13_error = extern enum {

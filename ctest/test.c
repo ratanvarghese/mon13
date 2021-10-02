@@ -2180,6 +2180,12 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
+			.name = "mon13_import: struct tm, localtime",
+			.prop1 = import_c99_tm,
+			.type_info = {&random_info},
+			.seed = seed
+		},
+		{
 			.name = "mon13_import: NULL args, Gregorian Year 0",
 			.prop2 = import_null,
 			.type_info = {

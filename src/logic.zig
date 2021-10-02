@@ -18,6 +18,18 @@ const Err = error{
 const UNIX_EPOCH_IN_MJD: i32 = 40587;
 const RD_EPOCH_IN_MJD: i32 = -678576;
 
+const c99_tm = extern struct {
+    tm_sec: c_int,
+    tm_min: c_int,
+    tm_hour: c_int,
+    tm_mday: c_int,
+    tm_mon: c_int,
+    tm_year: c_int,
+    tm_wday: c_int,
+    tm_yday: c_int,
+    tm_isdst: c_int,
+};
+
 fn clock_modulo(a: i32, b: u31) u31 {
     return @intCast(u31, @mod((a - 1), b)) + 1;
 }
@@ -484,6 +496,25 @@ fn rd_to_date(rd: i64, cal: *const base.mon13_cal) Err!base.mon13_date {
     return res;
 }
 
+//C99 struct tm
+fn c99_tm_to_date(tm: *const c99_tm) Err!base.mon13_date {
+    if (tm.*.tm_mday < 1 or tm.*.tm_mday > maxInt(u8)) {
+        return Err.Overflow;
+    }
+    if (tm.*.tm_mon < 0 or tm.*.tm_mon > maxInt(u8)) {
+        return Err.Overflow;
+    }
+    if (tm.*.tm_year < minInt(i32) or tm.*.tm_year > maxInt(i32)) {
+        return Err.Overflow;
+    }
+
+    return base.mon13_date{
+        .day = @intCast(u8, tm.*.tm_mday),
+        .month = @intCast(u8, tm.*.tm_mon + 1),
+        .year = @intCast(i32, tm.*.tm_year + 1900),
+    };
+}
+
 //Public functions
 pub export fn mon13_import(
     raw_cal: ?*const base.mon13_cal,
@@ -519,6 +550,12 @@ pub export fn mon13_import(
             if (@ptrCast(?*const i64, @alignCast(@alignOf(i64), raw_input))) |input_rd| {
                 var res_yz = rd_to_date(input_rd.*, cal) catch return 4;
                 result.* = yz_to_no_yz(res_yz, cal);
+                return 0;
+            }
+        },
+        base.mon13_import_mode.MON13_IMPORT_C99_TM => {
+            if (@ptrCast(?*const c99_tm, @alignCast(@alignOf(c99_tm), raw_input))) |input_c99_tm| {
+                result.* = c99_tm_to_date(input_c99_tm) catch return 5;
                 return 0;
             }
         },
