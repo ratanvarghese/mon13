@@ -258,3 +258,18 @@ test "avoid overflow in compare" {
         try expect(cmp_res1 > 0);
     }
 }
+
+test "Cotsworth format" {
+    const d = mon13.mon13_date{ .year = -2823980, .month = 06, .day = 29 };
+    const c = &mon13.mon13_cotsworth;
+    const n = &mon13.mon13_cotsworth_names_en_US;
+
+    const buf_size = 100;
+    var buf = [_]u8{0} ** buf_size;
+    const res = mon13.mon13_format(&d, c, n, "%A", @as([*]u8, &buf), buf_size);
+
+    const expected = "Leap Day";
+    for (expected) |ch, i| {
+        try expect(buf[i] == ch);
+    }
+}

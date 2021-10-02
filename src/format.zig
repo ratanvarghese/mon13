@@ -59,13 +59,13 @@ const sequence = enum(u8) {
     }
 
     fn get_ic_name(d: *const base.mon13_date, cal: *const base.mon13_cal, nlist: *const base.mon13_name_list) ?[*:0]const u8 {
-        const ic = logic.seek_ic(d.*, cal) orelse return null;
-        if (ic.IC_ERA_START_ALT_NAME and d.year == 0 and ic.day_of_year == logic.year_len(false, cal)) {
+        const icr = logic.seek_ic_res(d.*, cal) orelse return null;
+        if (icr.ic.IC_ERA_START_ALT_NAME and d.year == 0 and icr.ic.day_of_year == logic.year_len(false, cal)) {
             const alt_ic_list = nlist.*.alt_intercalary_list orelse return null;
-            return alt_ic_list[d.*.day - 1];
+            return alt_ic_list[icr.ici];
         } else {
             const ic_list = nlist.*.intercalary_list orelse return null;
-            return ic_list[d.*.day - 1];
+            return ic_list[icr.ici];
         }
     }
 

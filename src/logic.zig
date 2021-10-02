@@ -8,6 +8,11 @@ const doy_date = struct {
     doy: u16,
 };
 
+const ic_res = struct {
+    ic: base.intercalary,
+    ici: u8,
+};
+
 const Err = error{
     Overflow,
     BadCalendar,
@@ -133,7 +138,19 @@ fn doy_to_month_day(d: doy_date, cal: *const base.mon13_cal) Err!base.mon13_date
     return Err.DoyNotFound;
 }
 
-pub fn seek_ic(d: base.mon13_date, cal: *const base.mon13_cal) ?base.intercalary {
+pub fn seek_ic_res(d: base.mon13_date, cal: *const base.mon13_cal) ?ic_res {
+    if (cal.*.intercalary_list) |ic_list| {
+        var ici: u8 = 0;
+        while (ic_list[ici]) |res| : (ici += 1) {
+            if (res.month == d.month and res.day == d.day) {
+                return ic_res{ .ic = res, .ici = ici };
+            }
+        }
+    }
+    return null;
+}
+
+fn seek_ic(d: base.mon13_date, cal: *const base.mon13_cal) ?base.intercalary {
     if (cal.*.intercalary_list) |ic_list| {
         var ici: u8 = 0;
         while (ic_list[ici]) |res| : (ici += 1) {

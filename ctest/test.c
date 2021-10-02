@@ -233,6 +233,7 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance)
 		if(res->month == 0) {
 			res->day = 29;
 			res->month = (res->day == 1) ? 13 : 6;
+			res->year = (res->day == 1) ? res->year : (res->year - 31);
 		}
 	}
 	else {
@@ -1508,6 +1509,11 @@ enum theft_trial_res format_weekday(struct theft* t, void* a1, void* a2, void* a
 	int res = mon13_format(d, c, n, "%A", buf, 100);
 	if(day == MON13_NO_WEEKDAY) {
 		const char* expected_ic = contained_ic(buf, n, 100, placeholder);
+		if(!format_res_check_nonblank(res, expected_ic)) {
+			printf("FINDME 1 d: ");
+			print_date(stdout, d, NULL);
+			printf(" buf: %s\n", buf);
+		}
 		return format_res_check_nonblank(res, expected_ic) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 	}
 	else {
