@@ -153,3 +153,45 @@ pub export const mon13_holocene_names_en_US = base.mon13_name_list{
     .alt_intercalary_list = null,
     .calendar_name = "Holocene",
 };
+
+//Cotsworth Calendar
+
+var cotsworth_month_list = [_:null]?[*:0]const u8{
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "Sol",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+};
+
+var cotsworth_weekday_list = [_:null]?[*:0]const u8{
+    WKDY_MON,
+    WKDY_TUE,
+    WKDY_WED,
+    WKDY_THU,
+    WKDY_FRI,
+    WKDY_SAT,
+    WKDY_SUN,
+};
+
+var cotsworth_era_list = [_:null]?[*:0]const u8{
+    "Before Common Era",
+    "Common Era",
+};
+
+pub export const mon13_cotsworth_names_en_US = base.mon13_name_list{
+    .month_list = @as([*:null]?[*:0]const u8, &cotsworth_month_list),
+    .weekday_list = @as([*:null]?[*:0]const u8, &cotsworth_weekday_list),
+    .era_list = @as([*:null]?[*:0]const u8, &cotsworth_era_list),
+    .intercalary_list = null,
+    .alt_intercalary_list = null,
+    .calendar_name = "Cotsworth",
+};

@@ -253,4 +253,222 @@ const struct known_convert_date gr2tq_handy[] = {
 	}
 };
 
+//Gregorian and Cotsworth conversions
+//All dates are from Wikipedia
+//https://en.wikipedia.org/wiki/International_Fixed_Calendar
+const struct known_convert_date gr2ct_wiki[] = {
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 1, .day = 1},
+		.d1 = {.year = 1902, .month = 1, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 1, .day = 28},
+		.d1 = {.year = 1902, .month = 1, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 1, .day = 29},
+		.d1 = {.year = 1902, .month = 2, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 2, .day = 25},
+		.d1 = {.year = 1902, .month = 2, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 2, .day = 26},
+		.d1 = {.year = 1902, .month = 3, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 3, .day = 25},
+		.d1 = {.year = 1902, .month = 3, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1928, .month = 3, .day = 24},
+		.d1 = {.year = 1928, .month = 3, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 3, .day = 26},
+		.d1 = {.year = 1902, .month = 4, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1928, .month = 3, .day = 25},
+		.d1 = {.year = 1928, .month = 4, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 4, .day = 22},
+		.d1 = {.year = 1902, .month = 4, .day = 28},
+	},
+
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1928, .month = 4, .day = 21},
+		.d1 = {.year = 1928, .month = 4, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 4, .day = 23},
+		.d1 = {.year = 1902, .month = 5, .day = 1},
+	},
+
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1928, .month = 4, .day = 22},
+		.d1 = {.year = 1928, .month = 5, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 5, .day = 20},
+		.d1 = {.year = 1902, .month = 5, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1928, .month = 5, .day = 19},
+		.d1 = {.year = 1928, .month = 5, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 5, .day = 21},
+		.d1 = {.year = 1902, .month = 6, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1928, .month = 5, .day = 20},
+		.d1 = {.year = 1928, .month = 6, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 6, .day = 17},
+		.d1 = {.year = 1902, .month = 6, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1928, .month = 6, .day = 16},
+		.d1 = {.year = 1928, .month = 6, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1928, .month = 6, .day = 17},
+		.d1 = {.year = 1928, .month = 6, .day = 29},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 6, .day = 18},
+		.d1 = {.year = 1902, .month = 7, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 7, .day = 15},
+		.d1 = {.year = 1902, .month = 7, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 7, .day = 16},
+		.d1 = {.year = 1902, .month = 8, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 8, .day = 12},
+		.d1 = {.year = 1902, .month = 8, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 8, .day = 13},
+		.d1 = {.year = 1902, .month = 9, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 9, .day = 9},
+		.d1 = {.year = 1902, .month = 9, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 9, .day = 10},
+		.d1 = {.year = 1902, .month = 10, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 10, .day = 7},
+		.d1 = {.year = 1902, .month = 10, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 10, .day = 8},
+		.d1 = {.year = 1902, .month = 11, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 11, .day = 4},
+		.d1 = {.year = 1902, .month = 11, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 11, .day = 5},
+		.d1 = {.year = 1902, .month = 12, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 12, .day = 2},
+		.d1 = {.year = 1902, .month = 12, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 12, .day = 3},
+		.d1 = {.year = 1902, .month = 13, .day = 1},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 12, .day = 30},
+		.d1 = {.year = 1902, .month = 13, .day = 28},
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_cotsworth,
+		.d0 = {.year = 1902, .month = 12, .day = 31},
+		.d1 = {.year = 1902, .month = 13, .day = 29},
+	},
+};
+
 #endif //MON13_KNOWN_H

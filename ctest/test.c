@@ -126,6 +126,12 @@ bool is_leap_day(struct mon13_date d, const struct mon13_cal* c) {
 	if(cal_eq_ignore_year0(c, &mon13_tranquility_year_zero)) {
 		return d.month == 0 && d.day == 2;
 	}
+	if(c == &mon13_holocene) {
+		return d.month == 2 && d.day == 29;
+	}
+	if(c == &mon13_cotsworth) {
+		return d.month == 6 && d.day == 29;
+	}
 	return false;
 }
 
@@ -141,6 +147,13 @@ enum theft_alloc_res select_gr2tq_handy(struct theft* t, void* env, void** insta
 {
 	uint64_t i = theft_random_choice(t, SIZEOF_ARR(gr2tq_handy));
 	*instance = (void*)&gr2tq_handy[i];
+	return THEFT_ALLOC_OK;
+}
+
+enum theft_alloc_res select_gr2ct_wiki(struct theft* t, void* env, void** instance)
+{
+	uint64_t i = theft_random_choice(t, SIZEOF_ARR(gr2ct_wiki));
+	*instance = (void*)&gr2ct_wiki[i];
 	return THEFT_ALLOC_OK;
 }
 
@@ -193,6 +206,23 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance)
 			return THEFT_ALLOC_ERROR;
 		}
 	}
+	else if(env == &mon13_holocene) {
+		//Every valid Gregorian (Year 0) date is a valid Holocene date
+		if(mon13_add(&(kcd->d0), kcd->c0, offset, MON13_ADD_DAYS, res)) {
+			return THEFT_ALLOC_ERROR;
+		}
+	}
+	else if(env == &mon13_cotsworth) {
+		//Every valid Tranquility (Year 0) date is a valid Cotsworth date
+		//except if month == 0.
+		if(mon13_add(&(kcd->d1), kcd->c1, offset, MON13_ADD_DAYS, res)) {
+			return THEFT_ALLOC_ERROR;
+		}
+		if(res->month == 0) {
+			res->day = 29;
+			res->month = (res->day == 1) ? 13 : 6;
+		}
+	}
 	else {
 		return THEFT_ALLOC_ERROR;
 	}
@@ -209,7 +239,7 @@ enum theft_alloc_res alloc_leap_day(struct theft* t, void* env, void** instance)
 	}
 	struct mon13_cal* cal = env;
 	struct mon13_date* res = malloc(sizeof(struct mon13_date));
-	if(cal == &mon13_gregorian_year_zero) {
+	if(cal == &mon13_gregorian_year_zero || cal == &mon13_holocene) {
 		res->year = y;
 		res->month = 2;
 		res->day = 29;	
@@ -218,6 +248,11 @@ enum theft_alloc_res alloc_leap_day(struct theft* t, void* env, void** instance)
 		res->year = y + 31;
 		res->month = 0;
 		res->day = 2;
+	}
+	else if(cal == &mon13_cotsworth) {
+		res->year = y;
+		res->month = 6;
+		res->day = 29;
 	}
 	else {
 		return THEFT_ALLOC_ERROR;
@@ -533,6 +568,7 @@ enum theft_trial_res convert_known(struct theft* t, void* test_input)
 	if(mon13_convert(&(kcd->d0), kcd->c0, kcd->c1, &res1)) {
 		return THEFT_TRIAL_FAIL;
 	}
+
 	if(mon13_compare(&res0, &(kcd->d0), kcd->c0)) {
 		return THEFT_TRIAL_FAIL;
 	}
@@ -673,6 +709,18 @@ enum theft_trial_res convert_holocene(struct theft* t, void* a1) {
 	}
 
 	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res convert_same_year(struct theft* t, void* a1, void* a2, void* a3) {
+	const struct mon13_date* d0 = a1;
+	const struct mon13_cal* c0 = a2;
+	const struct mon13_cal* c1 = a3;
+	struct mon13_date res;
+	int status = mon13_convert(d0, c0, c1, &res);
+	if(status) {
+		return THEFT_TRIAL_FAIL;
+	}
+	return (res.year == d0->year) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 //Theft trials: add
@@ -982,7 +1030,7 @@ enum theft_trial_res add_like_other_cal(struct theft* t, void* a1, void* a2, voi
 
 	status = mon13_add(d, c, offset, m, &res0);
 	if(status) {
-		return THEFT_TRIAL_FAIL; //If add(,c_yz,) worked, add(,c,) should work.
+		return THEFT_TRIAL_SKIP;
 	}
 
 	status = mon13_convert(&res_yz, c_yz, c, &res1);
@@ -1786,6 +1834,11 @@ struct theft_type_info gr2tq_handy_info = {
 	.print = print_known
 };
 
+struct theft_type_info gr2ct_wiki_info = {
+	.alloc = select_gr2ct_wiki, //nothing to free
+	.print = print_known
+};
+
 struct theft_type_info random_info = {
 	.alloc = select_random, //nothing to free
 	.print = print_random,
@@ -1830,6 +1883,16 @@ struct theft_type_info tq_year0_cal_info = {
 	.env = (void*)&mon13_tranquility_year_zero
 };
 
+struct theft_type_info hl_cal_info = {
+	.alloc = select_env, //nothing to free
+	.env = (void*)&mon13_holocene
+};
+
+struct theft_type_info ct_cal_info = {
+	.alloc = select_env, //nothing to free
+	.env = (void*)&mon13_cotsworth
+};
+
 struct theft_type_info gr_date_info = {
 	.alloc = alloc_date,
 	.free = theft_generic_free_cb,
@@ -1856,6 +1919,20 @@ struct theft_type_info tq_year0_date_info = {
 	.free = theft_generic_free_cb,
 	.print = print_date,
 	.env = (void*)&mon13_tranquility_year_zero
+};
+
+struct theft_type_info hl_date_info = {
+	.alloc = alloc_date,
+	.free = theft_generic_free_cb,
+	.print = print_date,
+	.env = (void*)&mon13_holocene
+};
+
+struct theft_type_info ct_date_info = {
+	.alloc = alloc_date,
+	.free = theft_generic_free_cb,
+	.print = print_date,
+	.env = (void*)&mon13_cotsworth
 };
 
 struct theft_type_info gr_year0_leap_info = {
@@ -2108,6 +2185,13 @@ int main(int argc, char** argv) {
 			.trials = SIZEOF_ARR(gr2tq_handy)
 		},
 		{
+			.name = "mon13_convert: Gregorian<->Cotsworth (Wikipedia)",
+			.prop1 = convert_known,
+			.type_info = {&gr2ct_wiki_info},
+			.seed = seed,
+			.trials = SIZEOF_ARR(gr2ct_wiki)
+		},
+		{
 			.name = "mon13_convert: Gregorian Year 0",
 			.prop1 = convert_gr_year0,
 			.type_info = {&gr_year0_date_info},
@@ -2173,6 +2257,26 @@ int main(int argc, char** argv) {
 			.name = "mon13_convert: Holocene <-> Gregorian Year 0",
 			.prop1 = convert_holocene,
 			.type_info = {&gr_year0_date_info},
+			.seed = seed
+		},
+		{
+			.name = "mon13_convert: Gregorian Year 0 -> Cotsworth, Same Year",
+			.prop3 = convert_same_year,
+			.type_info = {
+				&gr_year0_date_info,
+				&gr_year0_cal_info,
+				&ct_cal_info,
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_convert: Cotsworth -> Gregorian Year 0, Same Year",
+			.prop3 = convert_same_year,
+			.type_info = {
+				&gr_year0_date_info,
+				&ct_cal_info,
+				&gr_year0_cal_info,
+			},
 			.seed = seed
 		},
 		{
@@ -2292,6 +2396,16 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
+			.name = "mon13_add: Year, Cotsworth",
+			.prop3 = add_year,
+			.type_info = {
+				&ct_date_info,
+				&random_info,
+				&ct_cal_info
+			},
+			.seed = seed
+		},
+		{
 			.name = "mon13_add: Year On Leap Day, Gregorian Year 0",
 			.prop3 = add_year_leap,
 			.type_info = {
@@ -2372,6 +2486,26 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
+			.name = "mon13_add: Zero, Holocene",
+			.prop3 = add_zero,
+			.type_info = {
+				&hl_date_info,
+				&add_mode_info,
+				&hl_cal_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Zero, Cotsworth",
+			.prop3 = add_zero,
+			.type_info = {
+				&ct_date_info,
+				&add_mode_info,
+				&ct_cal_info
+			},
+			.seed = seed
+		},
+		{
 			.name = "mon13_add: Gregorian like Gregorian Year 0",
 			.prop5 = add_like_other_cal,
 			.type_info = {
@@ -2391,6 +2525,18 @@ int main(int argc, char** argv) {
 				&add_mode_info,
 				&tq_year0_cal_info,
 				&tq_cal_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Holocene like Gregorian Year 0",
+			.prop5 = add_like_other_cal,
+			.type_info = {
+				&hl_date_info,
+				&add_mode_info,
+				&gr_year0_cal_info,
+				&hl_cal_info,
 				&random_info
 			},
 			.seed = seed
@@ -2435,6 +2581,28 @@ int main(int argc, char** argv) {
 				&tq_date_info,
 				&add_mode_info,
 				&tq_cal_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Normalized Result, Holocene",
+			.prop4 = add_result_normalized,
+			.type_info = {
+				&hl_date_info,
+				&add_mode_info,
+				&hl_cal_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_add: Normalized Result, Cotsworth",
+			.prop4 = add_result_normalized,
+			.type_info = {
+				&ct_date_info,
+				&add_mode_info,
+				&ct_cal_info,
 				&random_info
 			},
 			.seed = seed
