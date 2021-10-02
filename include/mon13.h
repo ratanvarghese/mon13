@@ -115,6 +115,8 @@ extern const struct mon13_name_list mon13_tranquility_names_en_US;
 
 extern const struct mon13_name_list mon13_holocene_names_en_US;
 
+extern const struct mon13_name_list mon13_cotsworth_names_en_US;
+
 //Predefined calendars
 extern const struct mon13_cal mon13_gregorian;
 extern const struct mon13_cal mon13_gregorian_year_zero;

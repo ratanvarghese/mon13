@@ -89,8 +89,20 @@ const char* contained(char* needle, const char** haystack, size_t maxlen, char p
 	return NULL;
 }
 
+const char* contained_ic(char* needle, const struct mon13_name_list* nlist, size_t maxlen, char placeholder) {
+	const char* expected = contained(needle, nlist->intercalary_list, maxlen, placeholder);
+	if(expected == NULL && nlist->alt_intercalary_list != NULL) {
+		return contained(needle, nlist->alt_intercalary_list, maxlen, placeholder);
+	}
+	return expected;
+}
+
 bool format_res_check(size_t res, const char* expected) {
 	return (expected != NULL) && (res == strlen(expected));
+}
+
+bool format_res_check_nonblank(size_t res, const char* expected) {
+	return format_res_check(res, expected) && expected[0] != '\0';
 }
 
 bool skip_import(int64_t x) {
@@ -1489,16 +1501,19 @@ enum theft_trial_res format_weekday(struct theft* t, void* a1, void* a2, void* a
 
 
 	int day = mon13_extract(d, c, MON13_EXTRACT_DAY_OF_WEEK);
+
+	char buf[100];
+	memset(buf, placeholder, 100);
+
+	int res = mon13_format(d, c, n, "%A", buf, 100);
 	if(day == MON13_NO_WEEKDAY) {
-		return THEFT_TRIAL_SKIP;
+		const char* expected_ic = contained_ic(buf, n, 100, placeholder);
+		return format_res_check_nonblank(res, expected_ic) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 	}
-
-	char buf[20];
-	memset(buf, placeholder, 20);
-
-	int res = mon13_format(d, c, n, "%A", buf, 20);
-	const char* expected = contained(buf, n->weekday_list, 10, placeholder);
-	return format_res_check(res, expected) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	else {
+		const char* expected = contained(buf, n->weekday_list, 100, placeholder);
+		return format_res_check(res, expected) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	}
 }
 
 enum theft_trial_res format_month(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
@@ -1507,16 +1522,18 @@ enum theft_trial_res format_month(struct theft* t, void* a1, void* a2, void* a3,
 	const struct mon13_name_list* n = a3;
 	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
 
-	if(d->month == 0) {
-		return THEFT_TRIAL_SKIP;
-	}
-
 	char buf[100];
 	memset(buf, placeholder, 100);
 
 	int res = mon13_format(d, c, n, "%B", buf, 100);
-	const char* expected = contained(buf, n->month_list, 100, placeholder);
-	return format_res_check(res, expected) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	if(d->month == 0) {
+		const char* expected_ic = contained_ic(buf, n, 100, placeholder);
+		return format_res_check_nonblank(res, expected_ic) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	}
+	else {
+		const char* expected = contained(buf, n->month_list, 100, placeholder);
+		return format_res_check(res, expected) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	}
 }
 
 enum theft_trial_res format_day_of_month(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
@@ -2031,6 +2048,11 @@ struct theft_type_info gr_name_fr_info = {
 struct theft_type_info tq_name_en_info = {
 	.alloc = select_env, //nothing to free
 	.env = (void*)&mon13_tranquility_names_en_US
+};
+
+struct theft_type_info ct_name_en_info = {
+	.alloc = select_env, //nothing to free
+	.env = (void*)&mon13_cotsworth_names_en_US
 };
 
 int main(int argc, char** argv) {
@@ -3019,6 +3041,28 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
+			.name = "mon13_format: %A, Tranquility Year 0 (en_US) (Leap Day)",
+			.prop4 = format_weekday,
+			.type_info = {
+				&tq_year0_leap_info,
+				&tq_year0_cal_info,
+				&tq_name_en_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: %A, Cotsworth (en_US)",
+			.prop4 = format_weekday,
+			.type_info = {
+				&ct_date_info,
+				&ct_cal_info,
+				&ct_name_en_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
 			.name = "mon13_format: %B, Gregorian Year 0 (en_US)",
 			.prop4 = format_month,
 			.type_info = {
@@ -3041,12 +3085,44 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
+			.name = "mon13_format: %B, Gregorian Year 0 (en_US) (Leap Day)",
+			.prop4 = format_month,
+			.type_info = {
+				&gr_year0_leap_info,
+				&gr_year0_cal_info,
+				&gr_name_en_info,
+				&random_info
+			}
+		},
+		{
 			.name = "mon13_format: %B, Tranquility Year 0 (en_US)",
 			.prop4 = format_month,
 			.type_info = {
 				&tq_year0_date_info,
 				&tq_year0_cal_info,
 				&tq_name_en_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: %B, Tranquility Year 0 (en_US) (Leap Day)",
+			.prop4 = format_month,
+			.type_info = {
+				&tq_year0_leap_info,
+				&tq_year0_cal_info,
+				&tq_name_en_info,
+				&random_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: %B, Cotsworth (en_US)",
+			.prop4 = format_month,
+			.type_info = {
+				&ct_date_info,
+				&ct_cal_info,
+				&ct_name_en_info,
 				&random_info
 			},
 			.seed = seed

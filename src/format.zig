@@ -58,11 +58,22 @@ const sequence = enum(u8) {
         }
     }
 
+    fn get_ic_name(d: *const base.mon13_date, cal: *const base.mon13_cal, nlist: *const base.mon13_name_list) ?[*:0]const u8 {
+        const ic = logic.seek_ic(d.*, cal) orelse return null;
+        if (ic.IC_ERA_START_ALT_NAME and d.year == 0 and ic.day_of_year == logic.year_len(false, cal)) {
+            const alt_ic_list = nlist.*.alt_intercalary_list orelse return null;
+            return alt_ic_list[d.*.day - 1];
+        } else {
+            const ic_list = nlist.*.intercalary_list orelse return null;
+            return ic_list[d.*.day - 1];
+        }
+    }
+
     fn get_weekday_name(d: *const base.mon13_date, cal: *const base.mon13_cal, nlist: *const base.mon13_name_list) ?[*:0]const u8 {
         const weekday_num = logic.mon13_extract(d, cal, base.mon13_extract_mode.MON13_EXTRACT_DAY_OF_WEEK);
         const weekday = @intToEnum(base.mon13_weekday, @intCast(c_int, weekday_num));
         if (weekday == base.mon13_weekday.MON13_NO_WEEKDAY) {
-            return null;
+            return get_ic_name(d, cal, nlist);
         } else {
             const i = @intCast(usize, weekday_num - 1);
             return nlist.*.weekday_list[i];
@@ -71,7 +82,7 @@ const sequence = enum(u8) {
 
     fn get_month_name(d: *const base.mon13_date, cal: *const base.mon13_cal, nlist: *const base.mon13_name_list) ?[*:0]const u8 {
         if (d.*.month == 0) {
-            return null;
+            return get_ic_name(d, cal, nlist);
         } else {
             const i = @intCast(usize, d.*.month - 1);
             return nlist.*.month_list[i];

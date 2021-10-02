@@ -187,11 +187,16 @@ var cotsworth_era_list = [_:null]?[*:0]const u8{
     "Common Era",
 };
 
+var cotsworth_intercalary_list = [_:null]?[*:0]const u8{
+    "Year Day",
+    "Leap Day",
+};
+
 pub export const mon13_cotsworth_names_en_US = base.mon13_name_list{
     .month_list = @as([*:null]?[*:0]const u8, &cotsworth_month_list),
     .weekday_list = @as([*:null]?[*:0]const u8, &cotsworth_weekday_list),
     .era_list = @as([*:null]?[*:0]const u8, &cotsworth_era_list),
-    .intercalary_list = null,
+    .intercalary_list = @as([*:null]?[*:0]const u8, &cotsworth_intercalary_list),
     .alt_intercalary_list = null,
     .calendar_name = "Cotsworth",
 };

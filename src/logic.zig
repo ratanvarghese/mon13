@@ -67,7 +67,7 @@ fn segment_len(s: base.segment) u8 {
     return (s.day_end - s.day_start) + 1;
 }
 
-fn year_len(leap: bool, cal: *const base.mon13_cal) u16 {
+pub fn year_len(leap: bool, cal: *const base.mon13_cal) u16 {
     const lc = cal.*.leap_cycle;
     if (leap) {
         return lc.common_days + lc.leap_days;
@@ -133,7 +133,7 @@ fn doy_to_month_day(d: doy_date, cal: *const base.mon13_cal) Err!base.mon13_date
     return Err.DoyNotFound;
 }
 
-fn seek_ic(d: base.mon13_date, cal: *const base.mon13_cal) ?base.intercalary {
+pub fn seek_ic(d: base.mon13_date, cal: *const base.mon13_cal) ?base.intercalary {
     if (cal.*.intercalary_list) |ic_list| {
         var ici: u8 = 0;
         while (ic_list[ici]) |res| : (ici += 1) {
