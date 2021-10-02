@@ -24,7 +24,8 @@ enum mon13_extract_mode {
 enum mon13_import_mode {
 	MON13_IMPORT_MJD,
 	MON13_IMPORT_UNIX,
-	MON13_IMPORT_RD
+	MON13_IMPORT_RD,
+	MON13_IMPORT_C99_TM,
 };
 
 enum mon13_weekday {

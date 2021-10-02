@@ -528,6 +528,50 @@ enum theft_trial_res import_rd(struct theft* t, void* a1, void* a2, void* a3) {
 	return ((rd1 - rd0) == offset) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res import_c99_tm(struct theft* t, void* a1) {
+	const struct mon13_cal* c = &mon13_gregorian_year_zero;
+	int64_t u0 = ((int64_t)a1) % (((int64_t)INT32_MAX) * UNIX_DAY);
+
+	time_t unix = u0;
+	const struct tm* local_u = localtime(&unix);
+	struct mon13_date d;
+	int status;
+	status = mon13_import(c, local_u, MON13_IMPORT_C99_TM, &d);
+	if(status) {
+		return skip_import(u0/(UNIX_DAY)) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+	}
+	if(d.day != local_u->tm_mday) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(d.month != (local_u->tm_mon + 1)) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(d.year != (local_u->tm_year + 1900)) {
+		return THEFT_TRIAL_FAIL;
+	}
+	
+	if(mon13_extract(&d, c, MON13_EXTRACT_DAY_OF_YEAR) != (local_u->tm_yday + 1)) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	enum mon13_weekday correct_weekday = MON13_NO_WEEKDAY;
+	switch(local_u->tm_wday) {
+		case 0: correct_weekday = MON13_SUNDAY; break;
+		case 1: correct_weekday = MON13_MONDAY; break;
+		case 2: correct_weekday = MON13_TUESDAY; break;
+		case 3: correct_weekday = MON13_WEDNESDAY; break;
+		case 4: correct_weekday = MON13_THURSDAY; break;
+		case 5: correct_weekday = MON13_FRIDAY; break;
+		case 6: correct_weekday = MON13_SATURDAY; break;
+		default: return THEFT_TRIAL_ERROR;
+	}
+	if(mon13_extract(&d, c, MON13_EXTRACT_DAY_OF_WEEK) != correct_weekday) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	return THEFT_TRIAL_PASS;
+}
+
 enum theft_trial_res import_null(struct theft* t, void* a1, void* a2) {
 	const struct mon13_cal* c = a1;
 	int64_t import_data = ((int64_t)a2) % INT32_MAX;
@@ -535,7 +579,8 @@ enum theft_trial_res import_null(struct theft* t, void* a1, void* a2) {
 	enum mon13_import_mode modelist[] = {
 		MON13_IMPORT_MJD,
 		MON13_IMPORT_UNIX,
-		MON13_IMPORT_RD
+		MON13_IMPORT_RD,
+		MON13_IMPORT_C99_TM
 	};
 	struct mon13_date d0;
 	int status;
