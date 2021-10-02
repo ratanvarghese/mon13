@@ -611,15 +611,15 @@ pub export fn mon13_compare(
         if (d0_norm.month == 0 or d1_norm.month == 0) {
             const doy0 = month_day_to_doy(d0_norm, cal) catch return 0;
             const doy1 = month_day_to_doy(d1_norm, cal) catch return 0;
-            return doy0.doy - doy1.doy;
+            return @intCast(c_int, doy0.doy) - @intCast(c_int, doy1.doy);
         }
     }
 
     if (d0_norm.month != d1_norm.month) {
-        return d0_norm.month - d1_norm.month;
+        return @intCast(c_int, d0_norm.month) - @intCast(c_int, d1_norm.month);
     }
 
-    return d0_norm.day - d1_norm.day;
+    return @intCast(c_int, d0_norm.day) - @intCast(c_int, d1_norm.day);
 }
 pub export fn mon13_extract(
     raw_d: ?*const base.mon13_date,

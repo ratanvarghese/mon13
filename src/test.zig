@@ -234,4 +234,27 @@ test "holocene" {
     try expect(d_hl.day == 1);
 }
 
-test "holocene 2" {}
+test "avoid overflow in compare" {
+    const kcd_d0 = mon13.mon13_date{ .year = 1928, .month = 5, .day = 28 };
+    const kcd_d1 = mon13.mon13_date{ .year = 1928, .month = 5, .day = 19 };
+    const kcd_c0 = &mon13.mon13_gregorian_year_zero;
+    const kcd_c1 = &mon13.mon13_cotsworth;
+
+    var res0 = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
+    var res1 = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
+    var status: c_int = 0;
+    status = mon13.mon13_convert(&kcd_d1, kcd_c1, kcd_c0, &res0);
+    try expect(status == 0);
+    status = mon13.mon13_convert(&kcd_d0, kcd_c0, kcd_c1, &res1);
+    try expect(status == 0);
+
+    const cmp_res0 = mon13.mon13_compare(&res0, &kcd_d0, kcd_c0);
+    const cmp_res1 = mon13.mon13_compare(&res1, &kcd_d1, kcd_c1);
+    if (cmp_res0 == 0) {
+        try expect(cmp_res1 == 0);
+    } else if (cmp_res0 > 0) {
+        try expect(cmp_res1 < 0);
+    } else {
+        try expect(cmp_res1 > 0);
+    }
+}
