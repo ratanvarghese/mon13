@@ -15,7 +15,13 @@ pub fn build(b: *std.build.Builder) void {
     staticLib.setBuildMode(mode);
     staticLib.install();
 
-    var main_tests = b.addTest("test.zig");
+    const mon13Pkg = std.build.Pkg{
+        .name = "mon13",
+        .path = "src/mon13.zig",
+    };
+
+    var main_tests = b.addTest("test/unit.zig");
+    main_tests.addPackage(mon13Pkg);
     main_tests.setBuildMode(mode);
 
     const test_step = b.step("test", "Run library tests");
