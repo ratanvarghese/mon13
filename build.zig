@@ -5,17 +5,17 @@ pub fn build(b: *std.build.Builder) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
 
-    const sharedLib = b.addSharedLibrary("mon13", "src/main.zig", b.version(0, 4, 1));
+    const sharedLib = b.addSharedLibrary("mon13", "src/mon13.zig", b.version(0, 4, 1));
 
     sharedLib.setBuildMode(mode);
     sharedLib.install();
 
-    const staticLib = b.addStaticLibrary("mon13", "src/main.zig");
+    const staticLib = b.addStaticLibrary("mon13", "src/mon13.zig");
 
     staticLib.setBuildMode(mode);
     staticLib.install();
 
-    var main_tests = b.addTest("src/test.zig");
+    var main_tests = b.addTest("test.zig");
     main_tests.setBuildMode(mode);
 
     const test_step = b.step("test", "Run library tests");

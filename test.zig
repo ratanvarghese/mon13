@@ -1,4 +1,4 @@
-const mon13 = @import("main.zig");
+const mon13 = @import("src/mon13.zig");
 
 const std = @import("std");
 const expect = std.testing.expect;
