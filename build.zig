@@ -13,15 +13,15 @@ pub fn build(b: *std.build.Builder) void {
     staticLib.setBuildMode(mode);
     staticLib.install();
 
-    const propertyTestExe = b.addExecutable("ptest", "ctest/test.c");
+    const propertyTestExe = b.addExecutable("ptest", "test/ptest.c");
     propertyTestExe.linkLibC();
     propertyTestExe.linkSystemLibraryName("m");
     propertyTestExe.linkSystemLibraryName("theft");
     propertyTestExe.linkLibrary(sharedLib);
-    propertyTestExe.addLibPath("ctest/theft/build");
+    propertyTestExe.addLibPath("theft/build");
     propertyTestExe.addIncludeDir("include");
-    propertyTestExe.addIncludeDir("ctest");
-    propertyTestExe.addIncludeDir("ctest/theft/inc");
+    propertyTestExe.addIncludeDir("test");
+    propertyTestExe.addIncludeDir("theft/inc");
     propertyTestExe.setBuildMode(mode);
     propertyTestExe.install();
 
