@@ -6,14 +6,26 @@ pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
 
     const sharedLib = b.addSharedLibrary("mon13", "src/mon13.zig", b.version(0, 4, 1));
-
     sharedLib.setBuildMode(mode);
     sharedLib.install();
 
     const staticLib = b.addStaticLibrary("mon13", "src/mon13.zig");
-
     staticLib.setBuildMode(mode);
     staticLib.install();
+
+    const propertyTestExe = b.addExecutable("ptest", "ctest/test.c");
+    propertyTestExe.linkLibC();
+    propertyTestExe.linkSystemLibraryName("m");
+    propertyTestExe.linkSystemLibraryName("theft");
+    propertyTestExe.linkLibrary(sharedLib);
+    propertyTestExe.addLibPath("ctest/theft/build");
+    propertyTestExe.addIncludeDir("include");
+    propertyTestExe.addIncludeDir("ctest");
+    propertyTestExe.addIncludeDir("ctest/theft/inc");
+    propertyTestExe.setBuildMode(mode);
+    propertyTestExe.install();
+
+    const propertyTestRun = propertyTestExe.run();
 
     const mon13Pkg = std.build.Pkg{
         .name = "mon13",
@@ -26,4 +38,5 @@ pub fn build(b: *std.build.Builder) void {
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.step);
+    test_step.dependOn(&propertyTestRun.step);
 }

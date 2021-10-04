@@ -502,8 +502,8 @@ enum theft_trial_res import_unix_gmtime(struct theft* t, void* a1) {
 	int64_t u0 = ((int64_t)a1) % (((int64_t)INT32_MAX) * UNIX_DAY);
 	const struct mon13_cal* c = &mon13_gregorian_year_zero;
 
-	time_t unix = u0;
-	const struct tm* gmt_u = gmtime(&unix);
+	time_t unix0 = u0;
+	const struct tm* gmt_u = gmtime(&unix0);
 	struct mon13_date d;
 	if(mon13_import(c, &u0, MON13_IMPORT_UNIX, &d)) {
 		return THEFT_TRIAL_SKIP;
@@ -545,8 +545,8 @@ enum theft_trial_res import_c99_tm(struct theft* t, void* a1) {
 	const struct mon13_cal* c = &mon13_gregorian_year_zero;
 	int64_t u0 = ((int64_t)a1) % (((int64_t)INT32_MAX) * UNIX_DAY);
 
-	time_t unix = u0;
-	const struct tm* local_u = localtime(&unix);
+	time_t unix0 = u0;
+	const struct tm* local_u = localtime(&unix0);
 	struct mon13_date d;
 	int status;
 	status = mon13_import(c, local_u, MON13_IMPORT_C99_TM, &d);
@@ -1758,8 +1758,8 @@ enum theft_trial_res format_strftime(struct theft* t, void* a1, void* a2, void* 
 	const struct mon13_cal* c = &mon13_gregorian_year_zero;
 	const struct mon13_name_list* n = &mon13_gregorian_names_en_US;
 
-	time_t unix = u0;
-	const struct tm* gmt_u = gmtime(&unix);
+	time_t unix0 = u0;
+	const struct tm* gmt_u = gmtime(&unix0);
 	struct mon13_date d;
 	if(mon13_import(c, &u0, MON13_IMPORT_UNIX, &d)) {
 		return THEFT_TRIAL_SKIP;
