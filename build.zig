@@ -27,13 +27,13 @@ pub fn build(b: *std.build.Builder) void {
     const testStep = b.step("utest", "Run unit tests");
     testStep.dependOn(&unitTests.step);
 
-    //Theft tests
+    //Property-based tests (using theft library)
     const submoduleInit = b.addSystemCommand(&[_][]const u8{ "git", "submodule", "init" });
     const submoduleUpdate = b.addSystemCommand(&[_][]const u8{ "git", "submodule", "update" });
     submoduleUpdate.step.dependOn(&submoduleInit.step);
 
     const makeTheft = b.addSystemCommand(&[_][]const u8{ "make", "-C", "theft" });
-    submoduleUpdate.step.dependOn(&submoduleUpdate.step);
+    makeTheft.step.dependOn(&submoduleUpdate.step);
 
     const propertyTestExe = b.addExecutable("ptest", "test/ptest.c");
     propertyTestExe.linkLibC();
