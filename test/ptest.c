@@ -1880,12 +1880,38 @@ enum theft_trial_res format_null(struct theft* t, void* a1, void* a2, void* a3, 
 	if(status >= 0 || buf[0] != placeholder) {
 		return THEFT_TRIAL_FAIL;
 	}
-	status = mon13_format(d, c, n, fmt, NULL, ASCII_COPY_BUF);
-	if(status >= 0 || buf[0] != placeholder) {
+	//NULL buf is tested seperately.
+	//0 length is tested seperately.
+	return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res format_dry_run(struct theft* t,  void* a1, void* a2, void* a3, void* a4) {
+	struct mon13_date* d = a1;
+	const struct mon13_cal* c = a2;
+	const struct mon13_name_list* n = a3;
+	const char* fmt = a4;
+
+	int status_null_buf = mon13_format(d, c, n, fmt, NULL, STRFTIME_BUF);
+	if(status_null_buf < 0) {
 		return THEFT_TRIAL_FAIL;
 	}
-	status = mon13_format(d, c, n, fmt, buf, 0);
-	if(status >= 0 || buf[0] != placeholder) {
+
+	char fake_buf = 0;
+	int status_buf_len_0 = mon13_format(d, c, n, fmt, &fake_buf, 0);
+	if(status_buf_len_0 != status_null_buf) {
+		return THEFT_TRIAL_FAIL;
+	}
+	if(fake_buf != 0) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	char* buf = calloc(status_null_buf, sizeof(char));
+	if(buf == NULL) {
+		return THEFT_TRIAL_SKIP;
+	}
+
+	int status = mon13_format(d, c, n, fmt, &buf, status_null_buf);
+	if(status != status_null_buf) {
 		return THEFT_TRIAL_FAIL;
 	}
 	return THEFT_TRIAL_PASS;
@@ -3602,6 +3628,39 @@ int main(int argc, char** argv) {
 				&tq_year0_cal_info,
 				&tq_name_en_info,
 				&utf8_copy_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: dry run, Gregorian Year 0 (en_US)",
+			.prop4 = format_dry_run,
+			.type_info = {
+				&gr_year0_date_info,
+				&gr_year0_cal_info,
+				&gr_name_en_info,
+				&strftime_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: dry run, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_dry_run,
+			.type_info = {
+				&gr_year0_date_info,
+				&gr_year0_cal_info,
+				&gr_name_fr_info,
+				&strftime_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: dry run, Tranquility Year 0 (en_US)",
+			.prop4 = format_dry_run,
+			.type_info = {
+				&tq_year0_date_info,
+				&tq_year0_cal_info,
+				&tq_name_en_info,
+				&strftime_fmt_info
 			},
 			.seed = seed
 		}
