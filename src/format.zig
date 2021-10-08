@@ -221,6 +221,24 @@ fn count_digits(n: u32) digit_res {
     return res;
 }
 
+fn is_dry_run(buflen: u32, raw_buf: ?[*]u8) bool {
+    if (buflen == 0) {
+        return true;
+    } else if (raw_buf) |buf| {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+fn usable_buf(dry_run: bool, raw_buf: ?[*]u8) ?[*]u8 {
+    if (dry_run) {
+        return null;
+    } else {
+        return raw_buf;
+    }
+}
+
 const fmt_info = struct {
     pad_width: u8 = 0,
     absolute_value: bool = false,
@@ -239,19 +257,16 @@ pub export fn mon13_format(
     const d = raw_d orelse return -1;
     const cal = raw_cal orelse return -2;
     const fmt = raw_fmt orelse return -3;
-    if (buflen < 1) {
-        return -4;
-    }
-    var buf = raw_buf orelse return -8;
+    const dry_run = is_dry_run(buflen, raw_buf);
 
-    const buf_limit = buflen - 1; //Leave space for null character.
+    const buf_limit = buflen -% 1; //Leave space for null character.
     var fmt_i: usize = 0;
     var buf_i: usize = 0;
     var s = state.start;
 
     var info = fmt_info{};
 
-    while (fmt[fmt_i] != 0 and buf_i < buf_limit) {
+    while (fmt[fmt_i] != 0 and (dry_run or buf_i < buf_limit)) {
         const c = fmt[fmt_i];
         s = s.next(c) catch return -5;
 
@@ -261,8 +276,10 @@ pub export fn mon13_format(
             const old_buf_i = buf_i;
             fmt_i += count;
             buf_i += count;
-            if (buf_i < buf_limit) {
-                std.mem.copy(u8, buf[old_buf_i..buf_i], fmt[old_fmt_i..fmt_i]);
+            if (buf_i <= buf_limit) {
+                if (usable_buf(dry_run, raw_buf)) |buf| {
+                    std.mem.copy(u8, buf[old_buf_i..buf_i], fmt[old_fmt_i..fmt_i]);
+                }
             } else {
                 buf_i = old_buf_i;
                 s = state.end;
@@ -284,14 +301,18 @@ pub export fn mon13_format(
         } else if (s == state.fmt_seq) {
             info.seq = @intToEnum(sequence, c);
             if (info.seq.get_char()) |ch| {
-                buf[buf_i] = ch;
+                if (usable_buf(dry_run, raw_buf)) |buf| {
+                    buf[buf_i] = ch;
+                }
                 buf_i += 1;
             } else if (info.seq.get_num(d, cal)) |n| {
                 var x: u32 = 0;
                 if (n < 0) {
                     x = @intCast(u32, -n);
                     if (!info.absolute_value) {
-                        buf[buf_i] = '-';
+                        if (usable_buf(dry_run, raw_buf)) |buf| {
+                            buf[buf_i] = '-';
+                        }
                         buf_i += 1;
                     }
                 } else {
@@ -311,14 +332,18 @@ pub export fn mon13_format(
 
                 if (pad_char) |pc| {
                     var pad_needed = pad_width;
-                    while (pad_needed > x_digit.count and buf_i < buf_limit) {
-                        buf[buf_i] = pc;
+                    while (pad_needed > x_digit.count and buf_i <= buf_limit) {
+                        if (usable_buf(dry_run, raw_buf)) |buf| {
+                            buf[buf_i] = pc;
+                        }
                         buf_i += 1;
                         pad_needed -= 1;
                     }
                 }
-                while (x_digit.count > 0 and buf_i < buf_limit) {
-                    buf[buf_i] = @intCast(u8, (x / x_digit.denominator)) + '0';
+                while (x_digit.count > 0 and buf_i <= buf_limit) {
+                    if (usable_buf(dry_run, raw_buf)) |buf| {
+                        buf[buf_i] = @intCast(u8, (x / x_digit.denominator)) + '0';
+                    }
                     x %= x_digit.denominator;
                     x_digit.denominator /= digit_res.radix;
                     buf_i += 1;
@@ -333,8 +358,10 @@ pub export fn mon13_format(
                     const old_name_i = name_i;
                     name_i += count;
                     buf_i += count;
-                    if (buf_i < buf_limit) {
-                        std.mem.copy(u8, buf[old_buf_i..buf_i], name[old_name_i..name_i]);
+                    if (buf_i <= buf_limit) {
+                        if (usable_buf(dry_run, raw_buf)) |buf| {
+                            std.mem.copy(u8, buf[old_buf_i..buf_i], name[old_name_i..name_i]);
+                        }
                     } else {
                         buf_i = old_buf_i;
                         s = state.end;
@@ -349,6 +376,8 @@ pub export fn mon13_format(
         }
     }
 
-    buf[buf_i] = 0;
+    if (usable_buf(dry_run, raw_buf)) |buf| {
+        buf[buf_i] = 0;
+    }
     return @intCast(c_int, buf_i);
 }

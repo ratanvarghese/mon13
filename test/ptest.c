@@ -1896,6 +1896,7 @@ enum theft_trial_res format_dry_run(struct theft* t,  void* a1, void* a2, void* 
 		return THEFT_TRIAL_FAIL;
 	}
 
+
 	char fake_buf = 0;
 	int status_buf_len_0 = mon13_format(d, c, n, fmt, &fake_buf, 0);
 	if(status_buf_len_0 != status_null_buf) {
@@ -1905,16 +1906,11 @@ enum theft_trial_res format_dry_run(struct theft* t,  void* a1, void* a2, void* 
 		return THEFT_TRIAL_FAIL;
 	}
 
-	char* buf = calloc(status_null_buf, sizeof(char));
-	if(buf == NULL) {
-		return THEFT_TRIAL_SKIP;
-	}
+	char* buf = calloc(status_null_buf + 1, sizeof(char));
+	int status = mon13_format(d, c, n, fmt, buf, status_null_buf + 1);
+	free(buf);
 
-	int status = mon13_format(d, c, n, fmt, &buf, status_null_buf);
-	if(status != status_null_buf) {
-		return THEFT_TRIAL_FAIL;
-	}
-	return THEFT_TRIAL_PASS;
+	return (status == status_null_buf) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 //Theft type info
