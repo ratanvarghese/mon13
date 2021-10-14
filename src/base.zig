@@ -1,24 +1,24 @@
-pub const mon13_add_mode = extern enum {
-    MON13_ADD_NONE,
-    MON13_ADD_DAYS,
-    MON13_ADD_MONTHS,
-    MON13_ADD_YEARS,
+pub const AddMode = extern enum {
+    NONE,
+    DAYS,
+    MONTHS,
+    YEARS,
 };
 
-pub const mon13_extract_mode = extern enum {
-    MON13_EXTRACT_DAY_OF_YEAR,
-    MON13_EXTRACT_DAY_OF_WEEK,
-    MON13_EXTRACT_IS_LEAP_YEAR,
-    MON13_EXTRACT_MJD,
-    MON13_EXTRACT_UNIX,
-    MON13_EXTRACT_RD,
+pub const ExtractMode = extern enum {
+    DAY_OF_YEAR,
+    DAY_OF_WEEK,
+    IS_LEAP_YEAR,
+    MJD,
+    UNIX,
+    RD,
 };
 
-pub const mon13_import_mode = extern enum {
-    MON13_IMPORT_MJD,
-    MON13_IMPORT_UNIX,
-    MON13_IMPORT_RD,
-    MON13_IMPORT_C99_TM,
+pub const ImportMode = extern enum {
+    MJD,
+    UNIX,
+    RD,
+    C99_TM,
 };
 
 pub const mon13_error = extern enum {
@@ -27,7 +27,7 @@ pub const mon13_error = extern enum {
     MON13_ERROR_NULL_FORMAT = -3,
 };
 
-pub const mon13_weekday = extern enum {
+pub const Weekday = extern enum {
     MON13_NO_WEEKDAY = 0,
     MON13_MONDAY = 1,
     MON13_TUESDAY = 2,
@@ -38,13 +38,13 @@ pub const mon13_weekday = extern enum {
     MON13_SUNDAY = 7,
 };
 
-pub const mon13_date = extern struct {
+pub const Date = extern struct {
     year: i32,
     month: u8,
     day: u8,
 };
 
-pub const intercalary = packed struct {
+pub const Intercalary = packed struct {
     day_of_year: u16,
     day_of_leap_year: u16,
     month: u8,
@@ -54,14 +54,14 @@ pub const intercalary = packed struct {
     IC_LEAP: bool,
 };
 
-pub const segment = packed struct {
+pub const Segment = packed struct {
     offset: u16,
     month: u8,
     day_start: u8,
     day_end: u8,
 };
 
-pub const leap_cycle_info = packed struct {
+pub const LeapCycleInfo = packed struct {
     year_count: u16,
     leap_year_count: u16,
     offset_years: u16,
@@ -71,19 +71,19 @@ pub const leap_cycle_info = packed struct {
     LEAP_GREGORIAN_SKIP: bool,
 };
 
-pub const mon13_cal = extern struct {
-    intercalary_list: ?[*:null]const ?intercalary,
-    common_lookup_list: [*:null]const ?segment,
-    leap_lookup_list: [*:null]const ?segment,
-    leap_cycle: leap_cycle_info,
+pub const Cal = extern struct {
+    intercalary_list: ?[*:null]const ?Intercalary,
+    common_lookup_list: [*:null]const ?Segment,
+    leap_lookup_list: [*:null]const ?Segment,
+    leap_cycle: LeapCycleInfo,
     epoch_mjd: i32,
-    start_weekday: mon13_weekday,
+    start_weekday: Weekday,
     week_length: u8,
     CAL_YEAR_ZERO: bool,
     CAL_PERENNIAL: bool,
 };
 
-pub const mon13_name_list = extern struct {
+pub const NameList = extern struct {
     month_list: [*:null]?[*:0]const u8,
     weekday_list: [*:null]?[*:0]const u8,
     era_list: [*:null]?[*:0]const u8,
@@ -91,14 +91,3 @@ pub const mon13_name_list = extern struct {
     alt_intercalary_list: ?[*:null]?[*:0]const u8,
     calendar_name: [*:0]const u8,
 };
-
-comptime {
-    @export(mon13_add_mode, .{ .name = "mon13_add_mode", .linkage = .Strong });
-    @export(mon13_extract_mode, .{ .name = "mon13_extract_mode", .linkage = .Strong });
-    @export(mon13_import_mode, .{ .name = "mon13_import_mode", .linkage = .Strong });
-    @export(mon13_error, .{ .name = "mon13_error", .linkage = .Strong });
-    @export(mon13_weekday, .{ .name = "mon13_weekday", .linkage = .Strong });
-    @export(mon13_date, .{ .name = "mon13_date", .linkage = .Strong });
-    @export(mon13_cal, .{ .name = "mon13_cal", .linkage = .Strong });
-    @export(mon13_name_list, .{ .name = "mon13_name_list", .linkage = .Strong });
-}

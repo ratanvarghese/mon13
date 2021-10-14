@@ -9,13 +9,13 @@ const FormatErr = error{
     InvalidSequence,
 };
 
-const flag = enum(u8) {
+const Flag = enum(u8) {
     pad_none = '-',
     pad_space = '_',
     pad_zero = '0',
     absolute_value = '|',
 
-    fn get_char(self: flag) ?u8 {
+    fn get_char(self: Flag) ?u8 {
         return switch (self) {
             .pad_space => ' ',
             .pad_zero => '0',
@@ -24,7 +24,7 @@ const flag = enum(u8) {
     }
 };
 
-const sequence = enum(u8) {
+const Sequence = enum(u8) {
     percent = '%',
     weekday_name = 'A',
     month_name = 'B',
@@ -38,18 +38,18 @@ const sequence = enum(u8) {
     weekday_number = 'u',
     year = 'Y',
 
-    fn get_num(self: sequence, d: *const base.mon13_date, cal: *const base.mon13_cal) ?i32 {
+    fn get_num(self: Sequence, d: *const base.Date, cal: *const base.Cal) ?i32 {
         return switch (self) {
             .day_of_month => d.*.day,
-            .day_of_year => @intCast(i32, logic.mon13_extract(d, cal, base.mon13_extract_mode.MON13_EXTRACT_DAY_OF_YEAR)),
+            .day_of_year => @intCast(i32, logic.mon13_extract(d, cal, base.ExtractMode.DAY_OF_YEAR)),
             .month_number => d.*.month,
-            .weekday_number => @intCast(i32, logic.mon13_extract(d, cal, base.mon13_extract_mode.MON13_EXTRACT_DAY_OF_WEEK)),
+            .weekday_number => @intCast(i32, logic.mon13_extract(d, cal, base.ExtractMode.DAY_OF_WEEK)),
             .year => d.*.year,
             else => null,
         };
     }
 
-    fn get_era_name(year: i32, nlist: *const base.mon13_name_list) ?[*:0]const u8 {
+    fn get_era_name(year: i32, nlist: *const base.NameList) ?[*:0]const u8 {
         const era_list = nlist.*.era_list;
         if (year < 0) {
             return era_list[0];
@@ -58,8 +58,8 @@ const sequence = enum(u8) {
         }
     }
 
-    fn get_ic_name(d: *const base.mon13_date, cal: *const base.mon13_cal, nlist: *const base.mon13_name_list) ?[*:0]const u8 {
-        const icr = logic.seek_ic_res(d.*, cal) orelse return null;
+    fn get_ic_name(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
+        const icr = logic.seek_IcRes(d.*, cal) orelse return null;
         if (icr.ic.IC_ERA_START_ALT_NAME and d.year == 0 and icr.ic.day_of_year == logic.year_len(false, cal)) {
             const alt_ic_list = nlist.*.alt_intercalary_list orelse return null;
             return alt_ic_list[icr.ici];
@@ -69,10 +69,10 @@ const sequence = enum(u8) {
         }
     }
 
-    fn get_weekday_name(d: *const base.mon13_date, cal: *const base.mon13_cal, nlist: *const base.mon13_name_list) ?[*:0]const u8 {
-        const weekday_num = logic.mon13_extract(d, cal, base.mon13_extract_mode.MON13_EXTRACT_DAY_OF_WEEK);
-        const weekday = @intToEnum(base.mon13_weekday, @intCast(c_int, weekday_num));
-        if (weekday == base.mon13_weekday.MON13_NO_WEEKDAY) {
+    fn get_weekday_name(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
+        const weekday_num = logic.mon13_extract(d, cal, base.ExtractMode.DAY_OF_WEEK);
+        const weekday = @intToEnum(base.Weekday, @intCast(c_int, weekday_num));
+        if (weekday == base.Weekday.MON13_NO_WEEKDAY) {
             return get_ic_name(d, cal, nlist);
         } else {
             const i = @intCast(usize, weekday_num - 1);
@@ -80,7 +80,7 @@ const sequence = enum(u8) {
         }
     }
 
-    fn get_month_name(d: *const base.mon13_date, cal: *const base.mon13_cal, nlist: *const base.mon13_name_list) ?[*:0]const u8 {
+    fn get_month_name(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
         if (d.*.month == 0) {
             return get_ic_name(d, cal, nlist);
         } else {
@@ -89,7 +89,7 @@ const sequence = enum(u8) {
         }
     }
 
-    fn get_name(self: sequence, d: *const base.mon13_date, cal: *const base.mon13_cal, raw_nlist: ?*const base.mon13_name_list) ?[*:0]const u8 {
+    fn get_name(self: Sequence, d: *const base.Date, cal: *const base.Cal, raw_nlist: ?*const base.NameList) ?[*:0]const u8 {
         const nlist = raw_nlist orelse return null;
 
         return switch (self) {
@@ -101,7 +101,7 @@ const sequence = enum(u8) {
         };
     }
 
-    fn get_char(self: sequence) ?u8 {
+    fn get_char(self: Sequence) ?u8 {
         return switch (self) {
             .percent => '%',
             .newline => '\n',
@@ -110,7 +110,7 @@ const sequence = enum(u8) {
         };
     }
 
-    fn default_padding_width(self: sequence) u8 {
+    fn default_padding_width(self: Sequence) u8 {
         return switch (self) {
             .day_of_month => 2,
             .day_of_year => 3,
@@ -120,7 +120,7 @@ const sequence = enum(u8) {
     }
 };
 
-const digit = enum(u8) {
+const Digit = enum(u8) {
     d0 = '0',
     d1 = '1',
     d2 = '2',
@@ -142,7 +142,7 @@ fn valid_in_enum(comptime E: type, x: u8) bool {
     return false;
 }
 
-const state = enum(u8) {
+const State = enum(u8) {
     start,
     end,
     fmt_prefix,
@@ -151,38 +151,38 @@ const state = enum(u8) {
     fmt_seq,
     copy,
 
-    fn after_start(c: u8) state {
+    fn after_start(c: u8) State {
         return switch (c) {
-            '%' => state.fmt_prefix,
-            0 => state.end,
-            else => state.copy,
+            '%' => State.fmt_prefix,
+            0 => State.end,
+            else => State.copy,
         };
     }
 
-    fn after_prefix_or_flag(c: u8) FormatErr!state {
-        if (valid_in_enum(flag, c)) {
-            return state.fmt_flag;
-        } else if (valid_in_enum(digit, c)) {
+    fn after_prefix_or_flag(c: u8) FormatErr!State {
+        if (valid_in_enum(Flag, c)) {
+            return State.fmt_flag;
+        } else if (valid_in_enum(Digit, c)) {
             //Check digit after flag because '0' is a flag.
-            return state.fmt_width;
-        } else if (valid_in_enum(sequence, c)) {
-            return state.fmt_seq;
+            return State.fmt_width;
+        } else if (valid_in_enum(Sequence, c)) {
+            return State.fmt_seq;
         } else {
             return FormatErr.InvalidSequence;
         }
     }
 
-    fn after_width(c: u8) FormatErr!state {
-        if (valid_in_enum(digit, c)) {
-            return state.fmt_width;
-        } else if (valid_in_enum(sequence, c)) {
-            return state.fmt_seq;
+    fn after_width(c: u8) FormatErr!State {
+        if (valid_in_enum(Digit, c)) {
+            return State.fmt_width;
+        } else if (valid_in_enum(Sequence, c)) {
+            return State.fmt_seq;
         } else {
             return FormatErr.InvalidSequence;
         }
     }
 
-    fn next(self: state, c: u8) FormatErr!state {
+    fn next(self: State, c: u8) FormatErr!State {
         return switch (self) {
             .start => after_start(c),
             .end => FormatErr.BeyondEndState,
@@ -204,19 +204,19 @@ fn copy_len(c: u8) FormatErr!u8 {
     };
 }
 
-const digit_res = struct {
+const DigitRes = struct {
     pub const radix = 10;
     denominator: u32,
     count: u8,
 };
 
-fn count_digits(n: u32) digit_res {
-    var res = digit_res{ .denominator = 1, .count = 1 };
+fn count_digits(n: u32) DigitRes {
+    var res = DigitRes{ .denominator = 1, .count = 1 };
     var x = n;
-    while (x >= digit_res.radix) {
-        x = x / digit_res.radix;
+    while (x >= DigitRes.radix) {
+        x = x / DigitRes.radix;
         res.count += 1;
-        res.denominator *= digit_res.radix;
+        res.denominator *= DigitRes.radix;
     }
     return res;
 }
@@ -242,14 +242,14 @@ fn usable_buf(dry_run: bool, raw_buf: ?[*]u8) ?[*]u8 {
 const fmt_info = struct {
     pad_width: u8 = 0,
     absolute_value: bool = false,
-    seq: sequence = sequence.percent,
-    pad_flag: ?flag = null,
+    seq: Sequence = Sequence.percent,
+    pad_flag: ?Flag = null,
 };
 
 pub export fn mon13_format(
-    raw_d: ?*const base.mon13_date,
-    raw_cal: ?*const base.mon13_cal,
-    raw_nlist: ?*const base.mon13_name_list,
+    raw_d: ?*const base.Date,
+    raw_cal: ?*const base.Cal,
+    raw_nlist: ?*const base.NameList,
     raw_fmt: ?[*]const u8,
     raw_buf: ?[*]u8,
     buflen: u32,
@@ -262,7 +262,7 @@ pub export fn mon13_format(
     const buf_limit = buflen -% 1; //Leave space for null character.
     var fmt_i: usize = 0;
     var buf_i: usize = 0;
-    var s = state.start;
+    var s = State.start;
 
     var info = fmt_info{};
 
@@ -270,7 +270,7 @@ pub export fn mon13_format(
         const c = fmt[fmt_i];
         s = s.next(c) catch return -5;
 
-        if (s == state.copy) {
+        if (s == State.copy) {
             const count = copy_len(c) catch return -6;
             const old_fmt_i = fmt_i;
             const old_buf_i = buf_i;
@@ -282,24 +282,24 @@ pub export fn mon13_format(
                 }
             } else {
                 buf_i = old_buf_i;
-                s = state.end;
+                s = State.end;
                 break;
             }
-        } else if (s == state.fmt_prefix) {
+        } else if (s == State.fmt_prefix) {
             fmt_i += 1;
-        } else if (s == state.fmt_width) {
+        } else if (s == State.fmt_width) {
             info.pad_width = (info.pad_width * 10) + (c - '0');
             fmt_i += 1;
-        } else if (s == state.fmt_flag) {
-            const f = @intToEnum(flag, c);
-            if (f == flag.absolute_value) {
+        } else if (s == State.fmt_flag) {
+            const f = @intToEnum(Flag, c);
+            if (f == Flag.absolute_value) {
                 info.absolute_value = true;
             } else {
                 info.pad_flag = f;
             }
             fmt_i += 1;
-        } else if (s == state.fmt_seq) {
-            info.seq = @intToEnum(sequence, c);
+        } else if (s == State.fmt_seq) {
+            info.seq = @intToEnum(Sequence, c);
             if (info.seq.get_char()) |ch| {
                 if (usable_buf(dry_run, raw_buf)) |buf| {
                     buf[buf_i] = ch;
@@ -345,7 +345,7 @@ pub export fn mon13_format(
                         buf[buf_i] = @intCast(u8, (x / x_digit.denominator)) + '0';
                     }
                     x %= x_digit.denominator;
-                    x_digit.denominator /= digit_res.radix;
+                    x_digit.denominator /= DigitRes.radix;
                     buf_i += 1;
                     x_digit.count -= 1;
                 }
@@ -364,7 +364,7 @@ pub export fn mon13_format(
                         }
                     } else {
                         buf_i = old_buf_i;
-                        s = state.end;
+                        s = State.end;
                         break;
                     }
                 }

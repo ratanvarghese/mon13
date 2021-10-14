@@ -2,7 +2,7 @@ const base = @import("base.zig");
 
 //Gregorian
 
-var gregorian_common_lookup = [_:null]?base.segment{
+var gregorian_common_lookup = [_:null]?base.Segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 31 },
     .{ .offset = 31, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 59, .month = 3, .day_start = 1, .day_end = 31 },
@@ -17,7 +17,7 @@ var gregorian_common_lookup = [_:null]?base.segment{
     .{ .offset = 334, .month = 12, .day_start = 1, .day_end = 31 },
 };
 
-var gregorian_leap_lookup = [_:null]?base.segment{
+var gregorian_leap_lookup = [_:null]?base.Segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 31 },
     .{ .offset = 31, .month = 2, .day_start = 1, .day_end = 29 },
     .{ .offset = 60, .month = 3, .day_start = 1, .day_end = 31 },
@@ -32,10 +32,10 @@ var gregorian_leap_lookup = [_:null]?base.segment{
     .{ .offset = 335, .month = 12, .day_start = 1, .day_end = 31 },
 };
 
-pub export const mon13_gregorian = base.mon13_cal{
+pub export const mon13_gregorian = base.Cal{
     .intercalary_list = null,
-    .common_lookup_list = @as([*:null]?base.segment, &gregorian_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.segment, &gregorian_leap_lookup),
+    .common_lookup_list = @as([*:null]?base.Segment, &gregorian_common_lookup),
+    .leap_lookup_list = @as([*:null]?base.Segment, &gregorian_leap_lookup),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
@@ -45,17 +45,17 @@ pub export const mon13_gregorian = base.mon13_cal{
         .offset_days = 0,
         .LEAP_GREGORIAN_SKIP = true,
     },
-    .start_weekday = base.mon13_weekday.MON13_NO_WEEKDAY,
+    .start_weekday = base.Weekday.MON13_NO_WEEKDAY,
     .epoch_mjd = -678575, //1 Jan, 1 CE
     .week_length = 7,
     .CAL_YEAR_ZERO = false,
     .CAL_PERENNIAL = false,
 };
 
-pub export const mon13_gregorian_year_zero = base.mon13_cal{
+pub export const mon13_gregorian_year_zero = base.Cal{
     .intercalary_list = null,
-    .common_lookup_list = @as([*:null]?base.segment, &gregorian_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.segment, &gregorian_leap_lookup),
+    .common_lookup_list = @as([*:null]?base.Segment, &gregorian_common_lookup),
+    .leap_lookup_list = @as([*:null]?base.Segment, &gregorian_leap_lookup),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
@@ -66,7 +66,7 @@ pub export const mon13_gregorian_year_zero = base.mon13_cal{
         .LEAP_GREGORIAN_SKIP = true,
     },
     .epoch_mjd = -678575, //1 Jan, 1 CE
-    .start_weekday = base.mon13_weekday.MON13_NO_WEEKDAY,
+    .start_weekday = base.Weekday.MON13_NO_WEEKDAY,
     .week_length = 7,
     .CAL_YEAR_ZERO = true,
     .CAL_PERENNIAL = false,
@@ -74,7 +74,7 @@ pub export const mon13_gregorian_year_zero = base.mon13_cal{
 
 //Tranquility
 
-var tranquility_ic = [_:null]?base.intercalary{
+var tranquility_ic = [_:null]?base.Intercalary{
     .{
         .month = 0,
         .day = 1,
@@ -95,7 +95,7 @@ var tranquility_ic = [_:null]?base.intercalary{
     },
 };
 
-var tranquility_common_lookup = [_:null]?base.segment{
+var tranquility_common_lookup = [_:null]?base.Segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 28 },
     .{ .offset = 28, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 56, .month = 3, .day_start = 1, .day_end = 28 },
@@ -112,7 +112,7 @@ var tranquility_common_lookup = [_:null]?base.segment{
     .{ .offset = 364, .month = 0, .day_start = 1, .day_end = 1 },
 };
 
-var tranquility_leap_lookup = [_:null]?base.segment{
+var tranquility_leap_lookup = [_:null]?base.Segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 28 },
     .{ .offset = 28, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 56, .month = 3, .day_start = 1, .day_end = 28 },
@@ -131,10 +131,10 @@ var tranquility_leap_lookup = [_:null]?base.segment{
     .{ .offset = 365, .month = 0, .day_start = 1, .day_end = 1 },
 };
 
-pub export const mon13_tranquility = base.mon13_cal{
-    .intercalary_list = @as([*:null]?base.intercalary, &tranquility_ic),
-    .common_lookup_list = @as([*:null]?base.segment, &tranquility_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.segment, &tranquility_leap_lookup),
+pub export const mon13_tranquility = base.Cal{
+    .intercalary_list = @as([*:null]?base.Intercalary, &tranquility_ic),
+    .common_lookup_list = @as([*:null]?base.Segment, &tranquility_common_lookup),
+    .leap_lookup_list = @as([*:null]?base.Segment, &tranquility_leap_lookup),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
@@ -145,16 +145,16 @@ pub export const mon13_tranquility = base.mon13_cal{
         .LEAP_GREGORIAN_SKIP = true,
     },
     .epoch_mjd = 40423, //1 day after Moon Landing Day
-    .start_weekday = base.mon13_weekday.MON13_FRIDAY,
+    .start_weekday = base.Weekday.MON13_FRIDAY,
     .week_length = 7,
     .CAL_YEAR_ZERO = false,
     .CAL_PERENNIAL = true,
 };
 
-pub export const mon13_tranquility_year_zero = base.mon13_cal{
-    .intercalary_list = @as([*:null]?base.intercalary, &tranquility_ic),
-    .common_lookup_list = @as([*:null]?base.segment, &tranquility_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.segment, &tranquility_leap_lookup),
+pub export const mon13_tranquility_year_zero = base.Cal{
+    .intercalary_list = @as([*:null]?base.Intercalary, &tranquility_ic),
+    .common_lookup_list = @as([*:null]?base.Segment, &tranquility_common_lookup),
+    .leap_lookup_list = @as([*:null]?base.Segment, &tranquility_leap_lookup),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
@@ -165,7 +165,7 @@ pub export const mon13_tranquility_year_zero = base.mon13_cal{
         .LEAP_GREGORIAN_SKIP = true,
     },
     .epoch_mjd = 40423, //1 day after Moon Landing Day
-    .start_weekday = base.mon13_weekday.MON13_FRIDAY,
+    .start_weekday = base.Weekday.MON13_FRIDAY,
     .week_length = 7,
     .CAL_YEAR_ZERO = true,
     .CAL_PERENNIAL = true,
@@ -173,10 +173,10 @@ pub export const mon13_tranquility_year_zero = base.mon13_cal{
 
 //Holocene
 
-pub export const mon13_holocene = base.mon13_cal{
+pub export const mon13_holocene = base.Cal{
     .intercalary_list = null,
-    .common_lookup_list = @as([*:null]?base.segment, &gregorian_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.segment, &gregorian_leap_lookup),
+    .common_lookup_list = @as([*:null]?base.Segment, &gregorian_common_lookup),
+    .leap_lookup_list = @as([*:null]?base.Segment, &gregorian_leap_lookup),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
@@ -187,7 +187,7 @@ pub export const mon13_holocene = base.mon13_cal{
         .LEAP_GREGORIAN_SKIP = true,
     },
     .epoch_mjd = -4331000, //1 Jan, 1 HE
-    .start_weekday = base.mon13_weekday.MON13_NO_WEEKDAY,
+    .start_weekday = base.Weekday.MON13_NO_WEEKDAY,
     .week_length = 7,
     .CAL_YEAR_ZERO = true,
     .CAL_PERENNIAL = false,
@@ -195,7 +195,7 @@ pub export const mon13_holocene = base.mon13_cal{
 
 //Cotsworth
 
-var cotsworth_ic = [_:null]?base.intercalary{
+var cotsworth_ic = [_:null]?base.Intercalary{
     .{
         .month = 13,
         .day = 29,
@@ -216,7 +216,7 @@ var cotsworth_ic = [_:null]?base.intercalary{
     },
 };
 
-var cotsworth_common_lookup = [_:null]?base.segment{
+var cotsworth_common_lookup = [_:null]?base.Segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 28 },
     .{ .offset = 28, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 56, .month = 3, .day_start = 1, .day_end = 28 },
@@ -232,7 +232,7 @@ var cotsworth_common_lookup = [_:null]?base.segment{
     .{ .offset = 336, .month = 13, .day_start = 1, .day_end = 29 },
 };
 
-var cotsworth_leap_lookup = [_:null]?base.segment{
+var cotsworth_leap_lookup = [_:null]?base.Segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 28 },
     .{ .offset = 28, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 56, .month = 3, .day_start = 1, .day_end = 28 },
@@ -248,10 +248,10 @@ var cotsworth_leap_lookup = [_:null]?base.segment{
     .{ .offset = 337, .month = 13, .day_start = 1, .day_end = 29 },
 };
 
-pub export const mon13_cotsworth = base.mon13_cal{
-    .intercalary_list = @as([*:null]?base.intercalary, &cotsworth_ic),
-    .common_lookup_list = @as([*:null]?base.segment, &cotsworth_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.segment, &cotsworth_leap_lookup),
+pub export const mon13_cotsworth = base.Cal{
+    .intercalary_list = @as([*:null]?base.Intercalary, &cotsworth_ic),
+    .common_lookup_list = @as([*:null]?base.Segment, &cotsworth_common_lookup),
+    .leap_lookup_list = @as([*:null]?base.Segment, &cotsworth_leap_lookup),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
@@ -262,7 +262,7 @@ pub export const mon13_cotsworth = base.mon13_cal{
         .LEAP_GREGORIAN_SKIP = true,
     },
     .epoch_mjd = -678575, //1 Jan, 1 CE
-    .start_weekday = base.mon13_weekday.MON13_SUNDAY,
+    .start_weekday = base.Weekday.MON13_SUNDAY,
     .week_length = 7,
     .CAL_YEAR_ZERO = true,
     .CAL_PERENNIAL = true,
