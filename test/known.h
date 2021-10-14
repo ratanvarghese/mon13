@@ -8,8 +8,8 @@
 struct known_convert_date {
 	const struct mon13_cal* c0;
 	const struct mon13_cal* c1;
-	const struct mon13_date d0;
-	const struct mon13_date d1;
+	const struct mon13_Date d0;
+	const struct mon13_Date d1;
 };
 
 //Tranquility & Gregorian conversions
