@@ -2096,7 +2096,6 @@ int main(int argc, char** argv) {
 	else {
 		seed = theft_seed_of_time();
 	}
-	printf("SEED: %lu\n", seed);
 	struct theft_run_config config[] = {
 		{
 			.name = "mon13_import: Gregorian Year 0<->MJD",
@@ -3666,12 +3665,29 @@ int main(int argc, char** argv) {
 			.seed = seed
 		}
 	};
-	//bool all_passed = true;
-	for(int i = 0; i < SIZEOF_ARR(config); i++) {
-		if(theft_run(&(config[i])) != THEFT_RUN_PASS) {
-			//all_passed = false;
+	size_t prop_count = SIZEOF_ARR(config);
+	size_t pass = 0;
+	size_t fail = 0;
+	size_t skip = 0;
+	size_t error = 0;
+	size_t other = 0;
+	for(size_t i = 0; i < prop_count; i++) {
+		enum theft_run_res test_res = theft_run(&(config[i]));
+		switch(test_res) {
+			case THEFT_RUN_PASS: pass++; break;
+			case THEFT_RUN_FAIL: fail++; break;
+			case THEFT_RUN_SKIP: skip++; break;
+			case THEFT_RUN_ERROR: error++; break;
+			default: other++;
 		}
 	}
-	//return all_passed ? EXIT_SUCCESS : EXIT_FAILURE;
+	printf("\n");
+	printf("SEED: %lu\n", seed);
+	printf("\tPROP:\t%u\n", prop_count);
+	printf("\tPASS:\t%u\n", pass);
+	printf("\tFAIL:\t%u\n", fail);
+	printf("\tSKIP:\t%u\n", skip);
+	printf("\tERROR:\t%u\n", error);
+	printf("\tOTHER:\t%u\n", other);
 	return 0;
 }

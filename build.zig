@@ -35,6 +35,8 @@ pub fn build(b: *std.build.Builder) void {
     const makeTheft = b.addSystemCommand(&[_][]const u8{ "make", "-C", "theft" });
     makeTheft.step.dependOn(&submoduleUpdate.step);
 
+    const raw_seed = b.option(u64, "seed", "Seed for ptest");
+
     const propertyTestExe = b.addExecutable("ptest", "test/ptest.c");
     propertyTestExe.linkLibC();
     propertyTestExe.linkSystemLibraryName("m");
@@ -48,6 +50,15 @@ pub fn build(b: *std.build.Builder) void {
     propertyTestExe.step.dependOn(&makeTheft.step);
 
     const propertyTestRun = propertyTestExe.run();
+    if (raw_seed) |seed| {
+        var seed_buf: [100]u8 = undefined;
+        var seed_arg = std.fmt.bufPrint(
+            seed_buf[0..seed_buf.len],
+            "{d}",
+            .{seed},
+        ) catch unreachable;
+        propertyTestRun.addArg(seed_arg);
+    }
 
     const propertyTestStep = b.step("ptest", "Run property-based tests (POSIX only)");
     propertyTestStep.dependOn(&propertyTestRun.step);
