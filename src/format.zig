@@ -15,7 +15,7 @@ const Flag = enum(u8) {
     pad_zero = '0',
     absolute_value = '|',
 
-    fn get_char(self: Flag) ?u8 {
+    fn getChar(self: Flag) ?u8 {
         return switch (self) {
             .pad_space => ' ',
             .pad_zero => '0',
@@ -38,7 +38,7 @@ const Sequence = enum(u8) {
     weekday_number = 'u',
     year = 'Y',
 
-    fn get_num(self: Sequence, d: *const base.Date, cal: *const base.Cal) ?i32 {
+    fn getNum(self: Sequence, d: *const base.Date, cal: *const base.Cal) ?i32 {
         return switch (self) {
             .day_of_month => d.*.day,
             .day_of_year => @intCast(i32, logic.mon13_extract(d, cal, base.ExtractMode.DAY_OF_YEAR)),
@@ -49,7 +49,7 @@ const Sequence = enum(u8) {
         };
     }
 
-    fn get_era_name(year: i32, nlist: *const base.NameList) ?[*:0]const u8 {
+    fn getEraName(year: i32, nlist: *const base.NameList) ?[*:0]const u8 {
         const era_list = nlist.*.era_list;
         if (year < 0) {
             return era_list[0];
@@ -58,9 +58,9 @@ const Sequence = enum(u8) {
         }
     }
 
-    fn get_ic_name(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
-        const icr = logic.seek_IcRes(d.*, cal) orelse return null;
-        if (icr.ic.IC_ERA_START_ALT_NAME and d.year == 0 and icr.ic.day_of_year == logic.year_len(false, cal)) {
+    fn getIcName(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
+        const icr = logic.seekIcRes(d.*, cal) orelse return null;
+        if (icr.ic.IC_ERA_START_ALT_NAME and d.year == 0 and icr.ic.day_of_year == logic.yearLen(false, cal)) {
             const alt_ic_list = nlist.*.alt_intercalary_list orelse return null;
             return alt_ic_list[icr.ici];
         } else {
@@ -69,39 +69,39 @@ const Sequence = enum(u8) {
         }
     }
 
-    fn get_weekday_name(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
+    fn getWeekdayName(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
         const weekday_num = logic.mon13_extract(d, cal, base.ExtractMode.DAY_OF_WEEK);
         const weekday = @intToEnum(base.Weekday, @intCast(c_int, weekday_num));
         if (weekday == base.Weekday.MON13_NO_WEEKDAY) {
-            return get_ic_name(d, cal, nlist);
+            return getIcName(d, cal, nlist);
         } else {
             const i = @intCast(usize, weekday_num - 1);
             return nlist.*.weekday_list[i];
         }
     }
 
-    fn get_month_name(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
+    fn getMonthName(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
         if (d.*.month == 0) {
-            return get_ic_name(d, cal, nlist);
+            return getIcName(d, cal, nlist);
         } else {
             const i = @intCast(usize, d.*.month - 1);
             return nlist.*.month_list[i];
         }
     }
 
-    fn get_name(self: Sequence, d: *const base.Date, cal: *const base.Cal, raw_nlist: ?*const base.NameList) ?[*:0]const u8 {
+    fn getName(self: Sequence, d: *const base.Date, cal: *const base.Cal, raw_nlist: ?*const base.NameList) ?[*:0]const u8 {
         const nlist = raw_nlist orelse return null;
 
         return switch (self) {
-            .weekday_name => get_weekday_name(d, cal, nlist),
-            .month_name => get_month_name(d, cal, nlist),
+            .weekday_name => getWeekdayName(d, cal, nlist),
+            .month_name => getMonthName(d, cal, nlist),
             .calendar_name => nlist.calendar_name,
-            .era_name => get_era_name(d.*.year, nlist),
+            .era_name => getEraName(d.*.year, nlist),
             else => null,
         };
     }
 
-    fn get_char(self: Sequence) ?u8 {
+    fn getChar(self: Sequence) ?u8 {
         return switch (self) {
             .percent => '%',
             .newline => '\n',
@@ -110,7 +110,7 @@ const Sequence = enum(u8) {
         };
     }
 
-    fn default_padding_width(self: Sequence) u8 {
+    fn defaultPaddingWidth(self: Sequence) u8 {
         return switch (self) {
             .day_of_month => 2,
             .day_of_year => 3,
@@ -133,7 +133,7 @@ const Digit = enum(u8) {
     d9 = '9',
 };
 
-fn valid_in_enum(comptime E: type, x: u8) bool {
+fn validInEnum(comptime E: type, x: u8) bool {
     inline for (std.meta.fields(E)) |field| {
         if (field.value == x) {
             return true;
@@ -151,7 +151,7 @@ const State = enum(u8) {
     fmt_seq,
     copy,
 
-    fn after_start(c: u8) State {
+    fn afterStart(c: u8) State {
         return switch (c) {
             '%' => State.fmt_prefix,
             0 => State.end,
@@ -159,23 +159,23 @@ const State = enum(u8) {
         };
     }
 
-    fn after_prefix_or_flag(c: u8) FormatErr!State {
-        if (valid_in_enum(Flag, c)) {
+    fn afterPrefixOrFlag(c: u8) FormatErr!State {
+        if (validInEnum(Flag, c)) {
             return State.fmt_flag;
-        } else if (valid_in_enum(Digit, c)) {
+        } else if (validInEnum(Digit, c)) {
             //Check digit after flag because '0' is a flag.
             return State.fmt_width;
-        } else if (valid_in_enum(Sequence, c)) {
+        } else if (validInEnum(Sequence, c)) {
             return State.fmt_seq;
         } else {
             return FormatErr.InvalidSequence;
         }
     }
 
-    fn after_width(c: u8) FormatErr!State {
-        if (valid_in_enum(Digit, c)) {
+    fn afterWidth(c: u8) FormatErr!State {
+        if (validInEnum(Digit, c)) {
             return State.fmt_width;
-        } else if (valid_in_enum(Sequence, c)) {
+        } else if (validInEnum(Sequence, c)) {
             return State.fmt_seq;
         } else {
             return FormatErr.InvalidSequence;
@@ -184,17 +184,17 @@ const State = enum(u8) {
 
     fn next(self: State, c: u8) FormatErr!State {
         return switch (self) {
-            .start => after_start(c),
+            .start => afterStart(c),
             .end => FormatErr.BeyondEndState,
-            .fmt_prefix, .fmt_flag => after_prefix_or_flag(c),
-            .fmt_width => after_width(c),
-            .fmt_seq => after_start(c),
-            .copy => after_start(c),
+            .fmt_prefix, .fmt_flag => afterPrefixOrFlag(c),
+            .fmt_width => afterWidth(c),
+            .fmt_seq => afterStart(c),
+            .copy => afterStart(c),
         };
     }
 };
 
-fn copy_len(c: u8) FormatErr!u8 {
+fn copyLenUtf8(c: u8) FormatErr!u8 {
     return switch (c) {
         0b11110000...0b11110111 => 4,
         0b11100000...0b11101111 => 3,
@@ -210,7 +210,7 @@ const DigitRes = struct {
     count: u8,
 };
 
-fn count_digits(n: u32) DigitRes {
+fn countDigits(n: u32) DigitRes {
     var res = DigitRes{ .denominator = 1, .count = 1 };
     var x = n;
     while (x >= DigitRes.radix) {
@@ -221,7 +221,7 @@ fn count_digits(n: u32) DigitRes {
     return res;
 }
 
-fn is_dry_run(buflen: u32, raw_buf: ?[*]u8) bool {
+fn isDryRun(buflen: u32, raw_buf: ?[*]u8) bool {
     if (buflen == 0) {
         return true;
     } else if (raw_buf) |buf| {
@@ -231,7 +231,7 @@ fn is_dry_run(buflen: u32, raw_buf: ?[*]u8) bool {
     }
 }
 
-fn usable_buf(dry_run: bool, raw_buf: ?[*]u8) ?[*]u8 {
+fn usableBuf(dry_run: bool, raw_buf: ?[*]u8) ?[*]u8 {
     if (dry_run) {
         return null;
     } else {
@@ -257,7 +257,7 @@ pub export fn mon13_format(
     const d = raw_d orelse return -1;
     const cal = raw_cal orelse return -2;
     const fmt = raw_fmt orelse return -3;
-    const dry_run = is_dry_run(buflen, raw_buf);
+    const dry_run = isDryRun(buflen, raw_buf);
 
     const buf_limit = buflen -% 1; //Leave space for null character.
     var fmt_i: usize = 0;
@@ -271,13 +271,13 @@ pub export fn mon13_format(
         s = s.next(c) catch return -5;
 
         if (s == State.copy) {
-            const count = copy_len(c) catch return -6;
+            const count = copyLenUtf8(c) catch return -6;
             const old_fmt_i = fmt_i;
             const old_buf_i = buf_i;
             fmt_i += count;
             buf_i += count;
             if (buf_i <= buf_limit) {
-                if (usable_buf(dry_run, raw_buf)) |buf| {
+                if (usableBuf(dry_run, raw_buf)) |buf| {
                     std.mem.copy(u8, buf[old_buf_i..buf_i], fmt[old_fmt_i..fmt_i]);
                 }
             } else {
@@ -300,17 +300,17 @@ pub export fn mon13_format(
             fmt_i += 1;
         } else if (s == State.fmt_seq) {
             info.seq = @intToEnum(Sequence, c);
-            if (info.seq.get_char()) |ch| {
-                if (usable_buf(dry_run, raw_buf)) |buf| {
+            if (info.seq.getChar()) |ch| {
+                if (usableBuf(dry_run, raw_buf)) |buf| {
                     buf[buf_i] = ch;
                 }
                 buf_i += 1;
-            } else if (info.seq.get_num(d, cal)) |n| {
+            } else if (info.seq.getNum(d, cal)) |n| {
                 var x: u32 = 0;
                 if (n < 0) {
                     x = @intCast(u32, -n);
                     if (!info.absolute_value) {
-                        if (usable_buf(dry_run, raw_buf)) |buf| {
+                        if (usableBuf(dry_run, raw_buf)) |buf| {
                             buf[buf_i] = '-';
                         }
                         buf_i += 1;
@@ -318,22 +318,22 @@ pub export fn mon13_format(
                 } else {
                     x = @intCast(u32, n);
                 }
-                var x_digit = count_digits(x);
+                var x_digit = countDigits(x);
 
                 var pad_char: ?u8 = null;
                 var pad_width: u8 = 0;
                 if (info.pad_flag) |pf| {
-                    pad_char = pf.get_char();
+                    pad_char = pf.getChar();
                     pad_width = info.pad_width;
                 } else {
                     pad_char = '0';
-                    pad_width = info.seq.default_padding_width();
+                    pad_width = info.seq.defaultPaddingWidth();
                 }
 
                 if (pad_char) |pc| {
                     var pad_needed = pad_width;
                     while (pad_needed > x_digit.count and buf_i <= buf_limit) {
-                        if (usable_buf(dry_run, raw_buf)) |buf| {
+                        if (usableBuf(dry_run, raw_buf)) |buf| {
                             buf[buf_i] = pc;
                         }
                         buf_i += 1;
@@ -341,7 +341,7 @@ pub export fn mon13_format(
                     }
                 }
                 while (x_digit.count > 0 and buf_i <= buf_limit) {
-                    if (usable_buf(dry_run, raw_buf)) |buf| {
+                    if (usableBuf(dry_run, raw_buf)) |buf| {
                         buf[buf_i] = @intCast(u8, (x / x_digit.denominator)) + '0';
                     }
                     x %= x_digit.denominator;
@@ -349,17 +349,17 @@ pub export fn mon13_format(
                     buf_i += 1;
                     x_digit.count -= 1;
                 }
-            } else if (info.seq.get_name(d, cal, raw_nlist)) |name| {
+            } else if (info.seq.getName(d, cal, raw_nlist)) |name| {
                 var name_i: u32 = 0;
                 while (name[name_i] != 0) {
                     const name_c = name[name_i];
-                    const count = copy_len(name_c) catch return -7;
+                    const count = copyLenUtf8(name_c) catch return -7;
                     const old_buf_i = buf_i;
                     const old_name_i = name_i;
                     name_i += count;
                     buf_i += count;
                     if (buf_i <= buf_limit) {
-                        if (usable_buf(dry_run, raw_buf)) |buf| {
+                        if (usableBuf(dry_run, raw_buf)) |buf| {
                             std.mem.copy(u8, buf[old_buf_i..buf_i], name[old_name_i..name_i]);
                         }
                     } else {
@@ -376,7 +376,7 @@ pub export fn mon13_format(
         }
     }
 
-    if (usable_buf(dry_run, raw_buf)) |buf| {
+    if (usableBuf(dry_run, raw_buf)) |buf| {
         buf[buf_i] = 0;
     }
     return @intCast(c_int, buf_i);
