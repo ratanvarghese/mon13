@@ -208,8 +208,8 @@ var cotsworth_ic = [_:null]?base.intercalary{
     .{
         .month = 6,
         .day = 29,
-        .day_of_year = 168,
-        .day_of_leap_year = 168,
+        .day_of_year = 169,
+        .day_of_leap_year = 169,
         .IC_YEAR = false,
         .IC_ERA_START_ALT_NAME = false,
         .IC_LEAP = true,

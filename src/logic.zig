@@ -335,12 +335,13 @@ fn ic_to_common(year: i32, doy_offset: u16, ic: base.intercalary, cal: *const ba
     if (leap) {
         dd_doy = ic.day_of_leap_year;
     }
+
     const dd: doy_date = .{
         .year = year,
         .doy = dd_doy +% doy_offset,
     };
     const norm_dd = norm_day_of_year(dd, cal);
-    const res = doy_to_month_day(norm_dd, cal) catch last_day_of_year(year, cal);
+    const res = doy_to_month_day(norm_dd, cal) catch last_day_of_year(norm_dd.year, cal);
     return res;
 }
 

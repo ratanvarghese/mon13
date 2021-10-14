@@ -956,9 +956,6 @@ enum theft_trial_res add_1month_tq(struct theft* t, void* test_input)
 {
 	const struct mon13_date* d = test_input;
 	const struct mon13_cal* c = &mon13_tranquility_year_zero;
-	if(d->month == 0) {
-		return THEFT_TRIAL_SKIP;
-	}
 
 	struct mon13_date res;
 	int status;
@@ -971,7 +968,20 @@ enum theft_trial_res add_1month_tq(struct theft* t, void* test_input)
 	}
 
 	bool correct_res = false;
-	if(res.day != d->day) {
+	if(d->month == 0) {
+		if(d->day == 1) {
+			bool inc_year = (res.year == d->year + 1) && (res.month == 1);
+			bool correct_day = (res.day == 28);
+			correct_res = inc_year && correct_day;
+		}
+		else if(d->day == 2) {
+			bool correct_year = (res.year == d->year);
+			bool correct_month = (res.month == 9);
+			bool correct_day = (res.day == 28);
+			correct_res = correct_year && correct_month && correct_day;
+		}
+	}
+	else if(res.day != d->day) {
 		correct_res = false;
 	}
 	else if(res.year == d->year) {
@@ -1509,11 +1519,6 @@ enum theft_trial_res format_weekday(struct theft* t, void* a1, void* a2, void* a
 	int res = mon13_format(d, c, n, "%A", buf, 100);
 	if(day == MON13_NO_WEEKDAY) {
 		const char* expected_ic = contained_ic(buf, n, 100, placeholder);
-		if(!format_res_check_nonblank(res, expected_ic)) {
-			printf("FINDME 1 d: ");
-			print_date(stdout, d, NULL);
-			printf(" buf: %s\n", buf);
-		}
 		return format_res_check_nonblank(res, expected_ic) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 	}
 	else {
@@ -2717,7 +2722,7 @@ int main(int argc, char** argv) {
 				&gr_year0_cal_info,
 				&random_info
 			},
-			.seed = seed
+			.seed = seed,
 		},
 		{
 			.name = "mon13_add: Normalized Result On Leap Day, Tranquility Year 0",

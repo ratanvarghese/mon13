@@ -208,7 +208,7 @@ test "strange convert" {
     try expect((rd1 - rd0) == offset);
 }
 
-test "strange add" {
+test "Tranquility strange add" {
     const d_yz = mon13.mon13_date{ .year = -2796441, .month = 0, .day = 1 };
     const c_yz = &mon13.mon13_tranquility_year_zero;
     const offset: i32 = 544641169;
@@ -272,4 +272,17 @@ test "Cotsworth format" {
     for (expected) |ch, i| {
         try expect(buf[i] == ch);
     }
+}
+
+test "Cotsworth add many months" {
+    const d = mon13.mon13_date{ .year = 992456, .month = 06, .day = 29 };
+    const m = mon13.mon13_add_mode.MON13_ADD_MONTHS;
+    const c = &mon13.mon13_cotsworth;
+    const offset = 209601470;
+
+    var res0 = mon13.mon13_date{ .year = 0, .month = 0, .day = 0 };
+    const status = mon13.mon13_add(&d, c, offset, m, &res0);
+    try expect(status == 0);
+    //    try expect(res0.month == d.month);
+    //    try expect(res0.day == d.day);
 }
