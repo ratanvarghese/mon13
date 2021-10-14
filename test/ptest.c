@@ -231,9 +231,10 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance)
 			return THEFT_ALLOC_ERROR;
 		}
 		if(res->month == 0) {
+			bool armstrong = (res->day == 1);
 			res->day = 29;
-			res->month = (res->day == 1) ? 13 : 6;
-			res->year = (res->day == 1) ? res->year : (res->year - 31);
+			res->month = armstrong ? 13 : 6;
+			res->year = armstrong ? res->year : (res->year - 31);
 		}
 	}
 	else {
@@ -578,7 +579,8 @@ enum theft_trial_res import_c99_tm(struct theft* t, void* a1) {
 		case 6: correct_weekday = MON13_SATURDAY; break;
 		default: return THEFT_TRIAL_ERROR;
 	}
-	if(mon13_extract(&d, c, MON13_EXTRACT_DAY_OF_WEEK) != correct_weekday) {
+	enum mon13_weekday res_weekday = mon13_extract(&d, c, MON13_EXTRACT_DAY_OF_WEEK);
+	if(res_weekday != correct_weekday && res_weekday != MON13_NO_WEEKDAY) {
 		return THEFT_TRIAL_FAIL;
 	}
 
@@ -970,8 +972,8 @@ enum theft_trial_res add_1month_tq(struct theft* t, void* test_input)
 	bool correct_res = false;
 	if(d->month == 0) {
 		if(d->day == 1) {
-			bool inc_year = (res.year == d->year + 1) && (res.month == 1);
-			bool correct_day = (res.day == 28);
+			bool inc_year = (res.year == d->year + 1) && (res.month == 2);
+			bool correct_day = (res.day == 1);
 			correct_res = inc_year && correct_day;
 		}
 		else if(d->day == 2) {
