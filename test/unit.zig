@@ -100,15 +100,9 @@ test "import mjd" {
     const offset: i32 = 0;
     const c = &mon13.tranquility_year_zero;
 
-    var d0 = mon13.Date{ .year = 0, .month = 0, .day = 0 };
+    const d0 = try mon13.import(c, &mjd0, mon13.ImportMode.MJD);
+
     var d1 = mon13.Date{ .year = 0, .month = 0, .day = 0 };
-    var impres = mon13.import(
-        c,
-        &mjd0,
-        mon13.ImportMode.MJD,
-        &d0,
-    );
-    try expect(impres == 0);
     var addres = mon13.add(
         &d0,
         c,
@@ -187,15 +181,10 @@ test "strange convert" {
     const rd0: i64 = 5385873414131997696 % std.math.maxInt(i32);
     const offset: i32 = 6356633119034338304 % std.math.maxInt(i32);
 
-    var d0 = mon13.Date{ .year = 0, .month = 0, .day = 0 };
+    const d0 = try mon13.import(c, &rd0, mon13.ImportMode.RD);
+
     var d1 = mon13.Date{ .year = 0, .month = 0, .day = 0 };
-    var status: c_int = 0;
-    status = mon13.import(c, &rd0, mon13.ImportMode.RD, &d0);
-    if (status != 0) {
-        try expect(skip_import(rd0));
-        return;
-    }
-    status = mon13.add(&d0, c, offset, mon13.AddMode.DAYS, &d1);
+    const status = mon13.add(&d0, c, offset, mon13.AddMode.DAYS, &d1);
     if (status != 0) {
         return;
     }

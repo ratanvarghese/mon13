@@ -443,7 +443,12 @@ enum theft_trial_res import_mjd(struct theft* t, void* a1, void* a2, void* a3) {
 	int status;
 	status = mon13_import(c, &mjd0, MON13_IMPORT_MJD, &d0);
 	if(status) {
-		return skip_import(mjd0) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+		if(status == MON13_ERROR_OVERFLOW) {
+			return skip_import(mjd0) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+		}
+		else {
+			return THEFT_TRIAL_FAIL;
+		}
 	}
 	status = mon13_add(&d0, c, offset, MON13_ADD_DAYS, &d1);
 	if(status) {
@@ -463,7 +468,12 @@ enum theft_trial_res import_unix(struct theft* t, void* a1, void* a2, void* a3) 
 	int status;
 	status = mon13_import(c, &u0_cut, MON13_IMPORT_UNIX, &d0);
 	if(status) {
-		return skip_import(u0/(UNIX_DAY)) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+		if(status == MON13_ERROR_OVERFLOW) {
+			return skip_import(u0/(UNIX_DAY)) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+		}
+		else {
+			return THEFT_TRIAL_FAIL;
+		}
 	}
 	status = mon13_add(&d0, c, offset, MON13_ADD_DAYS, &d1);
 	if(status) {
@@ -532,7 +542,12 @@ enum theft_trial_res import_rd(struct theft* t, void* a1, void* a2, void* a3) {
 	int status;
 	status = mon13_import(c, &rd0, MON13_IMPORT_RD, &d0);
 	if(status) {
-		return skip_import(rd0) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+		if(status == MON13_ERROR_OVERFLOW) {
+			return skip_import(rd0) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+		}
+		else {
+			return THEFT_TRIAL_FAIL;
+		}
 	}
 	status = mon13_add(&d0, c, offset, MON13_ADD_DAYS, &d1);
 	if(status) {
@@ -552,7 +567,12 @@ enum theft_trial_res import_c99_tm(struct theft* t, void* a1) {
 	int status;
 	status = mon13_import(c, local_u, MON13_IMPORT_C99_TM, &d);
 	if(status) {
-		return skip_import(u0/(UNIX_DAY)) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+		if(status == MON13_ERROR_OVERFLOW) {
+			return skip_import(u0/(UNIX_DAY)) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+		}
+		else {
+			return THEFT_TRIAL_FAIL;
+		}
 	}
 	if(d.day != local_u->tm_mday) {
 		return THEFT_TRIAL_FAIL;
@@ -602,15 +622,15 @@ enum theft_trial_res import_null(struct theft* t, void* a1, void* a2) {
 	for(int i = 0; i < SIZEOF_ARR(modelist); i++) {
 		enum mon13_ImportMode m = modelist[i];
 		status = mon13_import(NULL, &import_data, m, &d0);
-		if(!status) {
+		if(status != MON13_ERROR_NULL_CALENDAR) {
 			return THEFT_TRIAL_FAIL;
 		}
 		status = mon13_import(c, NULL, m, &d0);
-		if(!status) {
+		if(status != MON13_ERROR_NULL_INPUT) {
 			return THEFT_TRIAL_FAIL;
 		}
 		status = mon13_import(c, &import_data, m, NULL);
-		if(!status) {
+		if(status != MON13_ERROR_NULL_RESULT) {
 			return THEFT_TRIAL_FAIL;
 		}
 	}

@@ -21,12 +21,6 @@ pub const ImportMode = extern enum {
     C99_TM,
 };
 
-pub const mon13_error = extern enum {
-    MON13_ERROR_NULL_CALENDAR = -1,
-    MON13_ERROR_NULL_NAME_LIST = -2,
-    MON13_ERROR_NULL_FORMAT = -3,
-};
-
 pub const Weekday = extern enum {
     MON13_NO_WEEKDAY = 0,
     MON13_MONDAY = 1,

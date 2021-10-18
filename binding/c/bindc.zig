@@ -13,13 +13,48 @@ pub export const mon13_tranquility_names_en_US = mon13.tranquility_names_en_US;
 pub export const mon13_holocene_names_en_US = mon13.holocene_names_en_US;
 pub export const mon13_cotsworth_names_en_US = mon13.cotsworth_names_en_US;
 
+pub const PublicError = extern enum {
+    NONE = 0,
+    UNKNOWN = -1,
+    NULL_CALENDAR = -2,
+    NULL_NAME_LIST = -3,
+    NULL_FORMAT = -4,
+    NULL_INPUT = -5,
+    NULL_RESULT = -6,
+    OVERFLOW = -64,
+    BAD_CALENDAR = -65,
+    DATE_NOT_FOUND = -66,
+    DAY_OF_YEAR_NOT_FOUND = -67,
+    BAD_MODE = -68,
+
+    fn make(err: mon13.Err) PublicError {
+        return switch (err) {
+            mon13.Err.Overflow => PublicError.OVERFLOW,
+            mon13.Err.BadCalendar => PublicError.BAD_CALENDAR,
+            mon13.Err.DateNotFound => PublicError.DATE_NOT_FOUND,
+            mon13.Err.DoyNotFound => PublicError.DAY_OF_YEAR_NOT_FOUND,
+            mon13.Err.BadMode => PublicError.BAD_MODE,
+            else => PublicError.UNKNOWN,
+        };
+    }
+};
+
 pub export fn mon13_import(
     raw_cal: ?*const mon13.Cal,
     raw_input: ?*const c_void,
     mode: mon13.ImportMode,
     raw_result: ?*mon13.Date,
 ) c_int {
-    return mon13.import(raw_cal, raw_input, mode, raw_result);
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const input = raw_input orelse return @enumToInt(PublicError.NULL_INPUT);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (mon13.import(cal, input, mode)) |imported| {
+        result.* = imported;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
 }
 
 pub export fn mon13_convert(
