@@ -84,7 +84,16 @@ pub export fn mon13_add(
     mode: mon13.AddMode,
     raw_result: ?*mon13.Date,
 ) c_int {
-    return mon13.add(raw_d, raw_cal, offset, mode, raw_result);
+    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (mon13.add(d.*, cal, offset, mode)) |sum| {
+        result.* = sum;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
 }
 
 pub export fn mon13_compare(

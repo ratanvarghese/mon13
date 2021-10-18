@@ -452,7 +452,7 @@ enum theft_trial_res import_mjd(struct theft* t, void* a1, void* a2, void* a3) {
 	}
 	status = mon13_add(&d0, c, offset, MON13_ADD_DAYS, &d1);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	int64_t mjd1 = mon13_extract(&d1, c, MON13_EXTRACT_MJD);
 	return ((mjd1 - mjd0) == offset) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
@@ -477,7 +477,7 @@ enum theft_trial_res import_unix(struct theft* t, void* a1, void* a2, void* a3) 
 	}
 	status = mon13_add(&d0, c, offset, MON13_ADD_DAYS, &d1);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	int64_t u1 = mon13_extract(&d1, c, MON13_EXTRACT_UNIX);
 	int64_t udiff = (u1 - u0_cut);
@@ -551,7 +551,7 @@ enum theft_trial_res import_rd(struct theft* t, void* a1, void* a2, void* a3) {
 	}
 	status = mon13_add(&d0, c, offset, MON13_ADD_DAYS, &d1);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	int64_t rd1 = mon13_extract(&d1, c, MON13_EXTRACT_RD);
 	return ((rd1 - rd0) == offset) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
@@ -896,7 +896,7 @@ enum theft_trial_res add_day_roundtrip(struct theft* t, void* a1, void* a2, void
 	int status;
 	status = mon13_add(d, c, offset, MON13_ADD_DAYS, &res0);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	status = mon13_add(&res0, c, -offset, MON13_ADD_DAYS, &res1);
 	if(status) {
@@ -918,7 +918,7 @@ enum theft_trial_res add_day_split(struct theft* t, void* a1, void* a2, void* a3
 	int status;
 	status = mon13_add(d, c, offset, MON13_ADD_DAYS, &res0);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	status = mon13_add(d, c, offset/2, MON13_ADD_DAYS, &res1);
 	if(status) {
@@ -1035,7 +1035,7 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3)
 	struct mon13_Date res;
 	int status = mon13_add(d, c, offset, MON13_ADD_YEARS, &res);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	if(res.year != (d->year + offset)) {
 		return THEFT_TRIAL_FAIL;
@@ -1055,7 +1055,7 @@ enum theft_trial_res add_year_leap(struct theft* t, void* a1, void* a2, void* a3
 	struct mon13_Date res;
 	int status = mon13_add(d, c, offset, MON13_ADD_YEARS, &res);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 
 	if(mon13_extract(&res, c, MON13_EXTRACT_IS_LEAP_YEAR)) {
@@ -1123,12 +1123,12 @@ enum theft_trial_res add_like_other_cal(struct theft* t, void* a1, void* a2, voi
 
 	status = mon13_add(&d_yz, c_yz, offset, m, &res_yz);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 
 	status = mon13_add(d, c, offset, m, &res0);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 
 	status = mon13_convert(&res_yz, c_yz, c, &res1);
@@ -1158,7 +1158,7 @@ enum theft_trial_res add_no_year_zero(struct theft* t, void* a1, void* a2, void*
 	int status;
 	status = mon13_add(d, c, offset, m, &res);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	return (res.year == 0) ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS;
 }
@@ -1173,7 +1173,7 @@ enum theft_trial_res add_result_normalized(struct theft* t, void* a1, void* a2, 
 	int status;
 	status = mon13_add(d, c, offset, m, &res0);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	status = mon13_add(&res0, c, 0, m, &res1);
 	if(status) {
@@ -1253,11 +1253,11 @@ enum theft_trial_res compare_nearby(struct theft* t, void* a1, void* a2, void* a
 	int status;
 	status = mon13_add(d, c, 2*(-offset), m, &(sum[0]));
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	status = mon13_add(d, c, 1*(-offset), m, &(sum[1]));
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	status = mon13_add(d, c, 0*( offset), m, &(sum[2]));
 	if(status) {
@@ -1265,11 +1265,11 @@ enum theft_trial_res compare_nearby(struct theft* t, void* a1, void* a2, void* a
 	}
 	status = mon13_add(d, c, 1*( offset), m, &(sum[3]));
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	status = mon13_add(d, c, 2*( offset), m, &(sum[4]));
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 
 	for(int i = 0; i < 5; i++) {
@@ -1357,7 +1357,7 @@ enum theft_trial_res extract_is_leap(struct theft* t, void* a1, void* a2)
 		struct mon13_Date sum;
 		int status = mon13_add(d, c, i, MON13_ADD_YEARS, &sum);
 		if(status) {
-			return THEFT_TRIAL_SKIP;
+			return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 		}
 		if(mon13_extract(&sum, c, MON13_EXTRACT_IS_LEAP_YEAR)) {
 			leap_count++;
@@ -1460,7 +1460,7 @@ enum theft_trial_res extract_day_of_year_split(struct theft* t, void* a1, void* 
 	int status;
 	status = mon13_add(d, c, offset, MON13_ADD_DAYS, &res0);
 	if(status) {
-		return THEFT_TRIAL_SKIP;
+		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	status = mon13_add(d, c, offset/2, MON13_ADD_DAYS, &res1);
 	if(status) {

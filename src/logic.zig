@@ -587,46 +587,13 @@ pub fn convert(
     return yzToNoYz(dest_yz, dest);
 }
 
-// pub fn convert(
-//     raw_d: ?*const base.Date,
-//     raw_src: ?*const base.Cal,
-//     raw_dest: ?*const base.Cal,
-//     raw_result: ?*base.Date,
-// ) c_int {
-//     const d = raw_d orelse return 8;
-//     var result = raw_result orelse return 7;
-//     result.* = .{ .year = d.*.year, .month = d.*.month, .day = d.*.day };
-//     const src = raw_src orelse return 1;
-//     const dest = raw_dest orelse return 2;
-
-//     const src_yz = noYzToYz(d.*, src);
-//     const src_norm = normalize(src_yz, src);
-//     if (src == dest) {
-//         result.* = yzToNoYz(src_norm, src);
-//         return 0;
-//     }
-
-//     const src_doy = monthDayToDoy(src_norm, src) catch return 3;
-//     const mjd = doyToMjd(src_doy, src) catch return 4;
-//     const dest_doy = mjdToDoy(mjd, dest) catch return 5;
-//     const dest_yz = doyToMonthDay(dest_doy, dest) catch return 6;
-//     result.* = yzToNoYz(dest_yz, dest);
-//     return 0;
-// }
 pub fn add(
-    raw_d: ?*const base.Date,
-    raw_cal: ?*const base.Cal,
+    d: base.Date,
+    cal: *const base.Cal,
     offset: i32,
     mode: base.AddMode,
-    raw_result: ?*base.Date,
-) c_int {
-    var result = raw_result orelse return 5;
-    const bad_res: base.Date = .{ .year = 0, .month = 0, .day = 0 };
-    result.* = bad_res;
-    const cal = raw_cal orelse return 1;
-    const d = raw_d orelse return 1;
-
-    const d_yz = noYzToYz(d.*, cal);
+) Err!base.Date {
+    const d_yz = noYzToYz(d, cal);
     const d_norm = normalize(d_yz, cal);
     var res_yz = d_norm;
     if (offset != 0) { //Adding 0 shouldn't cause errors for valid cal.
@@ -635,20 +602,19 @@ pub fn add(
                 res_yz = d_norm;
             },
             base.AddMode.DAYS => {
-                res_yz = addDays(d_norm, offset, cal) catch return 2;
+                res_yz = try addDays(d_norm, offset, cal);
             },
             base.AddMode.MONTHS => {
-                res_yz = addMonths(d_norm, offset, cal) catch return 3;
+                res_yz = try addMonths(d_norm, offset, cal);
             },
             base.AddMode.YEARS => {
-                res_yz = addYears(d_norm, offset, cal) catch return 4;
+                res_yz = try addYears(d_norm, offset, cal);
             },
         }
     }
-    const res = yzToNoYz(res_yz, cal);
-    result.* = res;
-    return 0;
+    return yzToNoYz(res_yz, cal);
 }
+
 pub fn compare(
     raw_d0: ?*const base.Date,
     raw_d1: ?*const base.Date,

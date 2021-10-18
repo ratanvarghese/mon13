@@ -102,15 +102,12 @@ test "import mjd" {
 
     const d0 = try mon13.import(c, &mjd0, mon13.ImportMode.MJD);
 
-    var d1 = mon13.Date{ .year = 0, .month = 0, .day = 0 };
-    var addres = mon13.add(
-        &d0,
+    const d1 = try mon13.add(
+        d0,
         c,
         offset,
         mon13.AddMode.DAYS,
-        &d1,
     );
-    try expect(addres == 0);
     var mjd1 = mon13.extract(
         &d1,
         c,
@@ -138,35 +135,25 @@ test "strange add gregorian" {
     const c = &mon13.gregorian_year_zero;
 
     const offset: i32 = @truncate(i32, a2);
-    var res = mon13.Date{ .year = 0, .month = 0, .day = 0 };
-    var status = mon13.add(
-        &d,
+    const res = mon13.add(
+        d,
         c,
         offset,
         mon13.AddMode.YEARS,
-        &res,
-    );
-    if (status == 0) {
-        try expect(res.year == (d.year +% offset));
-    }
+    ) catch return;
+    try expect(res.year == (d.year +% offset));
 }
 
 test "add zero years" {
     const d = mon13.Date{ .year = -89712, .month = 2, .day = 29 };
     const c = &mon13.gregorian;
-    var res = mon13.Date{ .year = 0, .month = 0, .day = 0 };
-    var status = mon13.add(
-        &d,
+    const res = try mon13.add(
+        d,
         c,
         0,
         mon13.AddMode.YEARS,
-        &res,
     );
-    if (status == 0) {
-        try expect(mon13.compare(&d, &res, c) == 0);
-    } else {
-        unreachable;
-    }
+    try expect(mon13.compare(&d, &res, c) == 0);
 }
 
 fn skip_import(x: i64) bool {
@@ -179,18 +166,8 @@ test "strange convert" {
     const offset: i32 = 6356633119034338304 % std.math.maxInt(i32);
 
     const d0 = try mon13.import(c, &rd0, mon13.ImportMode.RD);
-
-    var d1 = mon13.Date{ .year = 0, .month = 0, .day = 0 };
-    const status = mon13.add(&d0, c, offset, mon13.AddMode.DAYS, &d1);
-    if (status != 0) {
-        return;
-    }
+    const d1 = try mon13.add(d0, c, offset, mon13.AddMode.DAYS);
     const rd1: i64 = mon13.extract(&d1, c, mon13.ExtractMode.RD);
-
-    // const stdout = std.io.getStdOut().writer();
-    // try stdout.print("\nd0: .year = {d}, .month = {d}, .day = {d}", .{ d0.year, d0.month, d0.day });
-    // try stdout.print("\nd1: .year = {d}, .month = {d}, .day = {d}", .{ d1.year, d1.month, d1.day });
-    // try stdout.print("\nrd0: {d}\nrd1: {d}\noffset: {d}\n", .{ rd0, rd1, offset });
     try expect((rd1 - rd0) == offset);
 }
 
@@ -200,12 +177,7 @@ test "Tranquility strange add" {
     const offset: i32 = 544641169;
     const m = mon13.AddMode.MONTHS;
 
-    var res = mon13.Date{ .year = 0, .month = 0, .day = 0 };
-    var status: c_int = 0;
-    status = mon13.add(&d_yz, c_yz, offset, m, &res);
-    try expect(status == 0);
-    // const stdout = std.io.getStdOut().writer();
-    // try stdout.print("\nd0: .year = {d}, .month = {d}, .day = {d}\n", .{ res.year, res.month, res.day });
+    const res = try mon13.add(d_yz, c_yz, offset, m);
 }
 
 test "holocene" {
@@ -259,9 +231,5 @@ test "Cotsworth add many months" {
     const c = &mon13.cotsworth;
     const offset = 209601470;
 
-    var res0 = mon13.Date{ .year = 0, .month = 0, .day = 0 };
-    const status = mon13.add(&d, c, offset, m, &res0);
-    try expect(status == 0);
-    //    try expect(res0.month == d.month);
-    //    try expect(res0.day == d.day);
+    const res0 = try mon13.add(d, c, offset, m);
 }
