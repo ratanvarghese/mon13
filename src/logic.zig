@@ -534,7 +534,7 @@ fn C99TmToDate(tm: *const C99Tm) Err!base.Date {
 }
 
 //Public functions
-pub export fn mon13_import(
+pub fn import(
     raw_cal: ?*const base.Cal,
     raw_input: ?*const c_void,
     mode: base.ImportMode,
@@ -581,7 +581,7 @@ pub export fn mon13_import(
     return 1;
 }
 
-pub export fn mon13_convert(
+pub fn convert(
     raw_d: ?*const base.Date,
     raw_src: ?*const base.Cal,
     raw_dest: ?*const base.Cal,
@@ -607,7 +607,7 @@ pub export fn mon13_convert(
     result.* = yzToNoYz(dest_yz, dest);
     return 0;
 }
-pub export fn mon13_add(
+pub fn add(
     raw_d: ?*const base.Date,
     raw_cal: ?*const base.Cal,
     offset: i32,
@@ -643,7 +643,7 @@ pub export fn mon13_add(
     result.* = res;
     return 0;
 }
-pub export fn mon13_compare(
+pub fn compare(
     raw_d0: ?*const base.Date,
     raw_d1: ?*const base.Date,
     raw_cal: ?*const base.Cal,
@@ -676,7 +676,7 @@ pub export fn mon13_compare(
 
     return @intCast(c_int, d0_norm.day) - @intCast(c_int, d1_norm.day);
 }
-pub export fn mon13_extract(
+pub fn extract(
     raw_d: ?*const base.Date,
     raw_cal: ?*const base.Cal,
     mode: base.ExtractMode,

@@ -39,7 +39,7 @@ var gregorian_era_list = [_:null]?[*:0]const u8{
     "Common Era",
 };
 
-pub export const mon13_gregorian_names_en_US = base.NameList{
+pub const gregorian_names_en_US = base.NameList{
     .month_list = @as([*:null]?[*:0]const u8, &gregorian_month_list),
     .weekday_list = @as([*:null]?[*:0]const u8, &gregorian_weekday_list),
     .era_list = @as([*:null]?[*:0]const u8, &gregorian_era_list),
@@ -78,7 +78,7 @@ var gregorian_era_list_fr_FR = [_:null]?[*:0]const u8{
     "Ère commune",
 };
 
-pub export const mon13_gregorian_names_fr_FR = base.NameList{
+pub const gregorian_names_fr_FR = base.NameList{
     .month_list = @as([*:null]?[*:0]const u8, &gregorian_month_list_fr_FR),
     .weekday_list = @as([*:null]?[*:0]const u8, &gregorian_weekday_list_fr_FR),
     .era_list = @as([*:null]?[*:0]const u8, &gregorian_era_list_fr_FR),
@@ -129,7 +129,7 @@ var tranquility_alt_intercalary_list_en_US = [_:null]?[*:0]const u8{
     "",
 };
 
-pub export const mon13_tranquility_names_en_US = base.NameList{
+pub const tranquility_names_en_US = base.NameList{
     .month_list = @as([*:null]?[*:0]const u8, &tranquility_month_list_en_US),
     .weekday_list = @as([*:null]?[*:0]const u8, &tranquility_weekday_list_en_US),
     .era_list = @as([*:null]?[*:0]const u8, &tranquility_era_list_en_US),
@@ -145,7 +145,7 @@ var holocene_era_list_en_US = [_:null]?[*:0]const u8{
     "Human Era",
 };
 
-pub export const mon13_holocene_names_en_US = base.NameList{
+pub const holocene_names_en_US = base.NameList{
     .month_list = @as([*:null]?[*:0]const u8, &gregorian_month_list),
     .weekday_list = @as([*:null]?[*:0]const u8, &gregorian_weekday_list),
     .era_list = @as([*:null]?[*:0]const u8, &holocene_era_list_en_US),
@@ -192,7 +192,7 @@ var cotsworth_intercalary_list = [_:null]?[*:0]const u8{
     "Leap Day",
 };
 
-pub export const mon13_cotsworth_names_en_US = base.NameList{
+pub const cotsworth_names_en_US = base.NameList{
     .month_list = @as([*:null]?[*:0]const u8, &cotsworth_month_list),
     .weekday_list = @as([*:null]?[*:0]const u8, &cotsworth_weekday_list),
     .era_list = @as([*:null]?[*:0]const u8, &cotsworth_era_list),

@@ -41,9 +41,9 @@ const Sequence = enum(u8) {
     fn getNum(self: Sequence, d: *const base.Date, cal: *const base.Cal) ?i32 {
         return switch (self) {
             .day_of_month => d.*.day,
-            .day_of_year => @intCast(i32, logic.mon13_extract(d, cal, base.ExtractMode.DAY_OF_YEAR)),
+            .day_of_year => @intCast(i32, logic.extract(d, cal, base.ExtractMode.DAY_OF_YEAR)),
             .month_number => d.*.month,
-            .weekday_number => @intCast(i32, logic.mon13_extract(d, cal, base.ExtractMode.DAY_OF_WEEK)),
+            .weekday_number => @intCast(i32, logic.extract(d, cal, base.ExtractMode.DAY_OF_WEEK)),
             .year => d.*.year,
             else => null,
         };
@@ -70,7 +70,7 @@ const Sequence = enum(u8) {
     }
 
     fn getWeekdayName(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
-        const weekday_num = logic.mon13_extract(d, cal, base.ExtractMode.DAY_OF_WEEK);
+        const weekday_num = logic.extract(d, cal, base.ExtractMode.DAY_OF_WEEK);
         const weekday = @intToEnum(base.Weekday, @intCast(c_int, weekday_num));
         if (weekday == base.Weekday.MON13_NO_WEEKDAY) {
             return getIcName(d, cal, nlist);
@@ -246,7 +246,7 @@ const fmt_info = struct {
     pad_flag: ?Flag = null,
 };
 
-pub export fn mon13_format(
+pub fn format(
     raw_d: ?*const base.Date,
     raw_cal: ?*const base.Cal,
     raw_nlist: ?*const base.NameList,

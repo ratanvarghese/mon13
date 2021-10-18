@@ -32,7 +32,7 @@ var gregorian_leap_lookup = [_:null]?base.Segment{
     .{ .offset = 335, .month = 12, .day_start = 1, .day_end = 31 },
 };
 
-pub export const mon13_gregorian = base.Cal{
+pub const gregorian = base.Cal{
     .intercalary_list = null,
     .common_lookup_list = @as([*:null]?base.Segment, &gregorian_common_lookup),
     .leap_lookup_list = @as([*:null]?base.Segment, &gregorian_leap_lookup),
@@ -52,7 +52,7 @@ pub export const mon13_gregorian = base.Cal{
     .CAL_PERENNIAL = false,
 };
 
-pub export const mon13_gregorian_year_zero = base.Cal{
+pub const gregorian_year_zero = base.Cal{
     .intercalary_list = null,
     .common_lookup_list = @as([*:null]?base.Segment, &gregorian_common_lookup),
     .leap_lookup_list = @as([*:null]?base.Segment, &gregorian_leap_lookup),
@@ -131,7 +131,7 @@ var tranquility_leap_lookup = [_:null]?base.Segment{
     .{ .offset = 365, .month = 0, .day_start = 1, .day_end = 1 },
 };
 
-pub export const mon13_tranquility = base.Cal{
+pub const tranquility = base.Cal{
     .intercalary_list = @as([*:null]?base.Intercalary, &tranquility_ic),
     .common_lookup_list = @as([*:null]?base.Segment, &tranquility_common_lookup),
     .leap_lookup_list = @as([*:null]?base.Segment, &tranquility_leap_lookup),
@@ -151,7 +151,7 @@ pub export const mon13_tranquility = base.Cal{
     .CAL_PERENNIAL = true,
 };
 
-pub export const mon13_tranquility_year_zero = base.Cal{
+pub const tranquility_year_zero = base.Cal{
     .intercalary_list = @as([*:null]?base.Intercalary, &tranquility_ic),
     .common_lookup_list = @as([*:null]?base.Segment, &tranquility_common_lookup),
     .leap_lookup_list = @as([*:null]?base.Segment, &tranquility_leap_lookup),
@@ -173,7 +173,7 @@ pub export const mon13_tranquility_year_zero = base.Cal{
 
 //Holocene
 
-pub export const mon13_holocene = base.Cal{
+pub const holocene = base.Cal{
     .intercalary_list = null,
     .common_lookup_list = @as([*:null]?base.Segment, &gregorian_common_lookup),
     .leap_lookup_list = @as([*:null]?base.Segment, &gregorian_leap_lookup),
@@ -248,7 +248,7 @@ var cotsworth_leap_lookup = [_:null]?base.Segment{
     .{ .offset = 337, .month = 13, .day_start = 1, .day_end = 29 },
 };
 
-pub export const mon13_cotsworth = base.Cal{
+pub const cotsworth = base.Cal{
     .intercalary_list = @as([*:null]?base.Intercalary, &cotsworth_ic),
     .common_lookup_list = @as([*:null]?base.Segment, &cotsworth_common_lookup),
     .leap_lookup_list = @as([*:null]?base.Segment, &cotsworth_leap_lookup),
