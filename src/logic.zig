@@ -616,18 +616,15 @@ pub fn add(
 }
 
 pub fn compare(
-    raw_d0: ?*const base.Date,
-    raw_d1: ?*const base.Date,
+    d0: base.Date,
+    d1: base.Date,
     raw_cal: ?*const base.Cal,
-) c_int {
-    const d0 = raw_d0 orelse return 0;
-    const d1 = raw_d1 orelse return 0;
-
-    var d0_norm = d0.*;
-    var d1_norm = d1.*;
+) Err!c_int {
+    var d0_norm = d0;
+    var d1_norm = d1;
     if (raw_cal) |cal| {
-        d0_norm = normalize(noYzToYz(d0.*, cal), cal);
-        d1_norm = normalize(noYzToYz(d1.*, cal), cal);
+        d0_norm = normalize(noYzToYz(d0, cal), cal);
+        d1_norm = normalize(noYzToYz(d1, cal), cal);
     }
 
     if (d0_norm.year != d1_norm.year) {
@@ -636,8 +633,8 @@ pub fn compare(
 
     if (raw_cal) |cal| {
         if (d0_norm.month == 0 or d1_norm.month == 0) {
-            const doy0 = monthDayToDoy(d0_norm, cal) catch return 0;
-            const doy1 = monthDayToDoy(d1_norm, cal) catch return 0;
+            const doy0 = try monthDayToDoy(d0_norm, cal);
+            const doy1 = try monthDayToDoy(d1_norm, cal);
             return @intCast(c_int, doy0.doy) - @intCast(c_int, doy1.doy);
         }
     }
@@ -648,6 +645,7 @@ pub fn compare(
 
     return @intCast(c_int, d0_norm.day) - @intCast(c_int, d1_norm.day);
 }
+
 pub fn extract(
     raw_d: ?*const base.Date,
     raw_cal: ?*const base.Cal,

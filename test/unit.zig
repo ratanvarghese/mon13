@@ -153,7 +153,7 @@ test "add zero years" {
         0,
         mon13.AddMode.YEARS,
     );
-    try expect(mon13.compare(&d, &res, c) == 0);
+    try expect((try mon13.compare(d, res, c)) == 0);
 }
 
 fn skip_import(x: i64) bool {
@@ -199,8 +199,8 @@ test "avoid overflow in compare" {
     const res0 = try mon13.convert(kcd_d1, kcd_c1, kcd_c0);
     const res1 = try mon13.convert(kcd_d0, kcd_c0, kcd_c1);
 
-    const cmp_res0 = mon13.compare(&res0, &kcd_d0, kcd_c0);
-    const cmp_res1 = mon13.compare(&res1, &kcd_d1, kcd_c1);
+    const cmp_res0 = try mon13.compare(res0, kcd_d0, kcd_c0);
+    const cmp_res1 = try mon13.compare(res1, kcd_d1, kcd_c1);
     if (cmp_res0 == 0) {
         try expect(cmp_res1 == 0);
     } else if (cmp_res0 > 0) {

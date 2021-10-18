@@ -101,7 +101,9 @@ pub export fn mon13_compare(
     raw_d1: ?*const mon13.Date,
     raw_cal: ?*const mon13.Cal,
 ) c_int {
-    return mon13.compare(raw_d0, raw_d1, raw_cal);
+    const d0 = raw_d0 orelse return 0;
+    const d1 = raw_d1 orelse return 0;
+    return mon13.compare(d0.*, d1.*, raw_cal) catch 0;
 }
 
 pub export fn mon13_extract(
