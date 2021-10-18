@@ -19,6 +19,9 @@ pub const Err = error{
     DateNotFound,
     DoyNotFound,
     BadMode,
+    InvalidUtf8,
+    BeyondEndState,
+    InvalidSequence,
 };
 
 const UNIX_EPOCH_IN_MJD: i32 = 40587;

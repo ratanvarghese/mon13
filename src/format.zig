@@ -3,12 +3,6 @@ const std = @import("std");
 const base = @import("base.zig");
 const logic = @import("logic.zig");
 
-const FormatErr = error{
-    InvalidUtf8,
-    BeyondEndState,
-    InvalidSequence,
-};
-
 const Flag = enum(u8) {
     pad_none = '-',
     pad_space = '_',
@@ -38,13 +32,13 @@ const Sequence = enum(u8) {
     weekday_number = 'u',
     year = 'Y',
 
-    fn getNum(self: Sequence, d: *const base.Date, cal: *const base.Cal) ?i32 {
+    fn getNum(self: Sequence, d: base.Date, cal: *const base.Cal) ?i32 {
         return switch (self) {
-            .day_of_month => d.*.day,
-            .day_of_year => @intCast(i32, logic.extract(d, cal, base.ExtractMode.DAY_OF_YEAR)),
-            .month_number => d.*.month,
-            .weekday_number => @intCast(i32, logic.extract(d, cal, base.ExtractMode.DAY_OF_WEEK)),
-            .year => d.*.year,
+            .day_of_month => d.day,
+            .day_of_year => @intCast(i32, logic.extract(&d, cal, base.ExtractMode.DAY_OF_YEAR)),
+            .month_number => d.month,
+            .weekday_number => @intCast(i32, logic.extract(&d, cal, base.ExtractMode.DAY_OF_WEEK)),
+            .year => d.year,
             else => null,
         };
     }
@@ -58,8 +52,8 @@ const Sequence = enum(u8) {
         }
     }
 
-    fn getIcName(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
-        const icr = logic.seekIcRes(d.*, cal) orelse return null;
+    fn getIcName(d: base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
+        const icr = logic.seekIcRes(d, cal) orelse return null;
         if (icr.ic.IC_ERA_START_ALT_NAME and d.year == 0 and icr.ic.day_of_year == logic.yearLen(false, cal)) {
             const alt_ic_list = nlist.*.alt_intercalary_list orelse return null;
             return alt_ic_list[icr.ici];
@@ -69,8 +63,8 @@ const Sequence = enum(u8) {
         }
     }
 
-    fn getWeekdayName(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
-        const weekday_num = logic.extract(d, cal, base.ExtractMode.DAY_OF_WEEK);
+    fn getWeekdayName(d: base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
+        const weekday_num = logic.extract(&d, cal, base.ExtractMode.DAY_OF_WEEK);
         const weekday = @intToEnum(base.Weekday, @intCast(c_int, weekday_num));
         if (weekday == base.Weekday.MON13_NO_WEEKDAY) {
             return getIcName(d, cal, nlist);
@@ -80,23 +74,23 @@ const Sequence = enum(u8) {
         }
     }
 
-    fn getMonthName(d: *const base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
-        if (d.*.month == 0) {
+    fn getMonthName(d: base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
+        if (d.month == 0) {
             return getIcName(d, cal, nlist);
         } else {
-            const i = @intCast(usize, d.*.month - 1);
+            const i = @intCast(usize, d.month - 1);
             return nlist.*.month_list[i];
         }
     }
 
-    fn getName(self: Sequence, d: *const base.Date, cal: *const base.Cal, raw_nlist: ?*const base.NameList) ?[*:0]const u8 {
+    fn getName(self: Sequence, d: base.Date, cal: *const base.Cal, raw_nlist: ?*const base.NameList) ?[*:0]const u8 {
         const nlist = raw_nlist orelse return null;
 
         return switch (self) {
             .weekday_name => getWeekdayName(d, cal, nlist),
             .month_name => getMonthName(d, cal, nlist),
             .calendar_name => nlist.calendar_name,
-            .era_name => getEraName(d.*.year, nlist),
+            .era_name => getEraName(d.year, nlist),
             else => null,
         };
     }
@@ -159,7 +153,7 @@ const State = enum(u8) {
         };
     }
 
-    fn afterPrefixOrFlag(c: u8) FormatErr!State {
+    fn afterPrefixOrFlag(c: u8) logic.Err!State {
         if (validInEnum(Flag, c)) {
             return State.fmt_flag;
         } else if (validInEnum(Digit, c)) {
@@ -168,24 +162,24 @@ const State = enum(u8) {
         } else if (validInEnum(Sequence, c)) {
             return State.fmt_seq;
         } else {
-            return FormatErr.InvalidSequence;
+            return logic.Err.InvalidSequence;
         }
     }
 
-    fn afterWidth(c: u8) FormatErr!State {
+    fn afterWidth(c: u8) logic.Err!State {
         if (validInEnum(Digit, c)) {
             return State.fmt_width;
         } else if (validInEnum(Sequence, c)) {
             return State.fmt_seq;
         } else {
-            return FormatErr.InvalidSequence;
+            return logic.Err.InvalidSequence;
         }
     }
 
-    fn next(self: State, c: u8) FormatErr!State {
+    fn next(self: State, c: u8) logic.Err!State {
         return switch (self) {
             .start => afterStart(c),
-            .end => FormatErr.BeyondEndState,
+            .end => logic.Err.BeyondEndState,
             .fmt_prefix, .fmt_flag => afterPrefixOrFlag(c),
             .fmt_width => afterWidth(c),
             .fmt_seq => afterStart(c),
@@ -194,13 +188,13 @@ const State = enum(u8) {
     }
 };
 
-fn copyLenUtf8(c: u8) FormatErr!u8 {
+fn copyLenUtf8(c: u8) logic.Err!u8 {
     return switch (c) {
         0b11110000...0b11110111 => 4,
         0b11100000...0b11101111 => 3,
         0b11000000...0b11011111 => 2,
         0b00000000...0b01111111 => 1,
-        else => FormatErr.InvalidUtf8,
+        else => logic.Err.InvalidUtf8,
     };
 }
 
@@ -247,16 +241,13 @@ const fmt_info = struct {
 };
 
 pub fn format(
-    raw_d: ?*const base.Date,
-    raw_cal: ?*const base.Cal,
+    d: base.Date,
+    cal: *const base.Cal,
     raw_nlist: ?*const base.NameList,
-    raw_fmt: ?[*]const u8,
+    fmt: [*]const u8,
     raw_buf: ?[*]u8,
     buflen: u32,
-) c_int {
-    const d = raw_d orelse return -1;
-    const cal = raw_cal orelse return -2;
-    const fmt = raw_fmt orelse return -3;
+) logic.Err!c_int {
     const dry_run = isDryRun(buflen, raw_buf);
 
     const buf_limit = buflen -% 1; //Leave space for null character.
@@ -268,10 +259,10 @@ pub fn format(
 
     while (fmt[fmt_i] != 0 and (dry_run or buf_i < buf_limit)) {
         const c = fmt[fmt_i];
-        s = s.next(c) catch return -5;
+        s = try s.next(c);
 
         if (s == State.copy) {
-            const count = copyLenUtf8(c) catch return -6;
+            const count = try copyLenUtf8(c);
             const old_fmt_i = fmt_i;
             const old_buf_i = buf_i;
             fmt_i += count;
@@ -353,7 +344,7 @@ pub fn format(
                 var name_i: u32 = 0;
                 while (name[name_i] != 0) {
                     const name_c = name[name_i];
-                    const count = copyLenUtf8(name_c) catch return -7;
+                    const count = try copyLenUtf8(name_c);
                     const old_buf_i = buf_i;
                     const old_name_i = name_i;
                     name_i += count;

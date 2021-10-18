@@ -122,5 +122,13 @@ pub export fn mon13_format(
     raw_buf: ?[*]u8,
     buflen: u32,
 ) c_int {
-    return mon13.format(raw_d, raw_cal, raw_nlist, raw_fmt, raw_buf, buflen);
+    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const fmt = raw_fmt orelse return @enumToInt(PublicError.NULL_FORMAT);
+
+    if (mon13.format(d.*, cal, raw_nlist, fmt, raw_buf, buflen)) |bytes_used| {
+        return bytes_used;
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
 }

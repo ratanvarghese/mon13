@@ -217,7 +217,7 @@ test "Cotsworth format" {
 
     const buf_size = 100;
     var buf = [_]u8{0} ** buf_size;
-    const res = mon13.format(&d, c, n, "%A", @as([*]u8, &buf), buf_size);
+    const res = try mon13.format(d, c, n, "%A", @as([*]u8, &buf), buf_size);
 
     const expected = "Leap Day";
     for (expected) |ch, i| {
