@@ -121,15 +121,12 @@ test "import mjd" {
 
 test "convert year 0" {
     const d = mon13.Date{ .year = -1639577, .month = 7, .day = 2 };
-    var res = mon13.Date{ .year = 0, .month = 0, .day = 0 };
-    const status = mon13.convert(
-        &d,
+    const res = try mon13.convert(
+        d,
         &mon13.tranquility_year_zero,
         &mon13.tranquility,
-        &res,
     );
 
-    try expect(status == 0);
     try expect(res.year == -1639578);
     try expect(res.month == 7);
     try expect(res.day == 2);
@@ -213,11 +210,9 @@ test "Tranquility strange add" {
 
 test "holocene" {
     const d_gr = mon13.Date{ .year = -9999, .month = 1, .day = 1 };
-    var d_hl = mon13.Date{ .year = 0, .month = 0, .day = 0 };
     const c_gr = &mon13.gregorian_year_zero;
     const c_hl = &mon13.holocene;
-    const status = mon13.convert(&d_gr, c_gr, c_hl, &d_hl);
-    try expect(status == 0);
+    const d_hl = try mon13.convert(d_gr, c_gr, c_hl);
     try expect(d_hl.year == 1);
     try expect(d_hl.month == 1);
     try expect(d_hl.day == 1);
@@ -229,13 +224,8 @@ test "avoid overflow in compare" {
     const kcd_c0 = &mon13.gregorian_year_zero;
     const kcd_c1 = &mon13.cotsworth;
 
-    var res0 = mon13.Date{ .year = 0, .month = 0, .day = 0 };
-    var res1 = mon13.Date{ .year = 0, .month = 0, .day = 0 };
-    var status: c_int = 0;
-    status = mon13.convert(&kcd_d1, kcd_c1, kcd_c0, &res0);
-    try expect(status == 0);
-    status = mon13.convert(&kcd_d0, kcd_c0, kcd_c1, &res1);
-    try expect(status == 0);
+    const res0 = try mon13.convert(kcd_d1, kcd_c1, kcd_c0);
+    const res1 = try mon13.convert(kcd_d0, kcd_c0, kcd_c1);
 
     const cmp_res0 = mon13.compare(&res0, &kcd_d0, kcd_c0);
     const cmp_res1 = mon13.compare(&res1, &kcd_d1, kcd_c1);

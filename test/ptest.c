@@ -730,19 +730,19 @@ enum theft_trial_res convert_null(struct theft* t, void* a1, void* a2, void* a3)
 	struct mon13_Date res;
 	int status;
 	status = mon13_convert(NULL, cal0, cal1, &res);
-	if(!status) {
+	if(status != MON13_ERROR_NULL_DATE) {
 		return THEFT_TRIAL_FAIL;
 	}
 	status = mon13_convert(d, NULL, cal1, &res);
-	if(!status) {
+	if(status != MON13_ERROR_NULL_CALENDAR) {
 		return THEFT_TRIAL_FAIL;
 	}
 	status = mon13_convert(d, cal0, NULL, &res);
-	if(!status) {
+	if(status != MON13_ERROR_NULL_CALENDAR) {
 		return THEFT_TRIAL_FAIL;
 	}
 	status = mon13_convert(d, cal0, cal1, NULL);
-	if(!status) {
+	if(status != MON13_ERROR_NULL_RESULT) {
 		return THEFT_TRIAL_FAIL;
 	}
 
@@ -768,7 +768,15 @@ enum theft_trial_res convert_holocene(struct theft* t, void* a1) {
 	int status_hl = mon13_convert(d0, cal_gr, cal_hl, &res_hl);
 	int status_gr = mon13_convert(d0, cal_hl, cal_gr, &res_gr);
 	if(status_hl && status_gr) {
-		return THEFT_TRIAL_SKIP;
+		if(status_hl != MON13_ERROR_OVERFLOW) {
+			return THEFT_TRIAL_FAIL;
+		}
+		else if(status_gr != MON13_ERROR_OVERFLOW) {
+			return THEFT_TRIAL_FAIL;
+		}
+		else {
+			return THEFT_TRIAL_SKIP;	
+		}
 	}
 
 	if(!status_hl) {
@@ -1125,7 +1133,12 @@ enum theft_trial_res add_like_other_cal(struct theft* t, void* a1, void* a2, voi
 
 	status = mon13_convert(&res_yz, c_yz, c, &res1);
 	if(status) {
-		return skip_import(((int64_t)res_yz.year)*366) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+		if(status == MON13_ERROR_OVERFLOW) {
+			return skip_import(((int64_t)res_yz.year)*366) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+		}
+		else {
+			return THEFT_TRIAL_FAIL;
+		}
 	}
 
 	if(mon13_compare(&res0, &res1, c)) {

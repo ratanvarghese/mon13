@@ -570,31 +570,49 @@ pub fn import(
 }
 
 pub fn convert(
-    raw_d: ?*const base.Date,
-    raw_src: ?*const base.Cal,
-    raw_dest: ?*const base.Cal,
-    raw_result: ?*base.Date,
-) c_int {
-    const d = raw_d orelse return 8;
-    var result = raw_result orelse return 7;
-    result.* = .{ .year = d.*.year, .month = d.*.month, .day = d.*.day };
-    const src = raw_src orelse return 1;
-    const dest = raw_dest orelse return 2;
-
-    const src_yz = noYzToYz(d.*, src);
+    d: base.Date,
+    src: *const base.Cal,
+    dest: *const base.Cal,
+) Err!base.Date {
+    const src_yz = noYzToYz(d, src);
     const src_norm = normalize(src_yz, src);
     if (src == dest) {
-        result.* = yzToNoYz(src_norm, src);
-        return 0;
+        return yzToNoYz(src_norm, src);
     }
 
-    const src_doy = monthDayToDoy(src_norm, src) catch return 3;
-    const mjd = doyToMjd(src_doy, src) catch return 4;
-    const dest_doy = mjdToDoy(mjd, dest) catch return 5;
-    const dest_yz = doyToMonthDay(dest_doy, dest) catch return 6;
-    result.* = yzToNoYz(dest_yz, dest);
-    return 0;
+    const src_doy = try monthDayToDoy(src_norm, src);
+    const mjd = try doyToMjd(src_doy, src);
+    const dest_doy = try mjdToDoy(mjd, dest);
+    const dest_yz = try doyToMonthDay(dest_doy, dest);
+    return yzToNoYz(dest_yz, dest);
 }
+
+// pub fn convert(
+//     raw_d: ?*const base.Date,
+//     raw_src: ?*const base.Cal,
+//     raw_dest: ?*const base.Cal,
+//     raw_result: ?*base.Date,
+// ) c_int {
+//     const d = raw_d orelse return 8;
+//     var result = raw_result orelse return 7;
+//     result.* = .{ .year = d.*.year, .month = d.*.month, .day = d.*.day };
+//     const src = raw_src orelse return 1;
+//     const dest = raw_dest orelse return 2;
+
+//     const src_yz = noYzToYz(d.*, src);
+//     const src_norm = normalize(src_yz, src);
+//     if (src == dest) {
+//         result.* = yzToNoYz(src_norm, src);
+//         return 0;
+//     }
+
+//     const src_doy = monthDayToDoy(src_norm, src) catch return 3;
+//     const mjd = doyToMjd(src_doy, src) catch return 4;
+//     const dest_doy = mjdToDoy(mjd, dest) catch return 5;
+//     const dest_yz = doyToMonthDay(dest_doy, dest) catch return 6;
+//     result.* = yzToNoYz(dest_yz, dest);
+//     return 0;
+// }
 pub fn add(
     raw_d: ?*const base.Date,
     raw_cal: ?*const base.Cal,

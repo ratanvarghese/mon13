@@ -21,6 +21,7 @@ pub const PublicError = extern enum {
     NULL_FORMAT = -4,
     NULL_INPUT = -5,
     NULL_RESULT = -6,
+    NULL_DATE = -7,
     OVERFLOW = -64,
     BAD_CALENDAR = -65,
     DATE_NOT_FOUND = -66,
@@ -63,7 +64,17 @@ pub export fn mon13_convert(
     raw_dest: ?*const mon13.Cal,
     raw_result: ?*mon13.Date,
 ) c_int {
-    return mon13.convert(raw_d, raw_src, raw_dest, raw_result);
+    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
+    const src = raw_src orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const dest = raw_dest orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (mon13.convert(d.*, src, dest)) |converted| {
+        result.* = converted;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
 }
 
 pub export fn mon13_add(
