@@ -102,10 +102,11 @@ int mon13_compare(
 	const struct mon13_Cal* cal
 );
 
-int64_t mon13_extract(
+int mon13_extract(
 	const struct mon13_Date* d,
 	const struct mon13_Cal* cal,
-	const enum mon13_ExtractMode mode
+	const enum mon13_ExtractMode mode,
+	int64_t* result
 );
 
 int mon13_format(

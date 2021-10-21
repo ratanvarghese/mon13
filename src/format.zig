@@ -35,9 +35,15 @@ const Sequence = enum(u8) {
     fn getNum(self: Sequence, d: base.Date, cal: *const base.Cal) ?i32 {
         return switch (self) {
             .day_of_month => d.day,
-            .day_of_year => @intCast(i32, logic.extract(&d, cal, base.ExtractMode.DAY_OF_YEAR)),
+            .day_of_year => doy: {
+                const res = logic.extract(d, cal, base.ExtractMode.DAY_OF_YEAR) catch break :doy null;
+                return @intCast(i32, res);
+            },
             .month_number => d.month,
-            .weekday_number => @intCast(i32, logic.extract(&d, cal, base.ExtractMode.DAY_OF_WEEK)),
+            .weekday_number => weekday: {
+                const res = logic.extract(d, cal, base.ExtractMode.DAY_OF_WEEK) catch break :weekday null;
+                return @intCast(i32, res);
+            },
             .year => d.year,
             else => null,
         };
@@ -64,7 +70,7 @@ const Sequence = enum(u8) {
     }
 
     fn getWeekdayName(d: base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
-        const weekday_num = logic.extract(&d, cal, base.ExtractMode.DAY_OF_WEEK);
+        const weekday_num = logic.extract(d, cal, base.ExtractMode.DAY_OF_WEEK) catch return null;
         const weekday = @intToEnum(base.Weekday, @intCast(c_int, weekday_num));
         if (weekday == base.Weekday.MON13_NO_WEEKDAY) {
             return getIcName(d, cal, nlist);

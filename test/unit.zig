@@ -108,8 +108,8 @@ test "import mjd" {
         offset,
         mon13.AddMode.DAYS,
     );
-    var mjd1 = mon13.extract(
-        &d1,
+    var mjd1 = try mon13.extract(
+        d1,
         c,
         mon13.ExtractMode.MJD,
     );
@@ -167,7 +167,7 @@ test "strange convert" {
 
     const d0 = try mon13.import(c, &rd0, mon13.ImportMode.RD);
     const d1 = try mon13.add(d0, c, offset, mon13.AddMode.DAYS);
-    const rd1: i64 = mon13.extract(&d1, c, mon13.ExtractMode.RD);
+    const rd1: i64 = try mon13.extract(d1, c, mon13.ExtractMode.RD);
     try expect((rd1 - rd0) == offset);
 }
 

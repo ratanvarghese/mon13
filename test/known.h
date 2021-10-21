@@ -6,8 +6,8 @@
 #include "mon13.h"
 
 struct known_convert_date {
-	const struct mon13_cal* c0;
-	const struct mon13_cal* c1;
+	const struct mon13_Cal* c0;
+	const struct mon13_Cal* c1;
 	const struct mon13_Date d0;
 	const struct mon13_Date d1;
 };

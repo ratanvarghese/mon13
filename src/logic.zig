@@ -650,35 +650,35 @@ pub fn compare(
 }
 
 pub fn extract(
-    raw_d: ?*const base.Date,
-    raw_cal: ?*const base.Cal,
+    d: base.Date,
+    cal: *const base.Cal,
     mode: base.ExtractMode,
-) i64 {
-    const cal = raw_cal orelse return 0;
-    const d = raw_d orelse return 0;
-    const d_norm = normalize(noYzToYz(d.*, cal), cal);
+) Err!i64 {
+    const d_norm = normalize(noYzToYz(d, cal), cal);
     switch (mode) {
         base.ExtractMode.DAY_OF_YEAR => {
-            const d_doy = monthDayToDoy(d_norm, cal) catch return 0;
+            const d_doy = try monthDayToDoy(d_norm, cal);
             return d_doy.doy;
         },
         base.ExtractMode.DAY_OF_WEEK => {
-            return @enumToInt(getDayOfWeek(d_norm, cal) catch base.Weekday.MON13_NO_WEEKDAY);
+            const weekday = try getDayOfWeek(d_norm, cal);
+            return @enumToInt(weekday);
         },
         base.ExtractMode.IS_LEAP_YEAR => {
-            return @boolToInt(isLeap(d_norm.year, cal) catch false);
+            const is_leap = try isLeap(d_norm.year, cal);
+            return @boolToInt(is_leap);
         },
         base.ExtractMode.MJD => {
-            const d_doy = monthDayToDoy(d_norm, cal) catch return 1;
-            const d_mjd = doyToMjd(d_doy, cal) catch return 1;
+            const d_doy = try monthDayToDoy(d_norm, cal);
+            const d_mjd = try doyToMjd(d_doy, cal);
             return d_mjd;
         },
         base.ExtractMode.UNIX => {
-            return dateToUnix(d_norm, cal) catch return 0;
+            return try dateToUnix(d_norm, cal);
         },
         base.ExtractMode.RD => {
-            return dateToRd(d_norm, cal) catch return 0;
+            return try dateToRd(d_norm, cal);
         },
     }
-    return 0;
+    return Err.BadMode;
 }

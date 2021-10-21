@@ -110,8 +110,18 @@ pub export fn mon13_extract(
     raw_d: ?*const mon13.Date,
     raw_cal: ?*const mon13.Cal,
     mode: mon13.ExtractMode,
-) i64 {
-    return mon13.extract(raw_d, raw_cal, mode);
+    raw_result: ?*i64,
+) c_int {
+    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (mon13.extract(d.*, cal, mode)) |extracted| {
+        result.* = extracted;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
 }
 
 pub export fn mon13_format(
