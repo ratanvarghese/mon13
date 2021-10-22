@@ -2050,6 +2050,59 @@ enum theft_trial_res format_dry_run(struct theft* t,  void* a1, void* a2, void* 
 	return (status == status_null_buf) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res format_truncate(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+	struct mon13_Date* d = a1;
+	const struct mon13_Cal* c = a2;
+	const struct mon13_NameList* n = a3;
+	const char* fmt = a4;
+
+	int buflen_0 = mon13_format(d, c, n, fmt, NULL, STRFTIME_BUF);
+	if(buflen_0 == 0) {
+		return THEFT_TRIAL_SKIP;
+	}
+	if(buflen_0 < 0) {
+		return THEFT_TRIAL_FAIL;
+	}
+	char* buf_0 = calloc(buflen_0 + 1, sizeof(char));
+	int status_0 = mon13_format(d, c, n, fmt, buf_0, buflen_0 + 1);
+	if(status_0 != buflen_0) {
+		free(buf_0);
+		return THEFT_TRIAL_FAIL;
+	}
+
+	int buflen_1 = (buflen_0 > 1) ? (buflen_0/2) : 1;
+	char* buf_1 = calloc(buflen_1 + 1, sizeof(char));
+	int status_1 = mon13_format(d, c, n, fmt, buf_1, buflen_1 + 1);
+	if(status_1 != buflen_0) {
+		free(buf_0);
+		free(buf_1);
+		return THEFT_TRIAL_FAIL;
+	}
+
+	if(buf_1[buflen_1] != 0) {
+		return THEFT_TRIAL_FAIL;
+	}
+
+	int cmp = memcmp(buf_0, buf_1, buflen_1);
+	if(cmp == 0) {
+		free(buf_0);
+		free(buf_1);
+		return THEFT_TRIAL_PASS;
+	}
+	else {
+		unsigned char* ubuf_0 = (unsigned char*)buf_0;
+		if(ubuf_0[buflen_1] > 0x7F) {
+			free(buf_0);
+			free(buf_1);
+			return THEFT_TRIAL_PASS;
+		}
+	}
+
+	free(buf_0);
+	free(buf_1);
+	return THEFT_TRIAL_FAIL;
+}
+
 //Theft type info
 struct theft_type_info gr2tq_oa_info = {
 	.alloc = select_gr2tq_oa, //nothing to free
@@ -3788,6 +3841,39 @@ int main(int argc, char** argv) {
 		{
 			.name = "mon13_format: dry run, Tranquility Year 0 (en_US)",
 			.prop4 = format_dry_run,
+			.type_info = {
+				&tq_year0_date_info,
+				&tq_year0_cal_info,
+				&tq_name_en_info,
+				&strftime_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: truncate, Gregorian Year 0 (en_US)",
+			.prop4 = format_truncate,
+			.type_info = {
+				&gr_year0_date_info,
+				&gr_year0_cal_info,
+				&gr_name_en_info,
+				&strftime_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: truncate, Gregorian Year 0 (fr_FR)",
+			.prop4 = format_truncate,
+			.type_info = {
+				&gr_year0_date_info,
+				&gr_year0_cal_info,
+				&gr_name_fr_info,
+				&strftime_fmt_info
+			},
+			.seed = seed
+		},
+		{
+			.name = "mon13_format: truncate, Tranquility Year 0 (en_US)",
+			.prop4 = format_truncate,
 			.type_info = {
 				&tq_year0_date_info,
 				&tq_year0_cal_info,

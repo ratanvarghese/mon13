@@ -221,8 +221,10 @@ fn countDigits(n: u32) DigitRes {
     return res;
 }
 
-fn isDryRun(buflen: u32, raw_buf: ?[*]u8) bool {
-    if (buflen == 0) {
+fn isDryRun(buflen: u32, buf_i: usize, raw_buf: ?[*]u8) bool {
+    if (buflen == 0 or buflen == 1) { //Leave space for null character
+        return true;
+    } else if (buf_i > (buflen - 1)) { //Leave space for null character
         return true;
     } else if (raw_buf) |buf| {
         return false;
@@ -231,8 +233,8 @@ fn isDryRun(buflen: u32, raw_buf: ?[*]u8) bool {
     }
 }
 
-fn usableBuf(dry_run: bool, raw_buf: ?[*]u8) ?[*]u8 {
-    if (dry_run) {
+fn usableBuf(buflen: u32, buf_i: usize, raw_buf: ?[*]u8) ?[*]u8 {
+    if (isDryRun(buflen, buf_i, raw_buf)) {
         return null;
     } else {
         return raw_buf;
@@ -254,16 +256,13 @@ pub fn format(
     raw_buf: ?[*]u8,
     buflen: u32,
 ) logic.Err!c_int {
-    const dry_run = isDryRun(buflen, raw_buf);
-
-    const buf_limit = buflen -% 1; //Leave space for null character.
     var fmt_i: usize = 0;
     var buf_i: usize = 0;
     var s = State.start;
 
     var info = fmt_info{};
 
-    while (fmt[fmt_i] != 0 and (dry_run or buf_i < buf_limit)) {
+    while (fmt[fmt_i] != 0) {
         const c = fmt[fmt_i];
         s = try s.next(c);
 
@@ -273,14 +272,8 @@ pub fn format(
             const old_buf_i = buf_i;
             fmt_i += count;
             buf_i += count;
-            if (buf_i <= buf_limit) {
-                if (usableBuf(dry_run, raw_buf)) |buf| {
-                    std.mem.copy(u8, buf[old_buf_i..buf_i], fmt[old_fmt_i..fmt_i]);
-                }
-            } else {
-                buf_i = old_buf_i;
-                s = State.end;
-                break;
+            if (usableBuf(buflen, buf_i, raw_buf)) |buf| {
+                std.mem.copy(u8, buf[old_buf_i..buf_i], fmt[old_fmt_i..fmt_i]);
             }
         } else if (s == State.fmt_prefix) {
             fmt_i += 1;
@@ -298,19 +291,19 @@ pub fn format(
         } else if (s == State.fmt_seq) {
             info.seq = @intToEnum(Sequence, c);
             if (info.seq.getChar()) |ch| {
-                if (usableBuf(dry_run, raw_buf)) |buf| {
-                    buf[buf_i] = ch;
-                }
                 buf_i += 1;
+                if (usableBuf(buflen, buf_i, raw_buf)) |buf| {
+                    buf[buf_i - 1] = ch;
+                }
             } else if (info.seq.getNum(d, cal)) |n| {
                 var x: u32 = 0;
                 if (n < 0) {
                     x = @intCast(u32, -n);
                     if (!info.absolute_value) {
-                        if (usableBuf(dry_run, raw_buf)) |buf| {
-                            buf[buf_i] = '-';
-                        }
                         buf_i += 1;
+                        if (usableBuf(buflen, buf_i, raw_buf)) |buf| {
+                            buf[buf_i - 1] = '-';
+                        }
                     }
                 } else {
                     x = @intCast(u32, n);
@@ -329,21 +322,21 @@ pub fn format(
 
                 if (pad_char) |pc| {
                     var pad_needed = pad_width;
-                    while (pad_needed > x_digit.count and buf_i <= buf_limit) {
-                        if (usableBuf(dry_run, raw_buf)) |buf| {
-                            buf[buf_i] = pc;
-                        }
+                    while (pad_needed > x_digit.count) {
                         buf_i += 1;
+                        if (usableBuf(buflen, buf_i, raw_buf)) |buf| {
+                            buf[buf_i - 1] = pc;
+                        }
                         pad_needed -= 1;
                     }
                 }
-                while (x_digit.count > 0 and buf_i <= buf_limit) {
-                    if (usableBuf(dry_run, raw_buf)) |buf| {
-                        buf[buf_i] = @intCast(u8, (x / x_digit.denominator)) + '0';
+                while (x_digit.count > 0) {
+                    buf_i += 1;
+                    if (usableBuf(buflen, buf_i, raw_buf)) |buf| {
+                        buf[buf_i - 1] = @intCast(u8, (x / x_digit.denominator)) + '0';
                     }
                     x %= x_digit.denominator;
                     x_digit.denominator /= DigitRes.radix;
-                    buf_i += 1;
                     x_digit.count -= 1;
                 }
             } else if (info.seq.getName(d, cal, raw_nlist)) |name| {
@@ -355,14 +348,8 @@ pub fn format(
                     const old_name_i = name_i;
                     name_i += count;
                     buf_i += count;
-                    if (buf_i <= buf_limit) {
-                        if (usableBuf(dry_run, raw_buf)) |buf| {
-                            std.mem.copy(u8, buf[old_buf_i..buf_i], name[old_name_i..name_i]);
-                        }
-                    } else {
-                        buf_i = old_buf_i;
-                        s = State.end;
-                        break;
+                    if (usableBuf(buflen, buf_i, raw_buf)) |buf| {
+                        std.mem.copy(u8, buf[old_buf_i..buf_i], name[old_name_i..name_i]);
                     }
                 }
             } else {
@@ -373,7 +360,7 @@ pub fn format(
         }
     }
 
-    if (usableBuf(dry_run, raw_buf)) |buf| {
+    if (usableBuf(buflen + 1, buf_i, raw_buf)) |buf| {
         buf[buf_i] = 0;
     }
     return @intCast(c_int, buf_i);
