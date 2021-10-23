@@ -10,5 +10,5 @@ pub const holocene = base.Cal{
     .start_weekday = cal_gr.gregorian.start_weekday,
     .week_length = cal_gr.gregorian.week_length,
     .CAL_YEAR_ZERO = true,
-    .CAL_PERENNIAL = false,
+    .CAL_PERENNIAL = cal_gr.gregorian.CAL_PERENNIAL,
 };
