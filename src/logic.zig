@@ -547,12 +547,17 @@ pub fn valid(
     d: base.Date,
     cal: *const base.Cal,
 ) bool {
-    const leap = isLeap(d.year, cal) catch return false;
+    if (!cal.*.CAL_YEAR_ZERO and d.year == 0) {
+        return false;
+    }
+
+    const d_yz = noYzToYz(d, cal);
+    const leap = isLeap(d_yz.year, cal) catch return false;
     const segments = getSegments(leap, cal);
 
     var si: u8 = 0;
     while (segments[si]) |s| : (si += 1) {
-        if (d.month == s.month and d.day >= s.day_start and d.day <= s.day_end) {
+        if (d_yz.month == s.month and d_yz.day >= s.day_start and d_yz.day <= s.day_end) {
             return true;
         }
     }
