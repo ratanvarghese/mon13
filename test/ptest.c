@@ -245,6 +245,10 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance)
 		return THEFT_ALLOC_ERROR;
 	}
 
+	if(!mon13_valid(res, env)) {
+		return THEFT_ALLOC_ERROR;
+	}
+
 	*instance = (void*)res;
 	return THEFT_ALLOC_OK;
 }

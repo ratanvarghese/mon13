@@ -78,6 +78,11 @@ struct mon13_NameList {
 struct mon13_Cal;
 
 //Functions
+int mon13_valid(
+	const struct mon13_Date* d,
+	const struct mon13_Cal* cal
+);
+
 int mon13_import(
 	const struct mon13_Cal* cal,
 	const void* input,

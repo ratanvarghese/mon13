@@ -543,6 +543,22 @@ fn C99TmToDate(tm: *const C99Tm) Err!base.Date {
 }
 
 //Public functions
+pub fn valid(
+    d: base.Date,
+    cal: *const base.Cal,
+) bool {
+    const leap = isLeap(d.year, cal) catch return false;
+    const segments = getSegments(leap, cal);
+
+    var si: u8 = 0;
+    while (segments[si]) |s| : (si += 1) {
+        if (d.month == s.month and d.day >= s.day_start and d.day <= s.day_end) {
+            return true;
+        }
+    }
+    return false;
+}
+
 pub fn import(
     cal: *const base.Cal,
     input: *const c_void,

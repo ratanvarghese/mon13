@@ -48,6 +48,15 @@ pub const PublicError = extern enum {
     }
 };
 
+pub export fn mon13_valid(
+    raw_d: ?*const mon13.Date,
+    raw_cal: ?*const mon13.Cal,
+) c_int {
+    const d = raw_d orelse return @boolToInt(false);
+    const cal = raw_cal orelse return @boolToInt(false);
+    return @boolToInt(mon13.valid(d.*, cal));
+}
+
 pub export fn mon13_import(
     raw_cal: ?*const mon13.Cal,
     raw_input: ?*const c_void,

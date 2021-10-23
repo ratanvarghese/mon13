@@ -233,3 +233,15 @@ test "Cotsworth add many months" {
 
     const res0 = try mon13.add(d, c, offset, m);
 }
+
+test "valid" {
+    const d = mon13.Date{ .year = 1, .month = 1, .day = 1 };
+    const c = &mon13.tranquility;
+    try expect(mon13.valid(d, c));
+}
+
+test "invalid" {
+    const d = mon13.Date{ .year = 1, .month = 20, .day = 20 };
+    const c = &mon13.tranquility;
+    try expect(!mon13.valid(d, c));
+}
