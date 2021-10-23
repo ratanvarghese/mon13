@@ -384,7 +384,7 @@ pub fn format(
                 } else if (spec.seq.getName(d, cal, raw_nlist)) |name| {
                     try doName(name, &pos, raw_buf);
                 } else {
-                    //return -7;
+                    return logic.Err.InvalidSequence;
                 }
                 pos.fmt_i += 1;
                 spec = Specifier{};
@@ -398,7 +398,7 @@ pub fn format(
             if (buf.len > pos.end_i) {
                 buf[pos.end_i] = 0;
             } else {
-                unreachable;
+                return logic.Err.FailedToInsertNullCharacter;
             }
         }
     }

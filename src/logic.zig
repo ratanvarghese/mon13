@@ -22,6 +22,7 @@ pub const Err = error{
     InvalidUtf8,
     BeyondEndState,
     InvalidSequence,
+    FailedToInsertNullCharacter,
 };
 
 const UNIX_EPOCH_IN_MJD: i32 = 40587;

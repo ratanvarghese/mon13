@@ -27,6 +27,10 @@ pub const PublicError = extern enum {
     DATE_NOT_FOUND = -66,
     DAY_OF_YEAR_NOT_FOUND = -67,
     BAD_MODE = -68,
+    INVALID_UTF8 = -69,
+    INVALID_STATE = -70,
+    INVALID_SEQUENCE = -71,
+    FAILED_TO_INSERT_NULLCHAR = -72,
 
     fn make(err: mon13.Err) PublicError {
         return switch (err) {
@@ -35,6 +39,10 @@ pub const PublicError = extern enum {
             mon13.Err.DateNotFound => PublicError.DATE_NOT_FOUND,
             mon13.Err.DoyNotFound => PublicError.DAY_OF_YEAR_NOT_FOUND,
             mon13.Err.BadMode => PublicError.BAD_MODE,
+            mon13.Err.InvalidUtf8 => PublicError.INVALID_UTF8,
+            mon13.Err.BeyondEndState => PublicError.INVALID_STATE,
+            mon13.Err.InvalidSequence => PublicError.INVALID_SEQUENCE,
+            mon13.Err.FailedToInsertNullCharacter => PublicError.FAILED_TO_INSERT_NULLCHAR,
             else => PublicError.UNKNOWN,
         };
     }
