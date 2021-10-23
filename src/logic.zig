@@ -441,6 +441,10 @@ fn addYears(d: base.Date, offset: i32, cal: *const base.Cal) Err!base.Date {
 fn addMonths(d: base.Date, offset: i32, cal: *const base.Cal) Err!base.Date {
     if (seekIc(d, cal)) |ic| {
         const next_day = icToCommon(d.year, 1, ic, cal);
+        const cmp = compare(d, next_day, null) catch unreachable;
+        if (cmp == 0) {
+            return Err.BadCalendar;
+        }
         return addMonths(next_day, offset, cal);
     }
     const rolled_d = try rollMonth(d, offset, cal);
