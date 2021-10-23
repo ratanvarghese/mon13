@@ -136,7 +136,14 @@ pub export fn mon13_format(
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     const fmt = raw_fmt orelse return @enumToInt(PublicError.NULL_FORMAT);
 
-    if (mon13.format(d.*, cal, raw_nlist, fmt, raw_buf, buflen)) |bytes_used| {
+    var slice_buf: ?[]u8 = null;
+    if (buflen > 0) {
+        if (raw_buf) |ptr_buf| {
+            slice_buf = ptr_buf[0..buflen];
+        }
+    }
+
+    if (mon13.format(d.*, cal, raw_nlist, fmt, slice_buf)) |bytes_used| {
         return bytes_used;
     } else |err| {
         return @enumToInt(PublicError.make(err));

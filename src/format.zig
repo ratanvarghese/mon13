@@ -145,15 +145,15 @@ fn validInEnum(comptime E: type, x: u8) bool {
 const State = enum(u8) {
     start,
     end,
-    fmt_prefix,
-    fmt_width,
-    fmt_flag,
-    fmt_seq,
+    spec_prefix,
+    spec_width,
+    spec_flag,
+    spec_seq,
     copy,
 
     fn afterStart(c: u8) State {
         return switch (c) {
-            '%' => State.fmt_prefix,
+            '%' => State.spec_prefix,
             0 => State.end,
             else => State.copy,
         };
@@ -161,12 +161,12 @@ const State = enum(u8) {
 
     fn afterPrefixOrFlag(c: u8) logic.Err!State {
         if (validInEnum(Flag, c)) {
-            return State.fmt_flag;
+            return State.spec_flag;
         } else if (validInEnum(Digit, c)) {
             //Check digit after flag because '0' is a flag.
-            return State.fmt_width;
+            return State.spec_width;
         } else if (validInEnum(Sequence, c)) {
-            return State.fmt_seq;
+            return State.spec_seq;
         } else {
             return logic.Err.InvalidSequence;
         }
@@ -174,9 +174,9 @@ const State = enum(u8) {
 
     fn afterWidth(c: u8) logic.Err!State {
         if (validInEnum(Digit, c)) {
-            return State.fmt_width;
+            return State.spec_width;
         } else if (validInEnum(Sequence, c)) {
-            return State.fmt_seq;
+            return State.spec_seq;
         } else {
             return logic.Err.InvalidSequence;
         }
@@ -184,12 +184,10 @@ const State = enum(u8) {
 
     fn next(self: State, c: u8) logic.Err!State {
         return switch (self) {
-            .start => afterStart(c),
+            .start, .copy, .spec_seq => afterStart(c),
             .end => logic.Err.BeyondEndState,
-            .fmt_prefix, .fmt_flag => afterPrefixOrFlag(c),
-            .fmt_width => afterWidth(c),
-            .fmt_seq => afterStart(c),
-            .copy => afterStart(c),
+            .spec_prefix, .spec_flag => afterPrefixOrFlag(c),
+            .spec_width => afterWidth(c),
         };
     }
 };
@@ -221,147 +219,188 @@ fn countDigits(n: u32) DigitRes {
     return res;
 }
 
-fn isDryRun(buflen: u32, buf_i: usize, raw_buf: ?[*]u8) bool {
-    if (buflen == 0 or buflen == 1) { //Leave space for null character
-        return true;
-    } else if (buf_i > (buflen - 1)) { //Leave space for null character
-        return true;
-    } else if (raw_buf) |buf| {
-        return false;
+fn isDryRun(buf_i: usize, raw_buf: ?[]u8) bool {
+    if (raw_buf) |buf| {
+        if (buf.len == 0 or buf.len == 1) { //Leave space for null character
+            return true;
+        } else if (buf_i > (buf.len - 1)) { //Leave space for null character
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return true;
     }
 }
 
-fn usableBuf(buflen: u32, buf_i: usize, raw_buf: ?[*]u8) ?[*]u8 {
-    if (isDryRun(buflen, buf_i, raw_buf)) {
+fn usableBuf(buf_i: usize, raw_buf: ?[]u8) ?[]u8 {
+    if (isDryRun(buf_i, raw_buf)) {
         return null;
     } else {
         return raw_buf;
     }
 }
 
-const fmt_info = struct {
+const Specifier = struct {
     pad_width: u8 = 0,
     absolute_value: bool = false,
     seq: Sequence = Sequence.percent,
     pad_flag: ?Flag = null,
 };
 
+const Position = struct {
+    fmt_i: usize = 0,
+    buf_i: usize = 0,
+    end_i: usize = 0,
+};
+
+fn doCopy(pos: *Position, fmt: [*]const u8, raw_buf: ?[]u8) logic.Err!void {
+    const count = try copyLenUtf8(fmt[pos.*.fmt_i]);
+    const old_pos = Position{ .fmt_i = pos.fmt_i, .buf_i = pos.buf_i };
+    pos.*.fmt_i += count;
+    pos.*.buf_i += count;
+    if (usableBuf(pos.*.buf_i, raw_buf)) |buf| {
+        std.mem.copy(u8, buf[old_pos.buf_i..pos.*.buf_i], fmt[old_pos.fmt_i..pos.*.fmt_i]);
+        pos.*.end_i += count;
+    }
+}
+
+fn doPrefix(pos: *Position) void {
+    pos.*.fmt_i += 1;
+}
+
+fn doSpecWidth(spec: *Specifier, pos: *Position, fmt: [*]const u8) void {
+    const c = fmt[pos.*.fmt_i];
+    spec.*.pad_width = (spec.*.pad_width * 10) + (c - '0');
+    pos.*.fmt_i += 1;
+}
+
+fn doFlag(spec: *Specifier, pos: *Position, fmt: [*]const u8) void {
+    const c = fmt[pos.*.fmt_i];
+    const f = @intToEnum(Flag, c);
+    if (f == Flag.absolute_value) {
+        spec.*.absolute_value = true;
+    } else {
+        spec.*.pad_flag = f;
+    }
+    pos.*.fmt_i += 1;
+}
+
+fn doChar(ch: u8, pos: *Position, raw_buf: ?[]u8) void {
+    pos.*.buf_i += 1;
+    if (usableBuf(pos.*.buf_i, raw_buf)) |buf| {
+        buf[pos.*.buf_i - 1] = ch;
+        pos.*.end_i += 1;
+    }
+}
+
+fn doPad(x_digit: DigitRes, spec: Specifier, pos: *Position, raw_buf: ?[]u8) void {
+    var pad_char: ?u8 = null;
+    var pad_width: u8 = 0;
+    if (spec.pad_flag) |pf| {
+        pad_char = pf.getChar();
+        pad_width = spec.pad_width;
+    } else {
+        pad_char = '0';
+        pad_width = spec.seq.defaultPaddingWidth();
+    }
+
+    if (pad_char) |pc| {
+        var pad_needed = pad_width;
+        while (pad_needed > x_digit.count) {
+            doChar(pc, pos, raw_buf);
+            pad_needed -= 1;
+        }
+    }
+}
+
+fn doDigits(y_digit: DigitRes, y: u32, pos: *Position, raw_buf: ?[]u8) void {
+    var x = y;
+    var x_digit = y_digit;
+    while (x_digit.count > 0) {
+        const ch = @intCast(u8, (x / x_digit.denominator)) + '0';
+        doChar(ch, pos, raw_buf);
+
+        x %= x_digit.denominator;
+        x_digit.denominator /= DigitRes.radix;
+        x_digit.count -= 1;
+    }
+}
+
+fn doNumber(n: i32, spec: Specifier, pos: *Position, raw_buf: ?[]u8) logic.Err!void {
+    if (n < 0 and !spec.absolute_value) {
+        doChar('-', pos, raw_buf);
+    }
+    const abs_n = std.math.absInt(n) catch return logic.Err.Overflow;
+    const x: u32 = @intCast(u32, abs_n);
+    const x_digit = countDigits(x);
+    doPad(x_digit, spec, pos, raw_buf);
+    doDigits(x_digit, x, pos, raw_buf);
+}
+
+fn doName(name: [*:0]const u8, pos: *Position, raw_buf: ?[]u8) logic.Err!void {
+    var name_i: u32 = 0;
+    while (name[name_i] != 0) {
+        const name_c = name[name_i];
+        const count = try copyLenUtf8(name_c);
+        const old_pos = Position{ .fmt_i = pos.*.fmt_i, .buf_i = pos.*.buf_i };
+        const old_name_i = name_i;
+        name_i += count;
+        pos.*.buf_i += count;
+        if (usableBuf(pos.*.buf_i, raw_buf)) |buf| {
+            std.mem.copy(u8, buf[old_pos.buf_i..pos.*.buf_i], name[old_name_i..name_i]);
+            pos.*.end_i += count;
+        }
+    }
+}
+
 pub fn format(
     d: base.Date,
     cal: *const base.Cal,
     raw_nlist: ?*const base.NameList,
     fmt: [*]const u8,
-    raw_buf: ?[*]u8,
-    buflen: u32,
+    raw_buf: ?[]u8,
 ) logic.Err!c_int {
-    var fmt_i: usize = 0;
-    var buf_i: usize = 0;
     var s = State.start;
 
-    var info = fmt_info{};
+    var spec = Specifier{};
+    var pos = Position{};
 
-    while (fmt[fmt_i] != 0) {
-        const c = fmt[fmt_i];
+    while (fmt[pos.fmt_i] != 0) {
+        const c = fmt[pos.fmt_i];
         s = try s.next(c);
 
-        if (s == State.copy) {
-            const count = try copyLenUtf8(c);
-            const old_fmt_i = fmt_i;
-            const old_buf_i = buf_i;
-            fmt_i += count;
-            buf_i += count;
-            if (usableBuf(buflen, buf_i, raw_buf)) |buf| {
-                std.mem.copy(u8, buf[old_buf_i..buf_i], fmt[old_fmt_i..fmt_i]);
-            }
-        } else if (s == State.fmt_prefix) {
-            fmt_i += 1;
-        } else if (s == State.fmt_width) {
-            info.pad_width = (info.pad_width * 10) + (c - '0');
-            fmt_i += 1;
-        } else if (s == State.fmt_flag) {
-            const f = @intToEnum(Flag, c);
-            if (f == Flag.absolute_value) {
-                info.absolute_value = true;
-            } else {
-                info.pad_flag = f;
-            }
-            fmt_i += 1;
-        } else if (s == State.fmt_seq) {
-            info.seq = @intToEnum(Sequence, c);
-            if (info.seq.getChar()) |ch| {
-                buf_i += 1;
-                if (usableBuf(buflen, buf_i, raw_buf)) |buf| {
-                    buf[buf_i - 1] = ch;
-                }
-            } else if (info.seq.getNum(d, cal)) |n| {
-                var x: u32 = 0;
-                if (n < 0) {
-                    x = @intCast(u32, -n);
-                    if (!info.absolute_value) {
-                        buf_i += 1;
-                        if (usableBuf(buflen, buf_i, raw_buf)) |buf| {
-                            buf[buf_i - 1] = '-';
-                        }
-                    }
+        switch (s) {
+            .copy => try doCopy(&pos, fmt, raw_buf),
+            .spec_prefix => doPrefix(&pos),
+            .spec_width => doSpecWidth(&spec, &pos, fmt),
+            .spec_flag => doFlag(&spec, &pos, fmt),
+            .spec_seq => {
+                spec.seq = @intToEnum(Sequence, c);
+                if (spec.seq.getChar()) |ch| {
+                    doChar(ch, &pos, raw_buf);
+                } else if (spec.seq.getNum(d, cal)) |n| {
+                    try doNumber(n, spec, &pos, raw_buf);
+                } else if (spec.seq.getName(d, cal, raw_nlist)) |name| {
+                    try doName(name, &pos, raw_buf);
                 } else {
-                    x = @intCast(u32, n);
+                    //return -7;
                 }
-                var x_digit = countDigits(x);
-
-                var pad_char: ?u8 = null;
-                var pad_width: u8 = 0;
-                if (info.pad_flag) |pf| {
-                    pad_char = pf.getChar();
-                    pad_width = info.pad_width;
-                } else {
-                    pad_char = '0';
-                    pad_width = info.seq.defaultPaddingWidth();
-                }
-
-                if (pad_char) |pc| {
-                    var pad_needed = pad_width;
-                    while (pad_needed > x_digit.count) {
-                        buf_i += 1;
-                        if (usableBuf(buflen, buf_i, raw_buf)) |buf| {
-                            buf[buf_i - 1] = pc;
-                        }
-                        pad_needed -= 1;
-                    }
-                }
-                while (x_digit.count > 0) {
-                    buf_i += 1;
-                    if (usableBuf(buflen, buf_i, raw_buf)) |buf| {
-                        buf[buf_i - 1] = @intCast(u8, (x / x_digit.denominator)) + '0';
-                    }
-                    x %= x_digit.denominator;
-                    x_digit.denominator /= DigitRes.radix;
-                    x_digit.count -= 1;
-                }
-            } else if (info.seq.getName(d, cal, raw_nlist)) |name| {
-                var name_i: u32 = 0;
-                while (name[name_i] != 0) {
-                    const name_c = name[name_i];
-                    const count = try copyLenUtf8(name_c);
-                    const old_buf_i = buf_i;
-                    const old_name_i = name_i;
-                    name_i += count;
-                    buf_i += count;
-                    if (usableBuf(buflen, buf_i, raw_buf)) |buf| {
-                        std.mem.copy(u8, buf[old_buf_i..buf_i], name[old_name_i..name_i]);
-                    }
-                }
-            } else {
-                //return -7;
-            }
-            fmt_i += 1;
-            info = fmt_info{};
+                pos.fmt_i += 1;
+                spec = Specifier{};
+            },
+            else => {},
         }
     }
 
-    if (usableBuf(buflen + 1, buf_i, raw_buf)) |buf| {
-        buf[buf_i] = 0;
+    if (raw_buf) |buf| {
+        if (buf.len > 0) {
+            if (buf.len > pos.end_i) {
+                buf[pos.end_i] = 0;
+            } else {
+                unreachable;
+            }
+        }
     }
-    return @intCast(c_int, buf_i);
+    return @intCast(c_int, pos.buf_i);
 }

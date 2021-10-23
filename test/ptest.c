@@ -2055,6 +2055,7 @@ enum theft_trial_res format_truncate(struct theft* t, void* a1, void* a2, void* 
 	const struct mon13_Cal* c = a2;
 	const struct mon13_NameList* n = a3;
 	const char* fmt = a4;
+	char placeholder = '\t';
 
 	int buflen_0 = mon13_format(d, c, n, fmt, NULL, STRFTIME_BUF);
 	if(buflen_0 == 0) {
@@ -2063,7 +2064,8 @@ enum theft_trial_res format_truncate(struct theft* t, void* a1, void* a2, void* 
 	if(buflen_0 < 0) {
 		return THEFT_TRIAL_FAIL;
 	}
-	char* buf_0 = calloc(buflen_0 + 1, sizeof(char));
+	char* buf_0 = malloc((buflen_0 + 1) * sizeof(char));
+	memset(buf_0, placeholder, (buflen_0 + 1) * sizeof(char));
 	int status_0 = mon13_format(d, c, n, fmt, buf_0, buflen_0 + 1);
 	if(status_0 != buflen_0) {
 		free(buf_0);
@@ -2071,7 +2073,8 @@ enum theft_trial_res format_truncate(struct theft* t, void* a1, void* a2, void* 
 	}
 
 	int buflen_1 = (buflen_0 > 1) ? (buflen_0/2) : 1;
-	char* buf_1 = calloc(buflen_1 + 1, sizeof(char));
+	char* buf_1 = malloc((buflen_1 + 1) * sizeof(char));
+	memset(buf_1, placeholder, (buflen_1 + 1) * sizeof(char));
 	int status_1 = mon13_format(d, c, n, fmt, buf_1, buflen_1 + 1);
 	if(status_1 != buflen_0) {
 		free(buf_0);
@@ -2079,23 +2082,18 @@ enum theft_trial_res format_truncate(struct theft* t, void* a1, void* a2, void* 
 		return THEFT_TRIAL_FAIL;
 	}
 
-	if(buf_1[buflen_1] != 0) {
+	unsigned char* ubuf_0 = (unsigned char*)buf_0;
+	bool ended_inside_code_point = (ubuf_0[buflen_1] > 0x7F);
+
+	if(buf_1[buflen_1] != 0 && !ended_inside_code_point) {
 		return THEFT_TRIAL_FAIL;
 	}
 
 	int cmp = memcmp(buf_0, buf_1, buflen_1);
-	if(cmp == 0) {
+	if(cmp == 0 || ended_inside_code_point) {
 		free(buf_0);
 		free(buf_1);
 		return THEFT_TRIAL_PASS;
-	}
-	else {
-		unsigned char* ubuf_0 = (unsigned char*)buf_0;
-		if(ubuf_0[buflen_1] > 0x7F) {
-			free(buf_0);
-			free(buf_1);
-			return THEFT_TRIAL_PASS;
-		}
 	}
 
 	free(buf_0);
