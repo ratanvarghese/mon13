@@ -23,6 +23,7 @@ pub const Err = error{
     BeyondEndState,
     InvalidSequence,
     FailedToInsertNullCharacter,
+    InvalidDate,
 };
 
 const UNIX_EPOCH_IN_MJD: i32 = 40587;
@@ -283,6 +284,23 @@ fn doyToMjd(doy: DoyDate, cal: *const base.Cal) Err!i32 {
     return res;
 }
 
+//Validation
+fn valid_year(d: base.Date, cal: *const base.Cal) bool {
+    return (cal.*.CAL_YEAR_ZERO or d.year != 0);
+}
+
+fn valid_assume_yz(d_yz: base.Date, cal: *const base.Cal) bool {
+    const segments = getSegments(d_yz.year, cal);
+
+    var si: u8 = 0;
+    while (segments[si]) |s| : (si += 1) {
+        if (d_yz.month == s.month and d_yz.day >= s.day_start and d_yz.day <= s.day_end) {
+            return true;
+        }
+    }
+    return false;
+}
+
 //Normalization
 //Normalization functions cannot return errors:
 //they must try their best to make a valid date for any input.
@@ -399,6 +417,16 @@ fn yzToNoYz(d: base.Date, cal: *const base.Cal) base.Date {
 fn noYzToYz(d: base.Date, cal: *const base.Cal) base.Date {
     const y = if (yzNeedsAdjustment(d.year, cal)) (d.year +% 1) else d.year;
     return .{ .year = y, .month = d.month, .day = d.day };
+}
+
+fn noYzToValidYz(d: base.Date, cal: *const base.Cal) Err!base.Date {
+    if (valid_year(d, cal)) {
+        const d_yz = noYzToYz(d, cal);
+        if (valid_assume_yz(d_yz, cal)) {
+            return d_yz;
+        }
+    }
+    return Err.InvalidDate;
 }
 
 //Adding
@@ -532,20 +560,11 @@ pub fn valid(
     d: base.Date,
     cal: *const base.Cal,
 ) bool {
-    if (!cal.*.CAL_YEAR_ZERO and d.year == 0) {
+    if (valid_year(d, cal)) {
+        return valid_assume_yz(noYzToYz(d, cal), cal);
+    } else {
         return false;
     }
-
-    const d_yz = noYzToYz(d, cal);
-    const segments = getSegments(d_yz.year, cal);
-
-    var si: u8 = 0;
-    while (segments[si]) |s| : (si += 1) {
-        if (d_yz.month == s.month and d_yz.day >= s.day_start and d_yz.day <= s.day_end) {
-            return true;
-        }
-    }
-    return false;
 }
 
 pub fn import(
@@ -587,13 +606,12 @@ pub fn convert(
     src: *const base.Cal,
     dest: *const base.Cal,
 ) Err!base.Date {
-    const src_yz = noYzToYz(d, src);
-    const src_norm = normalize(src_yz, src);
+    const src_yz = try noYzToValidYz(d, src);
     if (src == dest) {
-        return yzToNoYz(src_norm, src);
+        return yzToNoYz(src_yz, src);
     }
 
-    const src_doy = try monthDayToDoy(src_norm, src);
+    const src_doy = try monthDayToDoy(src_yz, src);
     const mjd = try doyToMjd(src_doy, src);
     const dest_doy = try mjdToDoy(mjd, dest);
     const dest_yz = try doyToMonthDay(dest_doy, dest);
@@ -606,22 +624,21 @@ pub fn add(
     offset: i32,
     mode: base.AddMode,
 ) Err!base.Date {
-    const d_yz = noYzToYz(d, cal);
-    const d_norm = normalize(d_yz, cal);
-    var res_yz = d_norm;
+    const d_yz = try noYzToValidYz(d, cal);
+    var res_yz = d_yz;
     if (offset != 0) { //Adding 0 shouldn't cause errors for valid cal.
         switch (mode) {
             base.AddMode.NONE => {
-                res_yz = d_norm;
+                res_yz = d_yz;
             },
             base.AddMode.DAYS => {
-                res_yz = try addDays(d_norm, offset, cal);
+                res_yz = try addDays(d_yz, offset, cal);
             },
             base.AddMode.MONTHS => {
-                res_yz = try addMonths(d_norm, offset, cal);
+                res_yz = try addMonths(d_yz, offset, cal);
             },
             base.AddMode.YEARS => {
-                res_yz = try addYears(d_norm, offset, cal);
+                res_yz = try addYears(d_yz, offset, cal);
             },
         }
     }
@@ -636,8 +653,8 @@ pub fn compare(
     var d0_norm = d0;
     var d1_norm = d1;
     if (raw_cal) |cal| {
-        d0_norm = normalize(noYzToYz(d0, cal), cal);
-        d1_norm = normalize(noYzToYz(d1, cal), cal);
+        d0_norm = try noYzToValidYz(d0, cal);
+        d1_norm = try noYzToValidYz(d1, cal);
     }
 
     if (d0_norm.year != d1_norm.year) {
@@ -664,7 +681,7 @@ pub fn extract(
     cal: *const base.Cal,
     mode: base.ExtractMode,
 ) Err!i64 {
-    const d_norm = normalize(noYzToYz(d, cal), cal);
+    const d_norm = try noYzToValidYz(d, cal);
     switch (mode) {
         base.ExtractMode.DAY_OF_YEAR => {
             const d_doy = try monthDayToDoy(d_norm, cal);

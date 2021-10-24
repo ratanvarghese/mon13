@@ -145,7 +145,7 @@ test "strange add gregorian" {
 }
 
 test "add zero years" {
-    const d = mon13.Date{ .year = -89712, .month = 2, .day = 29 };
+    const d = mon13.Date{ .year = -89713, .month = 2, .day = 29 };
     const c = &mon13.gregorian;
     const res = try mon13.add(
         d,
@@ -247,7 +247,7 @@ test "Invalid" {
 }
 
 test "Tempting overflow" {
-    const d = mon13.Date{ .year = -2147483641, .month = 2, .day = 29 };
+    const d = mon13.Date{ .year = -2147483641, .month = 0, .day = 2 };
     const c = &mon13.tranquility_year_zero;
     const m = mon13.ExtractMode.IS_LEAP_YEAR;
 

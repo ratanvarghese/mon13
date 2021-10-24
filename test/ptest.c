@@ -1232,7 +1232,7 @@ enum theft_trial_res add_no_year_zero(struct theft* t, void* a1, void* a2, void*
 	return (res.year == 0) ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS;
 }
 
-enum theft_trial_res add_result_normalized(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+enum theft_trial_res add_result_valid(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
 	const struct mon13_Date* d = a1;
 	enum mon13_AddMode m = (enum mon13_AddMode) ((uint64_t) a2);
 	const struct mon13_Cal* c = a3;
@@ -1244,24 +1244,26 @@ enum theft_trial_res add_result_normalized(struct theft* t, void* a1, void* a2, 
 	if(status) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
-	status = mon13_add(&res0, c, 0, m, &res1);
-	if(status) {
-		return THEFT_TRIAL_FAIL;
-	}
 
-	if(!equal_year_month_day(res0, res1)) {
-		return THEFT_TRIAL_FAIL;
-	}
-
-	return THEFT_TRIAL_PASS;
+	return mon13_valid(d, c) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res add_month_feb_29(struct theft* t, void* a1, void* a2) {
 	struct mon13_Date* d = a1;
 	const struct mon13_Cal* c = a2;
 	enum mon13_AddMode m = MON13_ADD_MONTHS;
-	int32_t offset = 2 - d->month;
-	d->day = 29;
+
+	int32_t offset;
+	if(d->month == 2) {
+		offset = 1;
+		d->month = 1;
+		d->day = 29;
+	}
+	else {
+		offset = 2 - d->month;
+		d->day = 29;
+	}
+
 
 	struct mon13_Date res;
 	int status;
@@ -1440,15 +1442,16 @@ enum theft_trial_res extract_is_leap(struct theft* t, void* a1, void* a2)
 	return res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
-enum theft_trial_res extract_day_of_week_gr(struct theft* t, void* test_input) {
-	const struct mon13_Date* d = test_input;
-	const struct mon13_Cal* c = &mon13_gregorian_year_zero;
+enum theft_trial_res extract_day_of_week_gr(struct theft* t, void* a1, void* a2) {
+	const struct mon13_Date* d = a1;
+	const struct mon13_Cal* c = a2;
 	
 	struct mon13_Date sum0, sum1;
 	int status;
 	status = mon13_add(d, c, 0, MON13_ADD_DAYS, &sum0);
 	if(status) {
-		return THEFT_TRIAL_FAIL; //Adding zero should never cause errors!
+		//Adding zero to a valid date should not cause errors!
+		return THEFT_TRIAL_FAIL;
 	}
 	status = mon13_add(d, c, 1, MON13_ADD_DAYS, &sum1);
 	if(status) {
@@ -1471,9 +1474,9 @@ enum theft_trial_res extract_day_of_week_gr(struct theft* t, void* test_input) {
 	}
 }
 
-enum theft_trial_res extract_day_of_week_tq(struct theft* t, void* test_input) {
-	const struct mon13_Date* d = test_input;
-	const struct mon13_Cal* c = &mon13_tranquility_year_zero;
+enum theft_trial_res extract_day_of_week_tq(struct theft* t, void* a1, void* a2) {
+	const struct mon13_Date* d = a1;
+	const struct mon13_Cal* c = a2;
 	
 	struct mon13_Date sum;
 	int status = mon13_add(d, c, 0, MON13_ADD_DAYS, &sum);
@@ -2585,7 +2588,7 @@ int main(int argc, char** argv) {
 			.name = "mon13_convert: Cotsworth -> Gregorian Year 0, Same Year",
 			.prop3 = convert_same_year,
 			.type_info = {
-				&gr_year0_date_info,
+				&ct_date_info,
 				&ct_cal_info,
 				&gr_year0_cal_info,
 			},
@@ -2876,8 +2879,8 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
-			.name = "mon13_add: Normalized Result, Gregorian Year 0",
-			.prop4 = add_result_normalized,
+			.name = "mon13_add: Valid Result, Gregorian Year 0",
+			.prop4 = add_result_valid,
 			.type_info = {
 				&gr_year0_date_info,
 				&add_mode_info,
@@ -2887,8 +2890,8 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
-			.name = "mon13_add: Normalized Result, Tranquility Year 0",
-			.prop4 = add_result_normalized,
+			.name = "mon13_add: Valid Result, Tranquility Year 0",
+			.prop4 = add_result_valid,
 			.type_info = {
 				&tq_date_info,
 				&add_mode_info,
@@ -2898,8 +2901,8 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
-			.name = "mon13_add: Normalized Result, Holocene",
-			.prop4 = add_result_normalized,
+			.name = "mon13_add: Valid Result, Holocene",
+			.prop4 = add_result_valid,
 			.type_info = {
 				&hl_date_info,
 				&add_mode_info,
@@ -2909,8 +2912,8 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
-			.name = "mon13_add: Normalized Result, Cotsworth",
-			.prop4 = add_result_normalized,
+			.name = "mon13_add: Valid Result, Cotsworth",
+			.prop4 = add_result_valid,
 			.type_info = {
 				&ct_date_info,
 				&add_mode_info,
@@ -2920,8 +2923,8 @@ int main(int argc, char** argv) {
 			.seed = seed
 		},
 		{
-			.name = "mon13_add: Normalized Result On Leap Day, Gregorian Year 0",
-			.prop4 = add_result_normalized,
+			.name = "mon13_add: Valid Result On Leap Day, Gregorian Year 0",
+			.prop4 = add_result_valid,
 			.type_info = {
 				&gr_year0_leap_info,
 				&add_mode_info,
@@ -2931,8 +2934,8 @@ int main(int argc, char** argv) {
 			.seed = seed,
 		},
 		{
-			.name = "mon13_add: Normalized Result On Leap Day, Tranquility Year 0",
-			.prop4 = add_result_normalized,
+			.name = "mon13_add: Valid Result On Leap Day, Tranquility Year 0",
+			.prop4 = add_result_valid,
 			.type_info = {
 				&tq_year0_leap_info,
 				&add_mode_info,
@@ -3135,26 +3138,38 @@ int main(int argc, char** argv) {
 		},
 		{
 			.name = "mon13_extract: DAY_OF_WEEK, Gregorian Year 0",
-			.prop1 = extract_day_of_week_gr,
-			.type_info = {&gr_year0_date_info},
+			.prop2 = extract_day_of_week_gr,
+			.type_info = {
+				&gr_year0_date_info,
+				&gr_year0_cal_info
+			},
 			.seed = seed
 		},
 		{
 			.name = "mon13_extract: DAY_OF_WEEK, Tranquility Year 0",
-			.prop1 = extract_day_of_week_tq,
-			.type_info = {&tq_year0_date_info},
+			.prop2 = extract_day_of_week_tq,
+			.type_info = {
+				&tq_year0_date_info,
+				&tq_year0_cal_info
+			},
 			.seed = seed
 		},
 		{
 			.name = "mon13_extract: DAY_OF_WEEK, Gregorian",
-			.prop1 = extract_day_of_week_gr,
-			.type_info = {&gr_date_info},
+			.prop2 = extract_day_of_week_gr,
+			.type_info = {
+				&gr_date_info,
+				&gr_cal_info,
+			},
 			.seed = seed
 		},
 		{
 			.name = "mon13_extract: DAY_OF_WEEK, Tranquility",
-			.prop1 = extract_day_of_week_tq,
-			.type_info = {&tq_date_info},
+			.prop2 = extract_day_of_week_tq,
+			.type_info = {
+				&tq_date_info,
+				&tq_cal_info
+			},
 			.seed = seed
 		},
 		{
