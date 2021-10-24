@@ -189,10 +189,10 @@ bool is_leap_day(struct mon13_Date d, const struct mon13_Cal* c) {
 	if(!is_leap) {
 		return false;
 	}
-	if(c == &mon13_gregorian_year_zero && c == &mon13_gregorian) {
+	if(c == &mon13_gregorian_year_zero || c == &mon13_gregorian) {
 		return d.month == 2 && d.day == 29;
 	}
-	if(c == &mon13_tranquility_year_zero && c == &mon13_tranquility) {
+	if(c == &mon13_tranquility_year_zero || c == &mon13_tranquility) {
 		return d.month == 0 && d.day == 2;
 	}
 	if(c == &mon13_holocene) {
