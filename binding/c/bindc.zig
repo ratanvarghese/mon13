@@ -98,6 +98,32 @@ fn runAddFn(
     }
 }
 
+const DiffFn = fn (
+    d0: mon13.Date,
+    d1: mon13.Date,
+    cal: *const mon13.Cal,
+) mon13.Err!i64;
+
+fn runDiffFn(
+    raw_d0: ?*const mon13.Date,
+    raw_d1: ?*const mon13.Date,
+    raw_cal: ?*const mon13.Cal,
+    raw_result: ?*i64,
+    raw_fn: comptime DiffFn,
+) c_int {
+    const d0 = raw_d0 orelse return @enumToInt(PublicError.NULL_DATE);
+    const d1 = raw_d1 orelse return @enumToInt(PublicError.NULL_DATE);
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (raw_fn(d0.*, d1.*, cal)) |diff| {
+        result.* = diff;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
 const extractFn = fn (
     d: mon13.Date,
     cal: *const mon13.Cal,
@@ -215,6 +241,33 @@ pub export fn mon13_addYears(
     raw_result: ?*mon13.Date,
 ) c_int {
     return runAddFn(raw_d, raw_cal, offset, raw_result, mon13.addYears);
+}
+
+pub export fn mon13_diffDays(
+    raw_d0: ?*const mon13.Date,
+    raw_d1: ?*const mon13.Date,
+    raw_cal: ?*const mon13.Cal,
+    raw_result: ?*i64,
+) c_int {
+    return runDiffFn(raw_d0, raw_d1, raw_cal, raw_result, mon13.diffDays);
+}
+
+pub export fn mon13_diffMonths(
+    raw_d0: ?*const mon13.Date,
+    raw_d1: ?*const mon13.Date,
+    raw_cal: ?*const mon13.Cal,
+    raw_result: ?*i64,
+) c_int {
+    return runDiffFn(raw_d0, raw_d1, raw_cal, raw_result, mon13.diffMonths);
+}
+
+pub export fn mon13_diffYears(
+    raw_d0: ?*const mon13.Date,
+    raw_d1: ?*const mon13.Date,
+    raw_cal: ?*const mon13.Cal,
+    raw_result: ?*i64,
+) c_int {
+    return runDiffFn(raw_d0, raw_d1, raw_cal, raw_result, mon13.diffYears);
 }
 
 pub export fn mon13_compare(

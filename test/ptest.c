@@ -1339,6 +1339,78 @@ enum theft_trial_res add_null(struct theft* t, void* a1, void* a2, void* a3, voi
     return THEFT_TRIAL_PASS;
 }
 
+//Theft trials: diff
+enum theft_trial_res diff_days_roundtrip(struct theft* t, void* a1, void* a2, void* a3) {
+    const struct mon13_Date* d0 = a1;
+    const struct mon13_Date* d1 = a2;
+    const struct mon13_Cal* c = a3;
+
+    int status;
+    int64_t diff;
+    status = mon13_diffDays(d0, d1, c, &diff);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    struct mon13_Date sum;
+    status = mon13_addDays(d1, c, diff, &sum);
+    if(status) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    return equal_year_month_day(*d0, sum) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res diff_months_roundtrip(struct theft* t, void* a1, void* a2, void* a3) {
+    const struct mon13_Date* d0 = a1;
+    const struct mon13_Date* d1 = a2;
+    const struct mon13_Cal* c = a3;
+
+    if(d0->month == 0 || d0->day > 28 || d1->month == 0 || d1->day > 28) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    int status;
+    int64_t diff;
+    status = mon13_diffMonths(d0, d1, c, &diff);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    struct mon13_Date sum;
+    status = mon13_addMonths(d1, c, diff, &sum);
+    if(status) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    return (d0->year == sum.year && d0->month == sum.month) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res diff_years_roundtrip(struct theft* t, void* a1, void* a2, void* a3) {
+    const struct mon13_Date* d0 = a1;
+    const struct mon13_Date* d1 = a2;
+    const struct mon13_Cal* c = a3;
+
+    if(d0->month == 0 || d0->day > 28 || d1->month == 0 || d1->day > 28) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    int status;
+    int64_t diff;
+    status = mon13_diffYears(d0, d1, c, &diff);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    struct mon13_Date sum;
+    status = mon13_addYears(d1, c, diff, &sum);
+    if(status) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    return (d0->year == sum.year) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
 //Theft trials: compare
 
 enum theft_trial_res compare_nearby(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
@@ -3045,6 +3117,186 @@ int main(int argc, char** argv) {
                 &add_mode_info,
                 &tq_year0_cal_info,
                 &random_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip day, Gregorian Year 0",
+            .prop3 = diff_days_roundtrip,
+            .type_info = {
+                &gr_year0_date_info,
+                &gr_year0_date_info,
+                &gr_year0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip months, Gregorian Year 0",
+            .prop3 = diff_months_roundtrip,
+            .type_info = {
+                &gr_year0_date_info,
+                &gr_year0_date_info,
+                &gr_year0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip years, Gregorian Year 0",
+            .prop3 = diff_years_roundtrip,
+            .type_info = {
+                &gr_year0_date_info,
+                &gr_year0_date_info,
+                &gr_year0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip day, Gregorian",
+            .prop3 = diff_days_roundtrip,
+            .type_info = {
+                &gr_date_info,
+                &gr_date_info,
+                &gr_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip months, Gregorian",
+            .prop3 = diff_months_roundtrip,
+            .type_info = {
+                &gr_date_info,
+                &gr_date_info,
+                &gr_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip years, Gregorian",
+            .prop3 = diff_years_roundtrip,
+            .type_info = {
+                &gr_date_info,
+                &gr_date_info,
+                &gr_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip day, Tranquility Year 0",
+            .prop3 = diff_days_roundtrip,
+            .type_info = {
+                &tq_year0_date_info,
+                &tq_year0_date_info,
+                &tq_year0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip months, Tranquility Year 0",
+            .prop3 = diff_months_roundtrip,
+            .type_info = {
+                &tq_year0_date_info,
+                &tq_year0_date_info,
+                &tq_year0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip years, Tranquility Year 0",
+            .prop3 = diff_years_roundtrip,
+            .type_info = {
+                &tq_year0_date_info,
+                &tq_year0_date_info,
+                &tq_year0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip day, Tranquility",
+            .prop3 = diff_days_roundtrip,
+            .type_info = {
+                &tq_date_info,
+                &tq_date_info,
+                &tq_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip months, Tranquility",
+            .prop3 = diff_months_roundtrip,
+            .type_info = {
+                &tq_date_info,
+                &tq_date_info,
+                &tq_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip years, Tranquility",
+            .prop3 = diff_years_roundtrip,
+            .type_info = {
+                &tq_date_info,
+                &tq_date_info,
+                &tq_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip day, Cotsworth",
+            .prop3 = diff_days_roundtrip,
+            .type_info = {
+                &ct_date_info,
+                &ct_date_info,
+                &ct_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip months, Cotsworth",
+            .prop3 = diff_months_roundtrip,
+            .type_info = {
+                &ct_date_info,
+                &ct_date_info,
+                &ct_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip years, Cotsworth",
+            .prop3 = diff_years_roundtrip,
+            .type_info = {
+                &ct_date_info,
+                &ct_date_info,
+                &ct_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip day, Holocene",
+            .prop3 = diff_days_roundtrip,
+            .type_info = {
+                &hl_date_info,
+                &hl_date_info,
+                &hl_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip months, Holocene",
+            .prop3 = diff_months_roundtrip,
+            .type_info = {
+                &hl_date_info,
+                &hl_date_info,
+                &hl_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip years, Holocene",
+            .prop3 = diff_years_roundtrip,
+            .type_info = {
+                &hl_date_info,
+                &hl_date_info,
+                &hl_cal_info
             },
             .seed = seed
         },

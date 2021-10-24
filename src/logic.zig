@@ -127,16 +127,20 @@ fn seekIc(d: base.Date, cal: *const base.Cal) ?base.Intercalary {
     return null;
 }
 
-fn rollMonth(d: base.Date, offset: i32, cal: *const base.Cal) base.Err!base.Date {
-    const segments = getSegments(d.year, cal);
+fn getMonthMax(cal: *const base.Cal) u8 {
+    //Assumes same months for leap and non-leap years.
     var month_max: u8 = 1;
     var si: u8 = 0;
-    while (segments[si]) |s| : (si += 1) {
+    while (cal.*.common_lookup_list[si]) |s| : (si += 1) {
         if (s.month > month_max) {
             month_max = s.month;
         }
     }
+    return month_max;
+}
 
+fn rollMonth(d: base.Date, offset: i32, cal: *const base.Cal) base.Err!base.Date {
+    const month_max = getMonthMax(cal);
     var month_sum: i32 = 0;
     if (@addWithOverflow(i32, d.month, offset, &month_sum)) {
         return base.Err.Overflow;
@@ -595,6 +599,49 @@ pub fn addYears(
         const res_yz = try doyToMonthDay(res_doy, cal);
         return yzToNoYz(res_yz, cal);
     }
+}
+
+pub fn diffDays(
+    d0: base.Date,
+    d1: base.Date,
+    cal: *const base.Cal,
+) base.Err!i64 {
+    const d0_norm = try noYzToValidYz(d0, cal);
+    const d0_doy = try monthDayToDoy(d0_norm, cal);
+    const mjd0 = try doyToMjd(d0_doy, cal);
+
+    const d1_norm = try noYzToValidYz(d1, cal);
+    const d1_doy = try monthDayToDoy(d1_norm, cal);
+    const mjd1 = try doyToMjd(d1_doy, cal);
+    return mjd0 - mjd1;
+}
+
+pub fn diffMonths(
+    d0: base.Date,
+    d1: base.Date,
+    cal: *const base.Cal,
+) base.Err!i64 {
+    const d0_norm = try noYzToValidYz(d0, cal);
+    const d1_norm = try noYzToValidYz(d1, cal);
+    const d0_skip = try skipIntercalary(d0_norm, cal);
+    const d1_skip = try skipIntercalary(d1_norm, cal);
+
+    //Prevent overflow by promoting all quantities to i64
+    const month_max = @intCast(i64, getMonthMax(cal));
+    const year_diff = @intCast(i64, d0_skip.year) - @intCast(i64, d1_skip.year);
+    const m0 = @intCast(i64, d0_skip.month);
+    const m1 = @intCast(i64, d1_skip.month);
+    return (m0 - m1) + (year_diff * month_max);
+}
+
+pub fn diffYears(
+    d0: base.Date,
+    d1: base.Date,
+    cal: *const base.Cal,
+) base.Err!i64 {
+    const d0_norm = try noYzToValidYz(d0, cal);
+    const d1_norm = try noYzToValidYz(d1, cal);
+    return d0_norm.year - d1_norm.year;
 }
 
 pub fn compare(

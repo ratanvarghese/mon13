@@ -113,6 +113,27 @@ int mon13_addYears(
     struct mon13_Date* result
 );
 
+int mon13_diffDays(
+    const struct mon13_Date* d0,
+    const struct mon13_Date* d1,
+    const struct mon13_Cal* cal,
+    int64_t* result
+);
+
+int mon13_diffMonths(
+    const struct mon13_Date* d0,
+    const struct mon13_Date* d1,
+    const struct mon13_Cal* cal,
+    int64_t* result
+);
+
+int mon13_diffYears(
+    const struct mon13_Date* d0,
+    const struct mon13_Date* d1,
+    const struct mon13_Cal* cal,
+    int64_t* result
+);
+
 int mon13_compare(
     const struct mon13_Date* d0,
     const struct mon13_Date* d1,
