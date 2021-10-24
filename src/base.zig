@@ -1,3 +1,16 @@
+pub const Err = error{
+    Overflow,
+    BadCalendar,
+    DateNotFound,
+    DoyNotFound,
+    BadMode,
+    InvalidUtf8,
+    BeyondEndState,
+    InvalidSequence,
+    FailedToInsertNullCharacter,
+    InvalidDate,
+};
+
 pub const AddMode = extern enum {
     NONE,
     DAYS,

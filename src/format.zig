@@ -159,7 +159,7 @@ const State = enum(u8) {
         };
     }
 
-    fn afterPrefixOrFlag(c: u8) logic.Err!State {
+    fn afterPrefixOrFlag(c: u8) base.Err!State {
         if (validInEnum(Flag, c)) {
             return State.spec_flag;
         } else if (validInEnum(Digit, c)) {
@@ -168,37 +168,37 @@ const State = enum(u8) {
         } else if (validInEnum(Sequence, c)) {
             return State.spec_seq;
         } else {
-            return logic.Err.InvalidSequence;
+            return base.Err.InvalidSequence;
         }
     }
 
-    fn afterWidth(c: u8) logic.Err!State {
+    fn afterWidth(c: u8) base.Err!State {
         if (validInEnum(Digit, c)) {
             return State.spec_width;
         } else if (validInEnum(Sequence, c)) {
             return State.spec_seq;
         } else {
-            return logic.Err.InvalidSequence;
+            return base.Err.InvalidSequence;
         }
     }
 
-    fn next(self: State, c: u8) logic.Err!State {
+    fn next(self: State, c: u8) base.Err!State {
         return switch (self) {
             .start, .copy, .spec_seq => afterStart(c),
-            .end => logic.Err.BeyondEndState,
+            .end => base.Err.BeyondEndState,
             .spec_prefix, .spec_flag => afterPrefixOrFlag(c),
             .spec_width => afterWidth(c),
         };
     }
 };
 
-fn copyLenUtf8(c: u8) logic.Err!u8 {
+fn copyLenUtf8(c: u8) base.Err!u8 {
     return switch (c) {
         0b11110000...0b11110111 => 4,
         0b11100000...0b11101111 => 3,
         0b11000000...0b11011111 => 2,
         0b00000000...0b01111111 => 1,
-        else => logic.Err.InvalidUtf8,
+        else => base.Err.InvalidUtf8,
     };
 }
 
@@ -254,7 +254,7 @@ const Position = struct {
     end_i: usize = 0,
 };
 
-fn doCopy(pos: *Position, fmt: [*]const u8, raw_buf: ?[]u8) logic.Err!void {
+fn doCopy(pos: *Position, fmt: [*]const u8, raw_buf: ?[]u8) base.Err!void {
     const count = try copyLenUtf8(fmt[pos.*.fmt_i]);
     const old_pos = Position{ .fmt_i = pos.fmt_i, .buf_i = pos.buf_i };
     pos.*.fmt_i += count;
@@ -327,18 +327,18 @@ fn doDigits(y_digit: DigitRes, y: u32, pos: *Position, raw_buf: ?[]u8) void {
     }
 }
 
-fn doNumber(n: i32, spec: Specifier, pos: *Position, raw_buf: ?[]u8) logic.Err!void {
+fn doNumber(n: i32, spec: Specifier, pos: *Position, raw_buf: ?[]u8) base.Err!void {
     if (n < 0 and !spec.absolute_value) {
         doChar('-', pos, raw_buf);
     }
-    const abs_n = std.math.absInt(n) catch return logic.Err.Overflow;
+    const abs_n = std.math.absInt(n) catch return base.Err.Overflow;
     const x: u32 = @intCast(u32, abs_n);
     const x_digit = countDigits(x);
     doPad(x_digit, spec, pos, raw_buf);
     doDigits(x_digit, x, pos, raw_buf);
 }
 
-fn doName(name: [*:0]const u8, pos: *Position, raw_buf: ?[]u8) logic.Err!void {
+fn doName(name: [*:0]const u8, pos: *Position, raw_buf: ?[]u8) base.Err!void {
     var name_i: u32 = 0;
     while (name[name_i] != 0) {
         const name_c = name[name_i];
@@ -360,7 +360,7 @@ pub fn format(
     raw_nlist: ?*const base.NameList,
     fmt: [*]const u8,
     raw_buf: ?[]u8,
-) logic.Err!c_int {
+) base.Err!c_int {
     var s = State.start;
 
     var spec = Specifier{};
@@ -384,7 +384,7 @@ pub fn format(
                 } else if (spec.seq.getName(d, cal, raw_nlist)) |name| {
                     try doName(name, &pos, raw_buf);
                 } else {
-                    return logic.Err.InvalidSequence;
+                    return base.Err.InvalidSequence;
                 }
                 pos.fmt_i += 1;
                 spec = Specifier{};
@@ -398,7 +398,7 @@ pub fn format(
             if (buf.len > pos.end_i) {
                 buf[pos.end_i] = 0;
             } else {
-                return logic.Err.FailedToInsertNullCharacter;
+                return base.Err.FailedToInsertNullCharacter;
             }
         }
     }
