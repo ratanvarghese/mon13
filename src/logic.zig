@@ -62,10 +62,6 @@ fn isLeap(year: i32, cal: *const base.Cal) bool {
     }
 }
 
-fn lastDayOfSegment(year: i32, s: base.Segment) base.Date {
-    return .{ .year = year, .month = s.month, .day = s.day_end };
-}
-
 fn segmentLen(s: base.Segment) u8 {
     return (s.day_end - s.day_start) + 1;
 }
@@ -84,17 +80,6 @@ fn getSegments(year: i32, cal: *const base.Cal) [*:null]const ?base.Segment {
         return cal.*.leap_lookup_list;
     } else {
         return cal.*.common_lookup_list;
-    }
-}
-
-fn lastDayOfYear(year: i32, cal: *const base.Cal) base.Date {
-    const segments = getSegments(year, cal);
-    var si: u8 = 0;
-    while (segments[si]) |s| : (si += 1) {}
-    if (segments[si - 1]) |s| {
-        return lastDayOfSegment(year, s);
-    } else {
-        unreachable; //would require a bad cal
     }
 }
 
@@ -177,6 +162,82 @@ fn rollMonth(d: base.Date, offset: i32, cal: *const base.Cal) Err!base.Date {
         .day = d.day,
     };
     return res;
+}
+
+fn normDoy(d: DoyDate, cal: *const base.Cal) DoyDate {
+    var doy_done: u16 = 0;
+    var year: i32 = d.year;
+    while (true) {
+        const leap = isLeap(year, cal);
+        const doy_sum = doy_done +% yearLen(leap, cal);
+        if (doy_sum >= d.doy) {
+            //doy_done never exceeds d.doy.
+            //That makes it slightly easier to determine the result.
+            //Use >= for 1-based doy, > for 0-based doy.
+            break;
+        } else {
+            var year_sum: i32 = 0;
+            if (@addWithOverflow(i32, year, 1, &year_sum)) {
+                break;
+            }
+            year = year_sum;
+            doy_done = doy_sum;
+        }
+    }
+    return .{ .year = year, .doy = d.doy - doy_done };
+}
+
+fn skipIntercalary(d: base.Date, cal: *const base.Cal) Err!base.Date {
+    var prev_day = d;
+    while (seekIc(prev_day, cal)) |ic| {
+        var dd_doy = ic.day_of_year;
+        if (isLeap(prev_day.year, cal)) {
+            dd_doy = ic.day_of_leap_year;
+        }
+
+        const dd: DoyDate = .{
+            .year = prev_day.year,
+            .doy = dd_doy + 1,
+        };
+        const norm_dd = normDoy(dd, cal);
+        const next_day = try doyToMonthDay(norm_dd, cal);
+        const cmp = compare(prev_day, next_day, null) catch unreachable;
+        if (cmp == 0) {
+            return Err.BadCalendar;
+        }
+        prev_day = next_day;
+    }
+    return prev_day;
+}
+
+fn normDay(d: base.Date, cal: *const base.Cal) Err!base.Date {
+    const segments = getSegments(d.year, cal);
+
+    var matching_si: u8 = 0;
+    var si: u8 = 0;
+    while (segments[si]) |s| : (si += 1) {
+        if (s.month == d.month) {
+            if (d.day >= s.day_start and d.day <= s.day_end) {
+                return d;
+            }
+            matching_si = si;
+        }
+    }
+
+    //d.day is too big
+    if (segments[matching_si]) |matching_s| {
+        //const excess_days = d.day -% matching_s.day_start;
+        const dd: DoyDate = .{
+            .year = d.year,
+            .doy = matching_s.offset +% d.day,
+        };
+
+        const norm_dd = normDoy(dd, cal);
+        const res = try doyToMonthDay(norm_dd, cal);
+        return res;
+    } else {
+        return Err.BadCalendar;
+    }
 }
 
 //MJD conversions
@@ -301,109 +362,6 @@ fn valid_assume_yz(d_yz: base.Date, cal: *const base.Cal) bool {
     return false;
 }
 
-//Normalization
-//Normalization functions cannot return errors:
-//they must try their best to make a valid date for any input.
-fn normMonth(d: base.Date, cal: *const base.Cal) base.Date {
-    //Assuming d.year normalized
-    if (d.month == 0) {
-        if (seekIc(d, cal)) |ic| {
-            return d;
-        }
-    }
-    const res = rollMonth(d, 0, cal) catch unreachable;
-    return res;
-}
-
-fn normDoy(d: DoyDate, cal: *const base.Cal) DoyDate {
-    var doy_done: u16 = 0;
-    var year: i32 = d.year;
-    while (true) {
-        const leap = isLeap(year, cal);
-        const doy_sum = doy_done +% yearLen(leap, cal);
-        if (doy_sum >= d.doy) {
-            //doy_done never exceeds d.doy.
-            //That makes it slightly easier to determine the result.
-            //Use >= for 1-based doy, > for 0-based doy.
-            break;
-        } else {
-            var year_sum: i32 = 0;
-            if (@addWithOverflow(i32, year, 1, &year_sum)) {
-                break;
-            }
-            year = year_sum;
-            doy_done = doy_sum;
-        }
-    }
-    return .{ .year = year, .doy = d.doy - doy_done };
-}
-
-fn icToCommon(year: i32, doy_offset: u16, ic: base.Intercalary, cal: *const base.Cal) base.Date {
-    var dd_doy = ic.day_of_year;
-    const leap = isLeap(year, cal);
-    if (leap) {
-        dd_doy = ic.day_of_leap_year;
-    }
-
-    const dd: DoyDate = .{
-        .year = year,
-        .doy = dd_doy +% doy_offset,
-    };
-    const norm_dd = normDoy(dd, cal);
-    const res = doyToMonthDay(norm_dd, cal) catch lastDayOfYear(norm_dd.year, cal);
-    return res;
-}
-
-fn normDay(d: base.Date, cal: *const base.Cal) base.Date {
-
-    //Assuming d.year and d.month normalized
-    const segments = getSegments(d.year, cal);
-
-    var matching_si: u8 = 0;
-    var si: u8 = 0;
-    while (segments[si]) |s| : (si += 1) {
-        if (s.month == d.month) {
-            if (d.day >= s.day_start and d.day <= s.day_end) {
-                return d;
-            }
-            matching_si = si;
-        }
-    }
-
-    if (seekIc(d, cal)) |ic| {
-        return icToCommon(d.year, 0, ic, cal);
-    }
-
-    if (d.day == 0) {
-        if (matching_si == 0) {
-            return lastDayOfYear(d.year -% 1, cal);
-        } else if (segments[matching_si - 1]) |s| {
-            return lastDayOfSegment(d.year, s);
-        }
-    }
-
-    //At this point, assuming a valid cal, d.day is too big.
-    if (segments[matching_si]) |matching_s| {
-        //const excess_days = d.day -% matching_s.day_start;
-        const dd: DoyDate = .{
-            .year = d.year,
-            .doy = matching_s.offset +% d.day,
-        };
-
-        const norm_dd = normDoy(dd, cal);
-        const res = doyToMonthDay(norm_dd, cal) catch lastDayOfYear(d.year, cal);
-        return res;
-    } else {
-        unreachable; //Would require a bad calendar.
-    }
-}
-
-fn normalize(d: base.Date, cal: *const base.Cal) base.Date {
-    const d_normMonth = normMonth(d, cal);
-    const d_normDay = normDay(d_normMonth, cal);
-    return d_normDay;
-}
-
 //Year Zero adjustment
 fn yzNeedsAdjustment(y: i32, cal: *const base.Cal) bool {
     return (!cal.*.CAL_YEAR_ZERO) and (y < 1);
@@ -448,19 +406,19 @@ fn addYears(d: base.Date, offset: i32, cal: *const base.Cal) Err!base.Date {
         return Err.Overflow;
     }
     const res = base.Date{ .year = y, .month = d.month, .day = d.day };
-    return normalize(res, cal);
+    if (valid(res, cal)) {
+        return res;
+    } else {
+        const d_doy = try monthDayToDoy(d, cal);
+        const sum_doy = DoyDate{ .year = y, .doy = d_doy.doy };
+        const res_doy = normDoy(sum_doy, cal);
+        return try doyToMonthDay(res_doy, cal);
+    }
 }
 
 fn addMonths(d: base.Date, offset: i32, cal: *const base.Cal) Err!base.Date {
-    if (seekIc(d, cal)) |ic| {
-        const next_day = icToCommon(d.year, 1, ic, cal);
-        const cmp = compare(d, next_day, null) catch unreachable;
-        if (cmp == 0) {
-            return Err.BadCalendar;
-        }
-        return addMonths(next_day, offset, cal);
-    }
-    const rolled_d = try rollMonth(d, offset, cal);
+    const skipped_d = try skipIntercalary(d, cal);
+    const rolled_d = try rollMonth(skipped_d, offset, cal);
     return normDay(rolled_d, cal);
 }
 
