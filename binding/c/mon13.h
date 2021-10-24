@@ -21,13 +21,6 @@ enum mon13_ExtractMode {
 	MON13_EXTRACT_RD
 };
 
-enum mon13_ImportMode {
-	MON13_IMPORT_MJD,
-	MON13_IMPORT_UNIX,
-	MON13_IMPORT_RD,
-	MON13_IMPORT_C99_TM,
-};
-
 enum mon13_Weekday {
 	MON13_NO_WEEKDAY = 0,
 	MON13_MONDAY = 1,
@@ -84,10 +77,27 @@ int mon13_valid(
 	const struct mon13_Cal* cal
 );
 
-int mon13_import(
+int mon13_importMjd(
+	const struct mon13_Cal* cal,
+	const int64_t* input,
+	struct mon13_Date* result
+);
+
+int mon13_importUnix(
+	const struct mon13_Cal* cal,
+	const int64_t* input,
+	struct mon13_Date* result
+);
+
+int mon13_importRd(
+	const struct mon13_Cal* cal,
+	const int64_t* input,
+	struct mon13_Date* result
+);
+
+int mon13_importC99Tm(
 	const struct mon13_Cal* cal,
 	const void* input,
-	const enum mon13_ImportMode mode,
 	struct mon13_Date* result
 );
 

@@ -100,7 +100,7 @@ test "import mjd" {
     const offset: i32 = 0;
     const c = &mon13.tranquility_year_zero;
 
-    const d0 = try mon13.import(c, &mjd0, mon13.ImportMode.MJD);
+    const d0 = try mon13.importMjd(c, &mjd0);
 
     const d1 = try mon13.add(
         d0,
@@ -165,7 +165,7 @@ test "strange convert" {
     const rd0: i64 = 5385873414131997696 % std.math.maxInt(i32);
     const offset: i32 = 6356633119034338304 % std.math.maxInt(i32);
 
-    const d0 = try mon13.import(c, &rd0, mon13.ImportMode.RD);
+    const d0 = try mon13.importRd(c, &rd0);
     const d1 = try mon13.add(d0, c, offset, mon13.AddMode.DAYS);
     const rd1: i64 = try mon13.extract(d1, c, mon13.ExtractMode.RD);
     try expect((rd1 - rd0) == offset);

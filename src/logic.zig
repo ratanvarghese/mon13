@@ -525,38 +525,41 @@ pub fn valid(
     }
 }
 
-pub fn import(
+pub fn importMjd(
+    cal: *const base.Cal,
+    input_mjd: *const i64,
+) Err!base.Date {
+    if (input_mjd.* > maxInt(i32) or input_mjd.* < minInt(i32)) {
+        return Err.Overflow;
+    }
+    const mjd_32 = @intCast(i32, input_mjd.*);
+    const doy = try mjdToDoy(mjd_32, cal);
+    const res_yz = try doyToMonthDay(doy, cal);
+    return yzToNoYz(res_yz, cal);
+}
+
+pub fn importUnix(
+    cal: *const base.Cal,
+    input_unix: *const i64,
+) Err!base.Date {
+    const res_yz = try unixToDate(input_unix.*, cal);
+    return yzToNoYz(res_yz, cal);
+}
+
+pub fn importRd(
+    cal: *const base.Cal,
+    input_rd: *const i64,
+) Err!base.Date {
+    const res_yz = try rdToDate(input_rd.*, cal);
+    return yzToNoYz(res_yz, cal);
+}
+
+pub fn importC99Tm(
     cal: *const base.Cal,
     input: *const c_void,
-    mode: base.ImportMode,
 ) Err!base.Date {
-    switch (mode) {
-        base.ImportMode.MJD => {
-            const input_mjd = @ptrCast(*const i64, @alignCast(@alignOf(i64), input));
-            if (input_mjd.* > maxInt(i32) or input_mjd.* < minInt(i32)) {
-                return Err.Overflow;
-            }
-            const mjd_32 = @intCast(i32, input_mjd.*);
-            const doy = try mjdToDoy(mjd_32, cal);
-            const res_yz = try doyToMonthDay(doy, cal);
-            return yzToNoYz(res_yz, cal);
-        },
-        base.ImportMode.UNIX => {
-            const input_unix = @ptrCast(*const i64, @alignCast(@alignOf(i64), input));
-            const res_yz = try unixToDate(input_unix.*, cal);
-            return yzToNoYz(res_yz, cal);
-        },
-        base.ImportMode.RD => {
-            const input_rd = @ptrCast(*const i64, @alignCast(@alignOf(i64), input));
-            const res_yz = try rdToDate(input_rd.*, cal);
-            return yzToNoYz(res_yz, cal);
-        },
-        base.ImportMode.C99_TM => {
-            const input_c99_tm = @ptrCast(*const C99Tm, @alignCast(@alignOf(C99Tm), input));
-            return try C99TmToDate(input_c99_tm);
-        },
-    }
-    return Err.BadMode;
+    const input_c99_tm = @ptrCast(*const C99Tm, @alignCast(@alignOf(C99Tm), input));
+    return try C99TmToDate(input_c99_tm);
 }
 
 pub fn convert(

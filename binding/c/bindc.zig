@@ -59,17 +59,67 @@ pub export fn mon13_valid(
     return @boolToInt(mon13.valid(d.*, cal));
 }
 
-pub export fn mon13_import(
+pub export fn mon13_importMjd(
     raw_cal: ?*const mon13.Cal,
-    raw_input: ?*const c_void,
-    mode: mon13.ImportMode,
+    raw_input: ?*const i64,
     raw_result: ?*mon13.Date,
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     const input = raw_input orelse return @enumToInt(PublicError.NULL_INPUT);
     const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
 
-    if (mon13.import(cal, input, mode)) |imported| {
+    if (mon13.importMjd(cal, input)) |imported| {
+        result.* = imported;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
+pub export fn mon13_importUnix(
+    raw_cal: ?*const mon13.Cal,
+    raw_input: ?*const i64,
+    raw_result: ?*mon13.Date,
+) c_int {
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const input = raw_input orelse return @enumToInt(PublicError.NULL_INPUT);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (mon13.importUnix(cal, input)) |imported| {
+        result.* = imported;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
+pub export fn mon13_importRd(
+    raw_cal: ?*const mon13.Cal,
+    raw_input: ?*const i64,
+    raw_result: ?*mon13.Date,
+) c_int {
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const input = raw_input orelse return @enumToInt(PublicError.NULL_INPUT);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (mon13.importRd(cal, input)) |imported| {
+        result.* = imported;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
+pub export fn mon13_importC99Tm(
+    raw_cal: ?*const mon13.Cal,
+    raw_input: ?*const c_void,
+    raw_result: ?*mon13.Date,
+) c_int {
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const input = raw_input orelse return @enumToInt(PublicError.NULL_INPUT);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (mon13.importC99Tm(cal, input)) |imported| {
         result.* = imported;
         return @enumToInt(PublicError.NONE);
     } else |err| {

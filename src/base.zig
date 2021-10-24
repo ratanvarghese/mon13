@@ -14,13 +14,6 @@ pub const ExtractMode = extern enum {
     RD,
 };
 
-pub const ImportMode = extern enum {
-    MJD,
-    UNIX,
-    RD,
-    C99_TM,
-};
-
 pub const Weekday = extern enum {
     MON13_NO_WEEKDAY = 0,
     MON13_MONDAY = 1,

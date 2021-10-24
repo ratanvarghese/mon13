@@ -473,7 +473,7 @@ enum theft_trial_res import_mjd(struct theft* t, void* a1, void* a2, void* a3) {
 
 	struct mon13_Date d0, d1;
 	int status;
-	status = mon13_import(c, &mjd0, MON13_IMPORT_MJD, &d0);
+	status = mon13_importMjd(c, &mjd0, &d0);
 	if(status) {
 		if(status == MON13_ERROR_OVERFLOW) {
 			return skip_import(mjd0) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -502,7 +502,7 @@ enum theft_trial_res import_unix(struct theft* t, void* a1, void* a2, void* a3) 
 	int64_t u0_cut = u0 - (u0 % (UNIX_DAY));
 	struct mon13_Date d0, d1;
 	int status;
-	status = mon13_import(c, &u0_cut, MON13_IMPORT_UNIX, &d0);
+	status = mon13_importUnix(c, &u0_cut, &d0);
 	if(status) {
 		if(status == MON13_ERROR_OVERFLOW) {
 			return skip_import(u0/(UNIX_DAY)) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -538,7 +538,7 @@ enum theft_trial_res import_unix_epoch_start(struct theft* t, void* a1) {
 	}
 
 	struct mon13_Date d0;
-	if(mon13_import(c, &u0, MON13_IMPORT_UNIX, &d0)) {
+	if(mon13_importUnix(c, &u0, &d0)) {
 		return THEFT_TRIAL_FAIL; //u0 is too small for error to be allowed
 	}
 	if(d0.year == 1970 && d0.month == 1 && d0.day == 1) {
@@ -556,7 +556,7 @@ enum theft_trial_res import_unix_gmtime(struct theft* t, void* a1) {
 	time_t unix0 = u0;
 	const struct tm* gmt_u = gmtime(&unix0);
 	struct mon13_Date d;
-	if(mon13_import(c, &u0, MON13_IMPORT_UNIX, &d)) {
+	if(mon13_importUnix(c, &u0, &d)) {
 		return THEFT_TRIAL_SKIP;
 	}
 
@@ -580,7 +580,7 @@ enum theft_trial_res import_rd(struct theft* t, void* a1, void* a2, void* a3) {
 
 	struct mon13_Date d0, d1;
 	int status;
-	status = mon13_import(c, &rd0, MON13_IMPORT_RD, &d0);
+	status = mon13_importRd(c, &rd0, &d0);
 	if(status) {
 		if(status == MON13_ERROR_OVERFLOW) {
 			return skip_import(rd0) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -609,7 +609,7 @@ enum theft_trial_res import_c99_tm(struct theft* t, void* a1) {
 	const struct tm* local_u = localtime(&unix0);
 	struct mon13_Date d;
 	int status;
-	status = mon13_import(c, local_u, MON13_IMPORT_C99_TM, &d);
+	status = mon13_importC99Tm(c, local_u, &d);
 	if(status) {
 		if(status == MON13_ERROR_OVERFLOW) {
 			return skip_import(u0/(UNIX_DAY)) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -664,29 +664,38 @@ enum theft_trial_res import_null(struct theft* t, void* a1, void* a2) {
 	const struct mon13_Cal* c = a1;
 	int64_t import_data = ((int64_t)a2) % INT32_MAX;
 
-	enum mon13_ImportMode modelist[] = {
-		MON13_IMPORT_MJD,
-		MON13_IMPORT_UNIX,
-		MON13_IMPORT_RD,
-		MON13_IMPORT_C99_TM
-	};
 	struct mon13_Date d0;
-	int status;
-	for(int i = 0; i < SIZEOF_ARR(modelist); i++) {
-		enum mon13_ImportMode m = modelist[i];
-		status = mon13_import(NULL, &import_data, m, &d0);
-		if(status != MON13_ERROR_NULL_CALENDAR) {
-			return THEFT_TRIAL_FAIL;
-		}
-		status = mon13_import(c, NULL, m, &d0);
-		if(status != MON13_ERROR_NULL_INPUT) {
-			return THEFT_TRIAL_FAIL;
-		}
-		status = mon13_import(c, &import_data, m, NULL);
-		if(status != MON13_ERROR_NULL_RESULT) {
+	int status[4];
+	status[0] = mon13_importMjd(NULL, &import_data, &d0);
+	status[1] = mon13_importUnix(NULL, &import_data, &d0);
+	status[2] = mon13_importRd(NULL, &import_data, &d0);
+	status[3] = mon13_importC99Tm(NULL, &import_data, &d0);
+	for(size_t si = 0; si < SIZEOF_ARR(status); si++) {
+		if(status[si] != MON13_ERROR_NULL_CALENDAR) {
 			return THEFT_TRIAL_FAIL;
 		}
 	}
+
+	status[0] = mon13_importMjd(c, NULL, &d0);
+	status[1] = mon13_importUnix(c, NULL, &d0);
+	status[2] = mon13_importRd(c, NULL, &d0);
+	status[3] = mon13_importC99Tm(c, NULL, &d0);
+	for(size_t si = 0; si < SIZEOF_ARR(status); si++) {
+		if(status[si] != MON13_ERROR_NULL_INPUT) {
+			return THEFT_TRIAL_FAIL;
+		}
+	}
+
+	status[0] = mon13_importMjd(c, &import_data, NULL);
+	status[1] = mon13_importUnix(c, &import_data, NULL);
+	status[2] = mon13_importRd(c, &import_data, NULL);
+	status[3] = mon13_importC99Tm(c, &import_data, NULL);
+	for(size_t si = 0; si < SIZEOF_ARR(status); si++) {
+		if(status[si] != MON13_ERROR_NULL_RESULT) {
+			return THEFT_TRIAL_FAIL;
+		}
+	}
+
 	return THEFT_TRIAL_PASS;
 }
 
@@ -1912,7 +1921,7 @@ enum theft_trial_res format_strftime(struct theft* t, void* a1, void* a2, void* 
 	time_t unix0 = u0;
 	const struct tm* gmt_u = gmtime(&unix0);
 	struct mon13_Date d;
-	if(mon13_import(c, &u0, MON13_IMPORT_UNIX, &d)) {
+	if(mon13_importUnix(c, &u0, &d)) {
 		return THEFT_TRIAL_SKIP;
 	}
 
