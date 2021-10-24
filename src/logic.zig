@@ -590,7 +590,7 @@ pub fn addYears(
     }
     const res = base.Date{ .year = y, .month = d_yz.month, .day = d_yz.day };
 
-    if (valid(res, cal)) {
+    if (valid_assume_yz(res, cal)) {
         return yzToNoYz(res, cal);
     } else {
         const d_doy = try monthDayToDoy(d_yz, cal);
