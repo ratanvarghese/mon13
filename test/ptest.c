@@ -57,6 +57,9 @@ void print_cal(FILE* f, const void* instance, void* env) {
     else if(c == &mon13_cotsworth) {
         fprintf(f, "%s", mon13_cotsworth_names_en_US.calendar_name);
     }
+    else if(c == &mon13_julian) {
+        fprintf(f, "%s", mon13_julian_names_en_US.calendar_name);
+    }
     else {
         fprintf(f, "UNKNOWN");
     }
@@ -194,6 +197,9 @@ bool is_leap_day(struct mon13_Date d, const struct mon13_Cal* c) {
     if(c == &mon13_gregorian_year_zero || c == &mon13_gregorian) {
         return d.month == 2 && d.day == 29;
     }
+    if(c == &mon13_julian) {
+        return d.month == 2 && d.day == 29;
+    }
     if(c == &mon13_tranquility_year_zero || c == &mon13_tranquility) {
         return d.month == 0 && d.day == 2;
     }
@@ -299,6 +305,12 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance) {
             res->year = armstrong ? res->year : (res->year - 31);
         }
     }
+    else if(env == &mon13_julian) {
+        //Every valid Gregorian (No Year 0) date is a valid Julian date
+        if(mon13_addDays(&(kcd->d0), &mon13_julian, offset, res)) {
+            return THEFT_ALLOC_ERROR;
+        }
+    }
     else {
         return THEFT_ALLOC_ERROR;
     }
@@ -313,15 +325,24 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance) {
 
 enum theft_alloc_res alloc_leap_day(struct theft* t, void* env, void** instance) {
     int32_t y = (theft_random_choice(t, INT32_MAX/4) - (INT32_MAX/8)) * 4;
-    if(y % 100 == 0) {
-        y = 400;
-    }
     struct mon13_Cal* cal = env;
     struct mon13_Date* res = malloc(sizeof(struct mon13_Date));
+
+    if(cal != &mon13_julian) {
+        if((y % 100 == 0) && (y % 400 != 0)) {
+            y = 400;
+        }
+    }
+
     if(cal == &mon13_gregorian_year_zero || cal == &mon13_holocene) {
         res->year = y;
         res->month = 2;
         res->day = 29;    
+    }
+    else if(cal == &mon13_gregorian || cal == &mon13_julian) {
+        res->year = (y > 0) ? y : (y - 1);
+        res->month = 2;
+        res->day = 29;
     }
     else if(cal == &mon13_tranquility_year_zero) {
         res->year = y + 31;
@@ -1471,7 +1492,7 @@ enum theft_trial_res compare_nearby(struct theft* t, void* a1, void* a2, void* a
     return THEFT_TRIAL_PASS;
 }
 
-enum theft_trial_res compare_random_gr(struct theft* t, void* a1, void* a2, void* a3) {
+enum theft_trial_res compare_random(struct theft* t, void* a1, void* a2, void* a3) {
     const struct mon13_Date* d0 = a1;
     const struct mon13_Date* d1 = a2;
     const struct mon13_Cal* c = a3;
@@ -2312,6 +2333,11 @@ struct theft_type_info ct_cal_info = {
     .env = (void*)&mon13_cotsworth
 };
 
+struct theft_type_info jl_cal_info = {
+    .alloc = select_env, //nothing to free
+    .env = (void*)&mon13_julian
+};
+
 struct theft_type_info gr_date_info = {
     .alloc = alloc_date,
     .free = theft_generic_free_cb,
@@ -2354,6 +2380,13 @@ struct theft_type_info ct_date_info = {
     .env = (void*)&mon13_cotsworth
 };
 
+struct theft_type_info jl_date_info = {
+    .alloc = alloc_date,
+    .free = theft_generic_free_cb,
+    .print = print_date,
+    .env = (void*)&mon13_julian
+};
+
 struct theft_type_info gr_year0_leap_info = {
     .alloc = alloc_leap_day,
     .free = theft_generic_free_cb,
@@ -2361,11 +2394,25 @@ struct theft_type_info gr_year0_leap_info = {
     .env = (void*)&mon13_gregorian_year_zero
 };
 
+struct theft_type_info gr_leap_info = {
+    .alloc = alloc_leap_day,
+    .free = theft_generic_free_cb,
+    .print = print_date,
+    .env = (void*)&mon13_gregorian
+};
+
 struct theft_type_info tq_year0_leap_info = {
     .alloc = alloc_leap_day,
     .free = theft_generic_free_cb,
     .print = print_date,
     .env = (void*)&mon13_tranquility_year_zero
+};
+
+struct theft_type_info jl_leap_info = {
+    .alloc = alloc_leap_day,
+    .free = theft_generic_free_cb,
+    .print = print_date,
+    .env = (void*)&mon13_julian
 };
 
 struct theft_type_info strftime_fmt_info = {
@@ -2410,6 +2457,11 @@ struct theft_type_info tq_name_en_info = {
 struct theft_type_info ct_name_en_info = {
     .alloc = select_env, //nothing to free
     .env = (void*)&mon13_cotsworth_names_en_US
+};
+
+struct theft_type_info jl_name_en_info = {
+    .alloc = select_env, //nothing to free
+    .env = (void*)&mon13_julian_names_en_US
 };
 
 int main(int argc, char** argv) {
@@ -2462,6 +2514,16 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_import: Julian<->MJD",
+            .prop3 = import_mjd,
+            .type_info = {
+                &jl_cal_info,
+                &random_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_import: Gregorian Year 0<->Unix time",
             .prop3 = import_unix,
             .type_info = {
@@ -2496,6 +2558,16 @@ int main(int argc, char** argv) {
             .prop3 = import_unix,
             .type_info = {
                 &tq_cal_info,
+                &random_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_import: Julian<->Unix",
+            .prop3 = import_unix,
+            .type_info = {
+                &jl_cal_info,
                 &random_info,
                 &random_info
             },
@@ -2558,6 +2630,16 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_import: Julian<->RD",
+            .prop3 = import_rd,
+            .type_info = {
+                &jl_cal_info,
+                &random_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_import: struct tm, localtime",
             .prop1 = import_c99_tm,
             .type_info = {&random_info},
@@ -2595,6 +2677,15 @@ int main(int argc, char** argv) {
             .prop2 = import_null,
             .type_info = {
                 &tq_cal_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_import: NULL args, Julian",
+            .prop2 = import_null,
+            .type_info = {
+                &jl_cal_info,
                 &random_info
             },
             .seed = seed
@@ -2761,6 +2852,16 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_add: Day Round Trip, Julian",
+            .prop3 = add_day_roundtrip,
+            .type_info = {
+                &jl_date_info,
+                &random_info,
+                &jl_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_add: Day Split, Gregorian Year 0",
             .prop3 = add_day_split,
             .type_info = {
@@ -2855,6 +2956,26 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_add: Year On Leap Day, Gregorian",
+            .prop3 = add_year_leap,
+            .type_info = {
+                &gr_leap_info,
+                &random_info,
+                &gr_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_add: Year On Leap Day, Julian",
+            .prop3 = add_year_leap,
+            .type_info = {
+                &jl_leap_info,
+                &random_info,
+                &jl_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_add: Zero, Gregorian Year 0",
             .prop3 = add_zero,
             .type_info = {
@@ -2935,6 +3056,16 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_add: Zero, Julian",
+            .prop3 = add_zero,
+            .type_info = {
+                &jl_date_info,
+                &add_mode_info,
+                &jl_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_add: Gregorian like Gregorian Year 0",
             .prop5 = add_like_other_cal,
             .type_info = {
@@ -2988,6 +3119,17 @@ int main(int argc, char** argv) {
                 &tq_date_info,
                 &add_mode_info,
                 &tq_cal_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_add: No Year 0 for Julian",
+            .prop4 = add_no_year_zero,
+            .type_info = {
+                &jl_date_info,
+                &add_mode_info,
+                &jl_cal_info,
                 &random_info
             },
             .seed = seed
@@ -3073,6 +3215,15 @@ int main(int argc, char** argv) {
             .type_info = {
                 &gr_date_info,
                 &gr_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_add: Month Onto Feb 29, Julian",
+            .prop2 = add_month_feb_29,
+            .type_info = {
+                &jl_date_info,
+                &jl_cal_info
             },
             .seed = seed
         },
@@ -3301,6 +3452,36 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_diff: Roundtrip day, Julian",
+            .prop3 = diff_days_roundtrip,
+            .type_info = {
+                &jl_date_info,
+                &jl_date_info,
+                &jl_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip months, Julian",
+            .prop3 = diff_months_roundtrip,
+            .type_info = {
+                &jl_date_info,
+                &jl_date_info,
+                &jl_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip years, Julian",
+            .prop3 = diff_years_roundtrip,
+            .type_info = {
+                &jl_date_info,
+                &jl_date_info,
+                &jl_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_compare: Nearby, Gregorian Year 0",
             .prop4 = compare_nearby,
             .type_info = {
@@ -3324,7 +3505,7 @@ int main(int argc, char** argv) {
         },
         {
             .name = "mon13_compare: Random, Gregorian Year 0",
-            .prop3 = compare_random_gr,
+            .prop3 = compare_random,
             .type_info = {
                 &gr_year0_date_info,
                 &gr_year0_date_info,
@@ -3334,11 +3515,31 @@ int main(int argc, char** argv) {
         },
         {
             .name = "mon13_compare: Random, Gregorian",
-            .prop3 = compare_random_gr,
+            .prop3 = compare_random,
             .type_info = {
                 &gr_date_info,
                 &gr_date_info,
                 &gr_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_compare: Random, Cotsworth",
+            .prop3 = compare_random,
+            .type_info = {
+                &ct_date_info,
+                &ct_date_info,
+                &ct_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_compare: Random, Julian",
+            .prop3 = compare_random,
+            .type_info = {
+                &jl_date_info,
+                &jl_date_info,
+                &jl_cal_info
             },
             .seed = seed
         },
@@ -3465,6 +3666,15 @@ int main(int argc, char** argv) {
             .type_info = {
                 &tq_date_info,
                 &tq_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_extract: DAY_OF_WEEK, Julian",
+            .prop2 = extract_day_of_week_gr,
+            .type_info = {
+                &jl_date_info,
+                &jl_cal_info,
             },
             .seed = seed
         },
@@ -3613,6 +3823,17 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_format: %A, Julian (en_US)",
+            .prop4 = format_weekday,
+            .type_info = {
+                &jl_date_info,
+                &jl_cal_info,
+                &jl_name_en_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_format: %B, Gregorian Year 0 (en_US)",
             .prop4 = format_month,
             .type_info = {
@@ -3673,6 +3894,17 @@ int main(int argc, char** argv) {
                 &ct_date_info,
                 &ct_cal_info,
                 &ct_name_en_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_format: %B, Julian (en_US)",
+            .prop4 = format_month,
+            .type_info = {
+                &jl_date_info,
+                &jl_cal_info,
+                &jl_name_en_info,
                 &random_info
             },
             .seed = seed

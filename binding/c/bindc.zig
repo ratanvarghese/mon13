@@ -6,12 +6,14 @@ pub export const mon13_tranquility = mon13.tranquility;
 pub export const mon13_tranquility_year_zero = mon13.tranquility_year_zero;
 pub export const mon13_holocene = mon13.holocene;
 pub export const mon13_cotsworth = mon13.cotsworth;
+pub export const mon13_julian = mon13.julian;
 
 pub export const mon13_gregorian_names_en_US = mon13.gregorian_names_en_US;
-pub export const mon13_gregorian_names_fr_FR = mon13.gregorian_names_fr_FR;
 pub export const mon13_tranquility_names_en_US = mon13.tranquility_names_en_US;
 pub export const mon13_holocene_names_en_US = mon13.holocene_names_en_US;
 pub export const mon13_cotsworth_names_en_US = mon13.cotsworth_names_en_US;
+pub export const mon13_julian_names_en_US = mon13.julian_names_en_US;
+pub export const mon13_gregorian_names_fr_FR = mon13.gregorian_names_fr_FR;
 
 pub const PublicError = extern enum {
     NONE = 0,
