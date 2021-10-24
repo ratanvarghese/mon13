@@ -1429,12 +1429,13 @@ enum theft_trial_res compare_nearby(struct theft* t, void* a1, void* a2, void* a
 	return THEFT_TRIAL_PASS;
 }
 
-enum theft_trial_res compare_random_gr(struct theft* t, void* a1, void* a2)
+enum theft_trial_res compare_random_gr(struct theft* t, void* a1, void* a2, void* a3)
 {
 	const struct mon13_Date* d0 = a1;
 	const struct mon13_Date* d1 = a2;
+	const struct mon13_Cal* c = a3;
 
-	int res = mon13_compare(d0, d1, &mon13_gregorian_year_zero);
+	int res = mon13_compare(d0, d1, c);
 	bool correct_res = false;
 	if(res == 0) {
 		correct_res = equal_year_month_day(*d0, *d1);
@@ -3107,19 +3108,21 @@ int main(int argc, char** argv) {
 		},
 		{
 			.name = "mon13_compare: Random, Gregorian Year 0",
-			.prop2 = compare_random_gr,
+			.prop3 = compare_random_gr,
 			.type_info = {
 				&gr_year0_date_info,
-				&gr_year0_date_info
+				&gr_year0_date_info,
+				&gr_year0_cal_info
 			},
 			.seed = seed
 		},
 		{
 			.name = "mon13_compare: Random, Gregorian",
-			.prop2 = compare_random_gr,
+			.prop3 = compare_random_gr,
 			.type_info = {
 				&gr_date_info,
-				&gr_date_info
+				&gr_date_info,
+				&gr_cal_info
 			},
 			.seed = seed
 		},
