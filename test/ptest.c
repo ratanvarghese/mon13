@@ -16,6 +16,78 @@
 #define ASCII_COPY_BUF 500
 #define UNIX_DAY 24 * 60 * 60
 
+//Theft printers
+void print_known(FILE* f, const void* instance, void* env)
+{
+	const struct known_convert_date* kcd = instance;
+	fprintf(
+		f, "(%d-%02d-%02d) (%d-%02d-%02d)",
+		kcd->d0.year, kcd->d0.month, kcd->d0.day,
+		kcd->d1.year, kcd->d1.month, kcd->d1.day
+	);
+}
+
+void print_cal(FILE* f, const void* instance, void* env)
+{
+	const struct mon13_Cal* c = instance;
+	if(c == NULL) {
+		fprintf(f, "NULL");
+	}
+	else if(c == &mon13_gregorian) {
+		fprintf(f, "%s", mon13_gregorian_names_en_US.calendar_name);
+	}
+	else if(c == &mon13_gregorian_year_zero) {
+		fprintf(f, "%s (Year Zero)", mon13_gregorian_names_en_US.calendar_name);
+	}
+	else if(c == &mon13_tranquility) {
+		fprintf(f, "%s", mon13_tranquility_names_en_US.calendar_name);
+	}
+	else if(c == &mon13_tranquility_year_zero) {
+		fprintf(f, "%s (Year Zero)", mon13_tranquility_names_en_US.calendar_name);
+	}
+	else if(c == &mon13_holocene) {
+		fprintf(f, "%s", mon13_holocene_names_en_US.calendar_name);
+	}
+	else if(c == &mon13_cotsworth) {
+		fprintf(f, "%s", mon13_cotsworth_names_en_US.calendar_name);
+	}
+	else {
+		fprintf(f, "UNKNOWN");
+	}
+}
+
+void print_date(FILE* f, const void* instance, void* env)
+{
+	const struct mon13_Date* d = instance;
+	fprintf(f, "(%d-%02d-%02d)", d->year, d->month, d->day);
+}
+
+void print_random(FILE* f, const void* instance, void* env)
+{
+	uint64_t i = (uint64_t) instance;
+	fprintf(f, "%lu", i);
+}
+
+void print_add_mode(FILE* f, const void* instance, void* env)
+{
+	enum mon13_AddMode m = (enum mon13_AddMode) ((uint64_t)instance);
+	char* m_str = NULL;
+	switch(m) {
+		case MON13_ADD_NONE:	m_str = "NONE";		break;
+		case MON13_ADD_DAYS:	m_str = "DAYS";		break;
+		case MON13_ADD_MONTHS:	m_str = "MONTHS";	break;
+		case MON13_ADD_YEARS:	m_str = "YEARS";	break;
+		default:				m_str = "INVALID";
+	}
+	fprintf(f, "%s", m_str);
+}
+
+void print_s(FILE* f, const void* instance, void* env)
+{
+	const char* s = instance;
+	fprintf(f, "%s", s);
+}
+
 //Theft trials: helpers
 bool valid_tq(const struct mon13_Date d) {
 	if(d.month == 0) {
@@ -109,25 +181,6 @@ bool skip_import(int64_t x) {
 	return (x > (INT32_MAX/2)) || (x < -(INT32_MAX/2));
 }
 
-bool cal_eq_ignore_year0(const struct mon13_Cal* x, const struct mon13_Cal* y) {
-	if(x == y) {
-		return true;
-	}
-	if(x == &mon13_gregorian_year_zero && y == &mon13_gregorian) {
-		return true;
-	}
-	if(x == &mon13_gregorian && y == &mon13_gregorian_year_zero) {
-		return true;
-	}
-	if(x == &mon13_tranquility_year_zero && y == &mon13_tranquility) {
-		return true;
-	}
-	if(x == &mon13_tranquility && y == &mon13_tranquility_year_zero) {
-		return true;
-	}
-	return false;
-}
-
 bool is_leap_day(struct mon13_Date d, const struct mon13_Cal* c) {
 	int64_t is_leap = 0;
 	if(mon13_extract(&d, c, MON13_EXTRACT_IS_LEAP_YEAR, &is_leap)) {
@@ -136,10 +189,10 @@ bool is_leap_day(struct mon13_Date d, const struct mon13_Cal* c) {
 	if(!is_leap) {
 		return false;
 	}
-	if(cal_eq_ignore_year0(c, &mon13_gregorian_year_zero)) {
+	if(c == &mon13_gregorian_year_zero && c == &mon13_gregorian) {
 		return d.month == 2 && d.day == 29;
 	}
-	if(cal_eq_ignore_year0(c, &mon13_tranquility_year_zero)) {
+	if(c == &mon13_tranquility_year_zero && c == &mon13_tranquility) {
 		return d.month == 0 && d.day == 2;
 	}
 	if(c == &mon13_holocene) {
@@ -212,13 +265,23 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance)
 	select_gr2tq_oa(t, NULL, (void**)&kcd);
 	int32_t offset = (theft_random_choice(t, INT32_MAX) - (INT32_MAX/2));
 
-	if(env == kcd->c0 || cal_eq_ignore_year0(env, kcd->c0)) {
+	if(env == &mon13_gregorian_year_zero) {
 		if(mon13_add(&(kcd->d0), kcd->c0, offset, MON13_ADD_DAYS, res)) {
 			return THEFT_ALLOC_ERROR;
 		}
 	}
-	else if(env == kcd->c1 || cal_eq_ignore_year0(env, kcd->c1)) {
+	else if(env == &mon13_gregorian) {
+		if(mon13_add(&(kcd->d0), &mon13_gregorian, offset, MON13_ADD_DAYS, res)) {
+			return THEFT_ALLOC_ERROR;
+		}
+	}
+	else if(env == &mon13_tranquility_year_zero) {
 		if(mon13_add(&(kcd->d1), kcd->c1, offset, MON13_ADD_DAYS, res)) {
+			return THEFT_ALLOC_ERROR;
+		}
+	}
+	else if(env == &mon13_tranquility) {
+		if(mon13_add(&(kcd->d1), &mon13_tranquility, offset, MON13_ADD_DAYS, res)) {
 			return THEFT_ALLOC_ERROR;
 		}
 	}
@@ -400,49 +463,6 @@ enum theft_alloc_res alloc_numeric_fmt(struct theft* t, void* env, void** instan
 	res[4] = '\0';
 	*instance = res;
 	return THEFT_ALLOC_OK;
-}
-
-//Theft printers
-void print_known(FILE* f, const void* instance, void* env)
-{
-	const struct known_convert_date* kcd = instance;
-	fprintf(
-		f, "(%d-%02d-%02d) (%d-%02d-%02d)",
-		kcd->d0.year, kcd->d0.month, kcd->d0.day,
-		kcd->d1.year, kcd->d1.month, kcd->d1.day
-	);
-}
-
-void print_date(FILE* f, const void* instance, void* env)
-{
-	const struct mon13_Date* d = instance;
-	fprintf(f, "(%d-%02d-%02d)", d->year, d->month, d->day);
-}
-
-void print_random(FILE* f, const void* instance, void* env)
-{
-	uint64_t i = (uint64_t) instance;
-	fprintf(f, "%lu", i);
-}
-
-void print_add_mode(FILE* f, const void* instance, void* env)
-{
-	enum mon13_AddMode m = (enum mon13_AddMode) ((uint64_t)instance);
-	char* m_str = NULL;
-	switch(m) {
-		case MON13_ADD_NONE:	m_str = "NONE";		break;
-		case MON13_ADD_DAYS:	m_str = "DAYS";		break;
-		case MON13_ADD_MONTHS:	m_str = "MONTHS";	break;
-		case MON13_ADD_YEARS:	m_str = "YEARS";	break;
-		default:				m_str = "INVALID";
-	}
-	fprintf(f, "%s", m_str);
-}
-
-void print_s(FILE* f, const void* instance, void* env)
-{
-	const char* s = instance;
-	fprintf(f, "%s", s);
 }
 
 //Theft trials: import
