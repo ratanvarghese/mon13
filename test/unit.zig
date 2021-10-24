@@ -234,14 +234,23 @@ test "Cotsworth add many months" {
     const res0 = try mon13.add(d, c, offset, m);
 }
 
-test "valid" {
+test "Valid" {
     const d = mon13.Date{ .year = 1, .month = 1, .day = 1 };
     const c = &mon13.tranquility;
     try expect(mon13.valid(d, c));
 }
 
-test "invalid" {
+test "Invalid" {
     const d = mon13.Date{ .year = 1, .month = 20, .day = 20 };
     const c = &mon13.tranquility;
     try expect(!mon13.valid(d, c));
+}
+
+test "Tempting overflow" {
+    const d = mon13.Date{ .year = -2147483641, .month = 2, .day = 29 };
+    const c = &mon13.tranquility_year_zero;
+    const m = mon13.ExtractMode.IS_LEAP_YEAR;
+
+    const res = try mon13.extract(d, c, m);
+    try expect(res != 0);
 }

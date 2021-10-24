@@ -44,22 +44,14 @@ fn clockModulo(a: i32, b: u31) u31 {
     return @intCast(u31, @mod((a - 1), b)) + 1;
 }
 
-fn isLeap(year: i32, cal: *const base.Cal) Err!bool {
-    const y = year;
-    const c = @intCast(i32, cal.*.leap_cycle.year_count);
-    const l = @intCast(i32, cal.*.leap_cycle.leap_year_count);
-    const A = @intCast(i32, cal.*.leap_cycle.offset_years);
+fn isLeap(year: i32, cal: *const base.Cal) bool {
+    //Prevent overflow by promoting all quantities to i64
+    const y = @intCast(i64, year);
+    const c = @intCast(i64, cal.*.leap_cycle.year_count);
+    const l = @intCast(i64, cal.*.leap_cycle.leap_year_count);
+    const A = @intCast(i64, cal.*.leap_cycle.offset_years);
 
-    var ly: i32 = 0;
-    if (@mulWithOverflow(i32, l, y, &ly)) {
-        return Err.Overflow;
-    }
-
-    var adjusted: i32 = 0;
-    if (@subWithOverflow(i32, ly, A, &adjusted)) {
-        return Err.Overflow;
-    }
-
+    const adjusted: i64 = (l * y) - A;
     const m_simple = @mod(adjusted, c);
     const res_simple = m_simple < l;
     if (cal.*.leap_cycle.LEAP_GREGORIAN_SKIP) {
@@ -86,8 +78,8 @@ pub fn yearLen(leap: bool, cal: *const base.Cal) u16 {
     }
 }
 
-fn getSegments(leap: bool, cal: *const base.Cal) [*:null]const ?base.Segment {
-    if (leap) {
+fn getSegments(year: i32, cal: *const base.Cal) [*:null]const ?base.Segment {
+    if (isLeap(year, cal)) {
         return cal.*.leap_lookup_list;
     } else {
         return cal.*.common_lookup_list;
@@ -95,8 +87,7 @@ fn getSegments(leap: bool, cal: *const base.Cal) [*:null]const ?base.Segment {
 }
 
 fn lastDayOfYear(year: i32, cal: *const base.Cal) base.Date {
-    const leap = isLeap(year, cal) catch false;
-    const segments = getSegments(leap, cal);
+    const segments = getSegments(year, cal);
     var si: u8 = 0;
     while (segments[si]) |s| : (si += 1) {}
     if (segments[si - 1]) |s| {
@@ -107,10 +98,7 @@ fn lastDayOfYear(year: i32, cal: *const base.Cal) base.Date {
 }
 
 fn monthDayToDoy(d: base.Date, cal: *const base.Cal) Err!DoyDate {
-
-    //Assuming d is normalized.
-    const leap = try isLeap(d.year, cal);
-    const segments = getSegments(leap, cal);
+    const segments = getSegments(d.year, cal);
 
     var si: u8 = 0;
     while (segments[si]) |s| : (si += 1) {
@@ -124,8 +112,7 @@ fn monthDayToDoy(d: base.Date, cal: *const base.Cal) Err!DoyDate {
 }
 
 fn doyToMonthDay(d: DoyDate, cal: *const base.Cal) Err!base.Date {
-    const leap = try isLeap(d.year, cal);
-    const segments = getSegments(leap, cal);
+    const segments = getSegments(d.year, cal);
 
     var si: u8 = 0;
     while (segments[si]) |s| : (si += 1) {
@@ -168,8 +155,7 @@ fn seekIc(d: base.Date, cal: *const base.Cal) ?base.Intercalary {
 }
 
 fn rollMonth(d: base.Date, offset: i32, cal: *const base.Cal) Err!base.Date {
-    const leap = isLeap(d.year, cal) catch false;
-    const segments = getSegments(leap, cal);
+    const segments = getSegments(d.year, cal);
     var month_max: u8 = 1;
     var si: u8 = 0;
     while (segments[si]) |s| : (si += 1) {
@@ -315,7 +301,7 @@ fn normDoy(d: DoyDate, cal: *const base.Cal) DoyDate {
     var doy_done: u16 = 0;
     var year: i32 = d.year;
     while (true) {
-        const leap = isLeap(year, cal) catch false;
+        const leap = isLeap(year, cal);
         const doy_sum = doy_done +% yearLen(leap, cal);
         if (doy_sum >= d.doy) {
             //doy_done never exceeds d.doy.
@@ -336,7 +322,7 @@ fn normDoy(d: DoyDate, cal: *const base.Cal) DoyDate {
 
 fn icToCommon(year: i32, doy_offset: u16, ic: base.Intercalary, cal: *const base.Cal) base.Date {
     var dd_doy = ic.day_of_year;
-    const leap = isLeap(year, cal) catch false;
+    const leap = isLeap(year, cal);
     if (leap) {
         dd_doy = ic.day_of_leap_year;
     }
@@ -353,8 +339,7 @@ fn icToCommon(year: i32, doy_offset: u16, ic: base.Intercalary, cal: *const base
 fn normDay(d: base.Date, cal: *const base.Cal) base.Date {
 
     //Assuming d.year and d.month normalized
-    const leap = isLeap(d.year, cal) catch false;
-    const segments = getSegments(leap, cal);
+    const segments = getSegments(d.year, cal);
 
     var matching_si: u8 = 0;
     var si: u8 = 0;
@@ -552,8 +537,7 @@ pub fn valid(
     }
 
     const d_yz = noYzToYz(d, cal);
-    const leap = isLeap(d_yz.year, cal) catch return false;
-    const segments = getSegments(leap, cal);
+    const segments = getSegments(d_yz.year, cal);
 
     var si: u8 = 0;
     while (segments[si]) |s| : (si += 1) {
@@ -691,8 +675,7 @@ pub fn extract(
             return @enumToInt(weekday);
         },
         base.ExtractMode.IS_LEAP_YEAR => {
-            const is_leap = try isLeap(d_norm.year, cal);
-            return @boolToInt(is_leap);
+            return @boolToInt(isLeap(d_norm.year, cal));
         },
         base.ExtractMode.MJD => {
             const d_doy = try monthDayToDoy(d_norm, cal);
