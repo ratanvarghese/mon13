@@ -231,6 +231,12 @@ enum theft_alloc_res select_gr2ct_wiki(struct theft* t, void* env, void** instan
     return THEFT_ALLOC_OK;
 }
 
+enum theft_alloc_res select_gr2jl_wiki(struct theft* t, void* env, void** instance) {
+    uint64_t i = theft_random_choice(t, SIZEOF_ARR(gr2jl_wiki));
+    *instance = (void*)&gr2jl_wiki[i];
+    return THEFT_ALLOC_OK;
+}
+
 enum theft_alloc_res select_random(struct theft* t, void* env, void** instance) {
     if(sizeof(uint64_t) != sizeof(void*)) {
         return THEFT_ALLOC_ERROR;
@@ -2279,6 +2285,11 @@ struct theft_type_info gr2ct_wiki_info = {
     .print = print_known
 };
 
+struct theft_type_info gr2jl_wiki_info = {
+    .alloc = select_gr2jl_wiki, //nothing to free
+    .print = print_known
+};
+
 struct theft_type_info random_info = {
     .alloc = select_random, //nothing to free
     .print = print_random,
@@ -2710,6 +2721,13 @@ int main(int argc, char** argv) {
             .type_info = {&gr2ct_wiki_info},
             .seed = seed,
             .trials = SIZEOF_ARR(gr2ct_wiki)
+        },
+        {
+            .name = "mon13_convert: Gregorian<->Julian (Wikipedia)",
+            .prop1 = convert_known,
+            .type_info = {&gr2jl_wiki_info},
+            .seed = seed,
+            .trials = SIZEOF_ARR(gr2jl_wiki)
         },
         {
             .name = "mon13_convert: Gregorian Year 0",
