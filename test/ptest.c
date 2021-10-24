@@ -191,7 +191,7 @@ bool skip_import(int64_t x) {
 
 bool is_leap_day(struct mon13_Date d, const struct mon13_Cal* c) {
 	int64_t is_leap = 0;
-	if(mon13_extract(&d, c, MON13_EXTRACT_IS_LEAP_YEAR, &is_leap)) {
+	if(mon13_extractIsLeapYear(&d, c, &is_leap)) {
 		return false;
 	}
 	if(!is_leap) {
@@ -352,7 +352,7 @@ enum theft_alloc_res alloc_leap_day(struct theft* t, void* env, void** instance)
 	}
 
 	int64_t is_leap = 0;
-	if(mon13_extract(res, cal, MON13_EXTRACT_IS_LEAP_YEAR, &is_leap)) {
+	if(mon13_extractIsLeapYear(res, cal, &is_leap)) {
 		return THEFT_ALLOC_ERROR;
 	}
 	if(!is_leap) {
@@ -495,7 +495,7 @@ enum theft_trial_res import_mjd(struct theft* t, void* a1, void* a2, void* a3) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	int64_t mjd1;
-	status = mon13_extract(&d1, c, MON13_EXTRACT_MJD, &mjd1);
+	status = mon13_extractMjd(&d1, c, &mjd1);
 	if(status) {
 		return THEFT_TRIAL_FAIL;
 	}
@@ -524,7 +524,7 @@ enum theft_trial_res import_unix(struct theft* t, void* a1, void* a2, void* a3) 
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	int64_t u1;
-	status = mon13_extract(&d1, c, MON13_EXTRACT_UNIX, &u1);
+	status = mon13_extractUnix(&d1, c, &u1);
 	if(status) {
 		return THEFT_TRIAL_FAIL;
 	}
@@ -602,7 +602,7 @@ enum theft_trial_res import_rd(struct theft* t, void* a1, void* a2, void* a3) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 	int64_t rd1;
-	status = mon13_extract(&d1, c, MON13_EXTRACT_RD, &rd1);
+	status = mon13_extractRd(&d1, c, &rd1);
 	if(status) {
 		return THEFT_TRIAL_FAIL;
 	}
@@ -637,7 +637,7 @@ enum theft_trial_res import_c99_tm(struct theft* t, void* a1) {
 	}
 	
 	int64_t doy;
-	status = mon13_extract(&d, c, MON13_EXTRACT_DAY_OF_YEAR, &doy);
+	status = mon13_extractDayOfYear(&d, c, &doy);
 	if(status) {
 		return THEFT_TRIAL_FAIL;
 	}
@@ -657,7 +657,7 @@ enum theft_trial_res import_c99_tm(struct theft* t, void* a1) {
 		default: return THEFT_TRIAL_ERROR;
 	}
 	int64_t res_weekday;
-	status = mon13_extract(&d, c, MON13_EXTRACT_DAY_OF_WEEK, &res_weekday);
+	status = mon13_extractDayOfWeek(&d, c, &res_weekday);
 	if(status) {
 		return THEFT_TRIAL_FAIL;
 	}
@@ -925,7 +925,7 @@ enum theft_trial_res add_1day_tq(struct theft* t, void* test_input)
 	}
 
 	int64_t leap;
-	status = mon13_extract(&res, c, MON13_EXTRACT_IS_LEAP_YEAR, &leap);
+	status = mon13_extractIsLeapYear(&res, c, &leap);
 	if(status) {
 		leap = 0;
 	}
@@ -1028,7 +1028,7 @@ enum theft_trial_res add_1month_gr(struct theft* t, void* test_input)
 		}
 		else if(d->day == 30) {
 			int64_t leap;
-			if(mon13_extract(d, c, MON13_EXTRACT_IS_LEAP_YEAR, &leap)) {
+			if(mon13_extractIsLeapYear(d, c, &leap)) {
 				leap = 0;
 			}
 			if(leap) {
@@ -1135,7 +1135,7 @@ enum theft_trial_res add_year_leap(struct theft* t, void* a1, void* a2, void* a3
 	}
 
 	int64_t leap;
-	if(mon13_extract(&res, c, MON13_EXTRACT_IS_LEAP_YEAR, &leap)) {
+	if(mon13_extractIsLeapYear(&res, c, &leap)) {
 		leap = 0;
 	}
 	if(leap) {
@@ -1145,11 +1145,11 @@ enum theft_trial_res add_year_leap(struct theft* t, void* a1, void* a2, void* a3
 	}
 	else {
 		int64_t doy0;
-		if(mon13_extract(d, c, MON13_EXTRACT_DAY_OF_YEAR, &doy0)) {
+		if(mon13_extractDayOfYear(d, c, &doy0)) {
 			return THEFT_TRIAL_FAIL;
 		}
 		int64_t doy1;
-		if(mon13_extract(&res, c, MON13_EXTRACT_DAY_OF_YEAR, &doy1)) {
+		if(mon13_extractDayOfYear(&res, c, &doy1)) {
 			return THEFT_TRIAL_FAIL;
 		}
 		if(doy0 != doy1) {
@@ -1498,7 +1498,7 @@ enum theft_trial_res extract_is_leap(struct theft* t, void* a1, void* a2)
 			return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 		}
 		int64_t is_leap;
-		if(mon13_extract(&sum, c, MON13_EXTRACT_IS_LEAP_YEAR, &is_leap)) {
+		if(mon13_extractIsLeapYear(&sum, c, &is_leap)) {
 			is_leap = 0;
 		}
 		if(is_leap) {
@@ -1526,11 +1526,11 @@ enum theft_trial_res extract_day_of_week_gr(struct theft* t, void* a1, void* a2)
 	}
 
 	int64_t dow0;
-	if(mon13_extract(&sum0, c, MON13_EXTRACT_DAY_OF_WEEK, &dow0)) {
+	if(mon13_extractDayOfWeek(&sum0, c, &dow0)) {
 		return THEFT_TRIAL_FAIL;
 	}
 	int64_t dow1;
-	if(mon13_extract(&sum1, c, MON13_EXTRACT_DAY_OF_WEEK, &dow1)) {
+	if(mon13_extractDayOfWeek(&sum1, c, &dow1)) {
 		return THEFT_TRIAL_FAIL;
 	}
 	if(dow0 == MON13_SUNDAY) {
@@ -1552,7 +1552,7 @@ enum theft_trial_res extract_day_of_week_tq(struct theft* t, void* a1, void* a2)
 	}
 
 	int64_t dow;
-	if(mon13_extract(&sum, c, MON13_EXTRACT_DAY_OF_WEEK, &dow)) {
+	if(mon13_extractDayOfWeek(&sum, c, &dow)) {
 		return THEFT_TRIAL_FAIL;
 	}
 	int expected;
@@ -1585,15 +1585,15 @@ enum theft_trial_res extract_day_of_year_add_one(struct theft* t, void* a1, void
 	}
 
 	int64_t doy0;
-	if(mon13_extract(d, c, MON13_EXTRACT_DAY_OF_YEAR, &doy0)) {
+	if(mon13_extractDayOfYear(d, c, &doy0)) {
 		return THEFT_TRIAL_FAIL;
 	}
 	int64_t doy1;
-	if(mon13_extract(&sum, c, MON13_EXTRACT_DAY_OF_YEAR, &doy1)) {
+	if(mon13_extractDayOfYear(&sum, c, &doy1)) {
 		return THEFT_TRIAL_FAIL;
 	}
 	int64_t leap;
-	if(mon13_extract(d, c, MON13_EXTRACT_IS_LEAP_YEAR, &leap)) {
+	if(mon13_extractIsLeapYear(d, c, &leap)) {
 		leap = 0;
 	}
 	bool res = false;
@@ -1637,11 +1637,11 @@ enum theft_trial_res extract_day_of_year_split(struct theft* t, void* a1, void* 
 	}
 
 	int64_t doy0;
-	if(mon13_extract(&res0, c, MON13_EXTRACT_DAY_OF_YEAR, &doy0)) {
+	if(mon13_extractDayOfYear(&res0, c, &doy0)) {
 		return THEFT_TRIAL_FAIL;
 	}
 	int64_t doy3;
-	if(mon13_extract(&res3, c, MON13_EXTRACT_DAY_OF_YEAR, &doy3)) {
+	if(mon13_extractDayOfYear(&res3, c, &doy3)) {
 		return THEFT_TRIAL_FAIL;
 	}
 
@@ -1653,35 +1653,45 @@ enum theft_trial_res extract_null(struct theft* t, void* a1, void* a2)
 {
 	const struct mon13_Date* d = a1;
 	const struct mon13_Cal* c = a2;
-	enum mon13_ExtractMode modelist[] = {
-		MON13_EXTRACT_DAY_OF_YEAR,
-		MON13_EXTRACT_DAY_OF_WEEK,
-		MON13_EXTRACT_IS_LEAP_YEAR,
-		MON13_EXTRACT_MJD,
-		MON13_EXTRACT_UNIX,
-		MON13_EXTRACT_RD
-	};
-	for(int i = 0; i < SIZEOF_ARR(modelist); i++) {
-		enum mon13_ExtractMode m = modelist[i];
-		int64_t res;
-		int err_res;
-		err_res = mon13_extract(d, NULL, m, &res);
-		if(!err_res) {
-			return THEFT_TRIAL_FAIL;
-		}
-		err_res = mon13_extract(NULL, c, m, &res);
-		if(!err_res) {
-			return THEFT_TRIAL_FAIL;
-		}
-		err_res = mon13_extract(NULL, NULL, m, &res);
-		if(!err_res) {
-			return THEFT_TRIAL_FAIL;
-		}
-		err_res = mon13_extract(d, c, m, NULL);
-		if(!err_res) {
+
+	int64_t res;
+	int err_res[24];
+	err_res[0] = mon13_extractDayOfYear(d, NULL, &res);
+	err_res[1] = mon13_extractDayOfYear(NULL, c, &res);
+	err_res[2] = mon13_extractDayOfYear(NULL, NULL, &res);
+	err_res[3] = mon13_extractDayOfYear(d, c, NULL);
+
+	err_res[4] = mon13_extractDayOfWeek(d, NULL, &res);
+	err_res[5] = mon13_extractDayOfWeek(NULL, c, &res);
+	err_res[6] = mon13_extractDayOfWeek(NULL, NULL, &res);
+	err_res[7] = mon13_extractDayOfWeek(d, c, NULL);
+
+	err_res[8]  = mon13_extractIsLeapYear(d, NULL, &res);
+	err_res[9]  = mon13_extractIsLeapYear(NULL, c, &res);
+	err_res[10] = mon13_extractIsLeapYear(NULL, NULL, &res);
+	err_res[11] = mon13_extractIsLeapYear(d, c, NULL);
+
+	err_res[12] = mon13_extractMjd(d, NULL, &res);
+	err_res[13] = mon13_extractMjd(NULL, c, &res);
+	err_res[14] = mon13_extractMjd(NULL, NULL, &res);
+	err_res[15] = mon13_extractMjd(d, c, NULL);
+
+	err_res[16] = mon13_extractUnix(d, NULL, &res);
+	err_res[17] = mon13_extractUnix(NULL, c, &res);
+	err_res[18] = mon13_extractUnix(NULL, NULL, &res);
+	err_res[19] = mon13_extractUnix(d, c, NULL);
+
+	err_res[20] = mon13_extractRd(d, NULL, &res);
+	err_res[21] = mon13_extractRd(NULL, c, &res);
+	err_res[22] = mon13_extractRd(NULL, NULL, &res);
+	err_res[23] = mon13_extractRd(d, c, NULL);
+
+	for(size_t i = 0; i < SIZEOF_ARR(err_res); i++) {
+		if(!err_res[i]) {
 			return THEFT_TRIAL_FAIL;
 		}
 	}
+
 	return THEFT_TRIAL_PASS;
 }
 
@@ -1719,7 +1729,7 @@ enum theft_trial_res format_weekday(struct theft* t, void* a1, void* a2, void* a
 
 
 	int64_t day;
-	if(mon13_extract(d, c, MON13_EXTRACT_DAY_OF_WEEK, &day)) {
+	if(mon13_extractDayOfWeek(d, c, &day)) {
 		return THEFT_TRIAL_FAIL;
 	}
 
@@ -1807,7 +1817,7 @@ enum theft_trial_res format_doy(struct theft* t, void* a1, void* a2, void* a3, v
 	const char placeholder = (char) (((uint64_t)a4) % CHAR_MAX);
 
 	int64_t doy;
-	if(mon13_extract(d, c, MON13_EXTRACT_DAY_OF_YEAR, &doy)) {
+	if(mon13_extractDayOfYear(d, c, &doy)) {
 		return THEFT_TRIAL_FAIL;
 	}
 	
@@ -2014,7 +2024,7 @@ enum theft_trial_res format_numeric_padding(struct theft* t, void* a1, void* a2,
 	switch(fmt[3]) {
 		case 'd': targ = d->day; break;
 		case 'j': {
-			status = mon13_extract(d, c, MON13_EXTRACT_DAY_OF_YEAR, &targ);
+			status = mon13_extractDayOfYear(d, c, &targ);
 			if(status) {
 				return THEFT_TRIAL_FAIL;
 			}
@@ -2022,7 +2032,7 @@ enum theft_trial_res format_numeric_padding(struct theft* t, void* a1, void* a2,
 		}
 		case 'm': targ = d->month; break;
 		case 'u': {
-			status = mon13_extract(d, c, MON13_EXTRACT_DAY_OF_WEEK, &targ);
+			status = mon13_extractDayOfWeek(d, c, &targ);
 			if(status) {
 				return THEFT_TRIAL_FAIL;
 			}

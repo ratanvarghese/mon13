@@ -628,35 +628,53 @@ pub fn compare(
     return @intCast(c_int, d0_norm.day) - @intCast(c_int, d1_norm.day);
 }
 
-pub fn extract(
+pub fn extractDayOfYear(
     d: base.Date,
     cal: *const base.Cal,
-    mode: base.ExtractMode,
 ) base.Err!i64 {
     const d_norm = try noYzToValidYz(d, cal);
-    switch (mode) {
-        base.ExtractMode.DAY_OF_YEAR => {
-            const d_doy = try monthDayToDoy(d_norm, cal);
-            return d_doy.doy;
-        },
-        base.ExtractMode.DAY_OF_WEEK => {
-            const weekday = try getDayOfWeek(d_norm, cal);
-            return @enumToInt(weekday);
-        },
-        base.ExtractMode.IS_LEAP_YEAR => {
-            return @boolToInt(isLeap(d_norm.year, cal));
-        },
-        base.ExtractMode.MJD => {
-            const d_doy = try monthDayToDoy(d_norm, cal);
-            const d_mjd = try doyToMjd(d_doy, cal);
-            return d_mjd;
-        },
-        base.ExtractMode.UNIX => {
-            return try dateToUnix(d_norm, cal);
-        },
-        base.ExtractMode.RD => {
-            return try dateToRd(d_norm, cal);
-        },
-    }
-    return base.Err.BadMode;
+    const d_doy = try monthDayToDoy(d_norm, cal);
+    return d_doy.doy;
+}
+
+pub fn extractDayOfWeek(
+    d: base.Date,
+    cal: *const base.Cal,
+) base.Err!i64 {
+    const d_norm = try noYzToValidYz(d, cal);
+    const weekday = try getDayOfWeek(d_norm, cal);
+    return @enumToInt(weekday);
+}
+
+pub fn extractIsLeapYear(
+    d: base.Date,
+    cal: *const base.Cal,
+) base.Err!i64 {
+    const d_norm = try noYzToValidYz(d, cal);
+    return @boolToInt(isLeap(d_norm.year, cal));
+}
+
+pub fn extractMjd(
+    d: base.Date,
+    cal: *const base.Cal,
+) base.Err!i64 {
+    const d_norm = try noYzToValidYz(d, cal);
+    const d_doy = try monthDayToDoy(d_norm, cal);
+    return try doyToMjd(d_doy, cal);
+}
+
+pub fn extractUnix(
+    d: base.Date,
+    cal: *const base.Cal,
+) base.Err!i64 {
+    const d_norm = try noYzToValidYz(d, cal);
+    return try dateToUnix(d_norm, cal);
+}
+
+pub fn extractRd(
+    d: base.Date,
+    cal: *const base.Cal,
+) base.Err!i64 {
+    const d_norm = try noYzToValidYz(d, cal);
+    return try dateToRd(d_norm, cal);
 }

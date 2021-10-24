@@ -210,17 +210,101 @@ pub export fn mon13_compare(
     return mon13.compare(d0.*, d1.*, raw_cal) catch 0;
 }
 
-pub export fn mon13_extract(
+pub export fn mon13_extractDayOfYear(
     raw_d: ?*const mon13.Date,
     raw_cal: ?*const mon13.Cal,
-    mode: mon13.ExtractMode,
     raw_result: ?*i64,
 ) c_int {
     const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
 
-    if (mon13.extract(d.*, cal, mode)) |extracted| {
+    if (mon13.extractDayOfYear(d.*, cal)) |extracted| {
+        result.* = extracted;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
+pub export fn mon13_extractDayOfWeek(
+    raw_d: ?*const mon13.Date,
+    raw_cal: ?*const mon13.Cal,
+    raw_result: ?*i64,
+) c_int {
+    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (mon13.extractDayOfWeek(d.*, cal)) |extracted| {
+        result.* = extracted;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
+pub export fn mon13_extractIsLeapYear(
+    raw_d: ?*const mon13.Date,
+    raw_cal: ?*const mon13.Cal,
+    raw_result: ?*i64,
+) c_int {
+    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (mon13.extractIsLeapYear(d.*, cal)) |extracted| {
+        result.* = extracted;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
+pub export fn mon13_extractMjd(
+    raw_d: ?*const mon13.Date,
+    raw_cal: ?*const mon13.Cal,
+    raw_result: ?*i64,
+) c_int {
+    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (mon13.extractMjd(d.*, cal)) |extracted| {
+        result.* = extracted;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
+pub export fn mon13_extractUnix(
+    raw_d: ?*const mon13.Date,
+    raw_cal: ?*const mon13.Cal,
+    raw_result: ?*i64,
+) c_int {
+    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (mon13.extractUnix(d.*, cal)) |extracted| {
+        result.* = extracted;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
+pub export fn mon13_extractRd(
+    raw_d: ?*const mon13.Date,
+    raw_cal: ?*const mon13.Cal,
+    raw_result: ?*i64,
+) c_int {
+    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (mon13.extractRd(d.*, cal)) |extracted| {
         result.* = extracted;
         return @enumToInt(PublicError.NONE);
     } else |err| {

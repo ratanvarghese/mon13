@@ -5,15 +5,6 @@
 #include <stddef.h>
 
 //Enumerations
-enum mon13_ExtractMode {
-	MON13_EXTRACT_DAY_OF_YEAR,
-	MON13_EXTRACT_DAY_OF_WEEK,
-	MON13_EXTRACT_IS_LEAP_YEAR,
-	MON13_EXTRACT_MJD,
-	MON13_EXTRACT_UNIX,
-	MON13_EXTRACT_RD
-};
-
 enum mon13_Weekday {
 	MON13_NO_WEEKDAY = 0,
 	MON13_MONDAY = 1,
@@ -128,10 +119,39 @@ int mon13_compare(
 	const struct mon13_Cal* cal
 );
 
-int mon13_extract(
+int mon13_extractDayOfYear(
 	const struct mon13_Date* d,
 	const struct mon13_Cal* cal,
-	const enum mon13_ExtractMode mode,
+	int64_t* result
+);
+
+int mon13_extractDayOfWeek(
+	const struct mon13_Date* d,
+	const struct mon13_Cal* cal,
+	int64_t* result
+);
+
+int mon13_extractIsLeapYear(
+	const struct mon13_Date* d,
+	const struct mon13_Cal* cal,
+	int64_t* result
+);
+
+int mon13_extractMjd(
+	const struct mon13_Date* d,
+	const struct mon13_Cal* cal,
+	int64_t* result
+);
+
+int mon13_extractUnix(
+	const struct mon13_Date* d,
+	const struct mon13_Cal* cal,
+	int64_t* result
+);
+
+int mon13_extractRd(
+	const struct mon13_Date* d,
+	const struct mon13_Cal* cal,
 	int64_t* result
 );
 

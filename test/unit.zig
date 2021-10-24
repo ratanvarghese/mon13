@@ -103,11 +103,7 @@ test "import mjd" {
     const d0 = try mon13.importMjd(c, &mjd0);
 
     const d1 = try mon13.addDays(d0, c, offset);
-    var mjd1 = try mon13.extract(
-        d1,
-        c,
-        mon13.ExtractMode.MJD,
-    );
+    var mjd1 = try mon13.extractMjd(d1, c);
     try expect((mjd1 - mjd0) == offset);
 }
 
@@ -156,7 +152,7 @@ test "strange convert" {
 
     const d0 = try mon13.importRd(c, &rd0);
     const d1 = try mon13.addDays(d0, c, offset);
-    const rd1: i64 = try mon13.extract(d1, c, mon13.ExtractMode.RD);
+    const rd1: i64 = try mon13.extractRd(d1, c);
     try expect((rd1 - rd0) == offset);
 }
 
@@ -236,9 +232,8 @@ test "Invalid" {
 test "Tempting overflow" {
     const d = mon13.Date{ .year = -2147483641, .month = 0, .day = 2 };
     const c = &mon13.tranquility_year_zero;
-    const m = mon13.ExtractMode.IS_LEAP_YEAR;
 
-    const res = try mon13.extract(d, c, m);
+    const res = try mon13.extractIsLeapYear(d, c);
     try expect(res != 0);
 }
 
