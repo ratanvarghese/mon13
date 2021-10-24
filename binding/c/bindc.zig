@@ -50,6 +50,77 @@ pub const PublicError = extern enum {
     }
 };
 
+const ImportFn = fn (
+    cal: *const mon13.Cal,
+    input: *const i64,
+) mon13.Err!mon13.Date;
+
+fn runImportFn(
+    raw_cal: ?*const mon13.Cal,
+    raw_input: ?*const i64,
+    raw_result: ?*mon13.Date,
+    raw_fn: comptime ImportFn,
+) c_int {
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const input = raw_input orelse return @enumToInt(PublicError.NULL_INPUT);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (raw_fn(cal, input)) |imported| {
+        result.* = imported;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
+const AddFn = fn (
+    d: mon13.Date,
+    cal: *const mon13.Cal,
+    offset: i32,
+) mon13.Err!mon13.Date;
+
+fn runAddFn(
+    raw_d: ?*const mon13.Date,
+    raw_cal: ?*const mon13.Cal,
+    offset: i32,
+    raw_result: ?*mon13.Date,
+    raw_fn: comptime AddFn,
+) c_int {
+    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (raw_fn(d.*, cal, offset)) |sum| {
+        result.* = sum;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
+const extractFn = fn (
+    d: mon13.Date,
+    cal: *const mon13.Cal,
+) mon13.Err!i64;
+
+fn runExtractFn(
+    raw_d: ?*const mon13.Date,
+    raw_cal: ?*const mon13.Cal,
+    raw_result: ?*i64,
+    raw_fn: comptime extractFn,
+) c_int {
+    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
+
+    if (raw_fn(d.*, cal)) |extracted| {
+        result.* = extracted;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
 pub export fn mon13_valid(
     raw_d: ?*const mon13.Date,
     raw_cal: ?*const mon13.Cal,
@@ -64,16 +135,7 @@ pub export fn mon13_importMjd(
     raw_input: ?*const i64,
     raw_result: ?*mon13.Date,
 ) c_int {
-    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const input = raw_input orelse return @enumToInt(PublicError.NULL_INPUT);
-    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.importMjd(cal, input)) |imported| {
-        result.* = imported;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return runImportFn(raw_cal, raw_input, raw_result, mon13.importMjd);
 }
 
 pub export fn mon13_importUnix(
@@ -81,16 +143,7 @@ pub export fn mon13_importUnix(
     raw_input: ?*const i64,
     raw_result: ?*mon13.Date,
 ) c_int {
-    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const input = raw_input orelse return @enumToInt(PublicError.NULL_INPUT);
-    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.importUnix(cal, input)) |imported| {
-        result.* = imported;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return runImportFn(raw_cal, raw_input, raw_result, mon13.importUnix);
 }
 
 pub export fn mon13_importRd(
@@ -98,16 +151,7 @@ pub export fn mon13_importRd(
     raw_input: ?*const i64,
     raw_result: ?*mon13.Date,
 ) c_int {
-    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const input = raw_input orelse return @enumToInt(PublicError.NULL_INPUT);
-    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.importRd(cal, input)) |imported| {
-        result.* = imported;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return runImportFn(raw_cal, raw_input, raw_result, mon13.importRd);
 }
 
 pub export fn mon13_importC99Tm(
@@ -152,16 +196,7 @@ pub export fn mon13_addDays(
     offset: i32,
     raw_result: ?*mon13.Date,
 ) c_int {
-    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
-    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.addDays(d.*, cal, offset)) |sum| {
-        result.* = sum;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return runAddFn(raw_d, raw_cal, offset, raw_result, mon13.addDays);
 }
 
 pub export fn mon13_addMonths(
@@ -170,16 +205,7 @@ pub export fn mon13_addMonths(
     offset: i32,
     raw_result: ?*mon13.Date,
 ) c_int {
-    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
-    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.addMonths(d.*, cal, offset)) |sum| {
-        result.* = sum;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return runAddFn(raw_d, raw_cal, offset, raw_result, mon13.addMonths);
 }
 
 pub export fn mon13_addYears(
@@ -188,16 +214,7 @@ pub export fn mon13_addYears(
     offset: i32,
     raw_result: ?*mon13.Date,
 ) c_int {
-    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
-    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.addYears(d.*, cal, offset)) |sum| {
-        result.* = sum;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return runAddFn(raw_d, raw_cal, offset, raw_result, mon13.addYears);
 }
 
 pub export fn mon13_compare(
@@ -215,16 +232,7 @@ pub export fn mon13_extractDayOfYear(
     raw_cal: ?*const mon13.Cal,
     raw_result: ?*i64,
 ) c_int {
-    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
-    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.extractDayOfYear(d.*, cal)) |extracted| {
-        result.* = extracted;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return runExtractFn(raw_d, raw_cal, raw_result, mon13.extractDayOfYear);
 }
 
 pub export fn mon13_extractDayOfWeek(
@@ -232,16 +240,7 @@ pub export fn mon13_extractDayOfWeek(
     raw_cal: ?*const mon13.Cal,
     raw_result: ?*i64,
 ) c_int {
-    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
-    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.extractDayOfWeek(d.*, cal)) |extracted| {
-        result.* = extracted;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return runExtractFn(raw_d, raw_cal, raw_result, mon13.extractDayOfWeek);
 }
 
 pub export fn mon13_extractIsLeapYear(
@@ -249,16 +248,7 @@ pub export fn mon13_extractIsLeapYear(
     raw_cal: ?*const mon13.Cal,
     raw_result: ?*i64,
 ) c_int {
-    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
-    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.extractIsLeapYear(d.*, cal)) |extracted| {
-        result.* = extracted;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return runExtractFn(raw_d, raw_cal, raw_result, mon13.extractIsLeapYear);
 }
 
 pub export fn mon13_extractMjd(
@@ -266,16 +256,7 @@ pub export fn mon13_extractMjd(
     raw_cal: ?*const mon13.Cal,
     raw_result: ?*i64,
 ) c_int {
-    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
-    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.extractMjd(d.*, cal)) |extracted| {
-        result.* = extracted;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return runExtractFn(raw_d, raw_cal, raw_result, mon13.extractMjd);
 }
 
 pub export fn mon13_extractUnix(
@@ -283,16 +264,7 @@ pub export fn mon13_extractUnix(
     raw_cal: ?*const mon13.Cal,
     raw_result: ?*i64,
 ) c_int {
-    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
-    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.extractUnix(d.*, cal)) |extracted| {
-        result.* = extracted;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return runExtractFn(raw_d, raw_cal, raw_result, mon13.extractUnix);
 }
 
 pub export fn mon13_extractRd(
@@ -300,16 +272,7 @@ pub export fn mon13_extractRd(
     raw_cal: ?*const mon13.Cal,
     raw_result: ?*i64,
 ) c_int {
-    const d = raw_d orelse return @enumToInt(PublicError.NULL_DATE);
-    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const result = raw_result orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.extractRd(d.*, cal)) |extracted| {
-        result.* = extracted;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return runExtractFn(raw_d, raw_cal, raw_result, mon13.extractRd);
 }
 
 pub export fn mon13_format(
