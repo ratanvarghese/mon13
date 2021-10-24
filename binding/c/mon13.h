@@ -5,13 +5,6 @@
 #include <stddef.h>
 
 //Enumerations
-enum mon13_AddMode {
-	MON13_ADD_NONE,
-	MON13_ADD_DAYS,
-	MON13_ADD_MONTHS,
-	MON13_ADD_YEARS
-};
-
 enum mon13_ExtractMode {
 	MON13_EXTRACT_DAY_OF_YEAR,
 	MON13_EXTRACT_DAY_OF_WEEK,
@@ -108,11 +101,24 @@ int mon13_convert(
 	struct mon13_Date* result
 );
 
-int mon13_add(
+int mon13_addDays(
 	const struct mon13_Date* d,
 	const struct mon13_Cal* cal,
 	const int32_t offset,
-	const enum mon13_AddMode mode,
+	struct mon13_Date* result
+);
+
+int mon13_addMonths(
+	const struct mon13_Date* d,
+	const struct mon13_Cal* cal,
+	const int32_t offset,
+	struct mon13_Date* result
+);
+
+int mon13_addYears(
+	const struct mon13_Date* d,
+	const struct mon13_Cal* cal,
+	const int32_t offset,
 	struct mon13_Date* result
 );
 

@@ -16,6 +16,14 @@
 #define ASCII_COPY_BUF 500
 #define UNIX_DAY 24 * 60 * 60
 
+enum mon13_AddMode {
+       MON13_ADD_NONE,
+       MON13_ADD_DAYS,
+       MON13_ADD_MONTHS,
+       MON13_ADD_YEARS
+};
+
+
 //Theft printers
 void print_known(FILE* f, const void* instance, void* env)
 {
@@ -266,35 +274,35 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance)
 	int32_t offset = (theft_random_choice(t, INT32_MAX) - (INT32_MAX/2));
 
 	if(env == &mon13_gregorian_year_zero) {
-		if(mon13_add(&(kcd->d0), kcd->c0, offset, MON13_ADD_DAYS, res)) {
+		if(mon13_addDays(&(kcd->d0), kcd->c0, offset, res)) {
 			return THEFT_ALLOC_ERROR;
 		}
 	}
 	else if(env == &mon13_gregorian) {
-		if(mon13_add(&(kcd->d0), &mon13_gregorian, offset, MON13_ADD_DAYS, res)) {
+		if(mon13_addDays(&(kcd->d0), &mon13_gregorian, offset, res)) {
 			return THEFT_ALLOC_ERROR;
 		}
 	}
 	else if(env == &mon13_tranquility_year_zero) {
-		if(mon13_add(&(kcd->d1), kcd->c1, offset, MON13_ADD_DAYS, res)) {
+		if(mon13_addDays(&(kcd->d1), kcd->c1, offset, res)) {
 			return THEFT_ALLOC_ERROR;
 		}
 	}
 	else if(env == &mon13_tranquility) {
-		if(mon13_add(&(kcd->d1), &mon13_tranquility, offset, MON13_ADD_DAYS, res)) {
+		if(mon13_addDays(&(kcd->d1), &mon13_tranquility, offset, res)) {
 			return THEFT_ALLOC_ERROR;
 		}
 	}
 	else if(env == &mon13_holocene) {
 		//Every valid Gregorian (Year 0) date is a valid Holocene date
-		if(mon13_add(&(kcd->d0), kcd->c0, offset, MON13_ADD_DAYS, res)) {
+		if(mon13_addDays(&(kcd->d0), kcd->c0, offset, res)) {
 			return THEFT_ALLOC_ERROR;
 		}
 	}
 	else if(env == &mon13_cotsworth) {
 		//Every valid Tranquility (Year 0) date is a valid Cotsworth date
 		//except if month == 0.
-		if(mon13_add(&(kcd->d1), kcd->c1, offset, MON13_ADD_DAYS, res)) {
+		if(mon13_addDays(&(kcd->d1), kcd->c1, offset, res)) {
 			return THEFT_ALLOC_ERROR;
 		}
 		if(res->month == 0) {
@@ -482,7 +490,7 @@ enum theft_trial_res import_mjd(struct theft* t, void* a1, void* a2, void* a3) {
 			return THEFT_TRIAL_FAIL;
 		}
 	}
-	status = mon13_add(&d0, c, offset, MON13_ADD_DAYS, &d1);
+	status = mon13_addDays(&d0, c, offset, &d1);
 	if(status) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
@@ -511,7 +519,7 @@ enum theft_trial_res import_unix(struct theft* t, void* a1, void* a2, void* a3) 
 			return THEFT_TRIAL_FAIL;
 		}
 	}
-	status = mon13_add(&d0, c, offset, MON13_ADD_DAYS, &d1);
+	status = mon13_addDays(&d0, c, offset, &d1);
 	if(status) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
@@ -589,7 +597,7 @@ enum theft_trial_res import_rd(struct theft* t, void* a1, void* a2, void* a3) {
 			return THEFT_TRIAL_FAIL;
 		}
 	}
-	status = mon13_add(&d0, c, offset, MON13_ADD_DAYS, &d1);
+	status = mon13_addDays(&d0, c, offset, &d1);
 	if(status) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
@@ -880,7 +888,7 @@ enum theft_trial_res add_1day_gr(struct theft* t, void* test_input)
 	const struct mon13_Cal* c = &mon13_gregorian_year_zero;
 	struct mon13_Date res;
 	int status;
-	status = mon13_add(d, c, 1, MON13_ADD_DAYS, &res);
+	status = mon13_addDays(d, c, 1, &res);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //Adding 1 is unlikely to be legitimate error.
 	}
@@ -908,7 +916,7 @@ enum theft_trial_res add_1day_tq(struct theft* t, void* test_input)
 	const struct mon13_Cal* c = &mon13_tranquility_year_zero;
 	struct mon13_Date res;
 	int status;
-	status = mon13_add(d, c, 1, MON13_ADD_DAYS, &res);
+	status = mon13_addDays(d, c, 1, &res);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //Adding 1 is unlikely to be legitimate error.
 	}
@@ -958,11 +966,11 @@ enum theft_trial_res add_day_roundtrip(struct theft* t, void* a1, void* a2, void
 
 	struct mon13_Date res0, res1;
 	int status;
-	status = mon13_add(d, c, offset, MON13_ADD_DAYS, &res0);
+	status = mon13_addDays(d, c, offset, &res0);
 	if(status) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
-	status = mon13_add(&res0, c, -offset, MON13_ADD_DAYS, &res1);
+	status = mon13_addDays(&res0, c, -offset, &res1);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //Need to be able to return to origin.
 	}
@@ -980,19 +988,19 @@ enum theft_trial_res add_day_split(struct theft* t, void* a1, void* a2, void* a3
 
 	struct mon13_Date res0, res1, res2, res3;
 	int status;
-	status = mon13_add(d, c, offset, MON13_ADD_DAYS, &res0);
+	status = mon13_addDays(d, c, offset, &res0);
 	if(status) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
-	status = mon13_add(d, c, offset/2, MON13_ADD_DAYS, &res1);
+	status = mon13_addDays(d, c, offset/2, &res1);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //If adding offset is OK, adding offset/2 should be.
 	}
-	status = mon13_add(&res1, c, offset/2, MON13_ADD_DAYS, &res2);
+	status = mon13_addDays(&res1, c, offset/2, &res2);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //If adding offset is OK, adding offset/2 should be.
 	}
-	status = mon13_add(&res2, c, offset%2, MON13_ADD_DAYS, &res3);
+	status = mon13_addDays(&res2, c, offset%2, &res3);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //If adding offset is OK, adding offset%2 should be.
 	}
@@ -1005,7 +1013,7 @@ enum theft_trial_res add_1month_gr(struct theft* t, void* test_input)
 	const struct mon13_Cal* c = &mon13_gregorian_year_zero;
 	struct mon13_Date res;
 	int status;
-	status = mon13_add(d, c, 1, MON13_ADD_MONTHS, &res);
+	status = mon13_addMonths(d, c, 1, &res);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //Adding 1 month is unlikely to be legitimate error.
 	}
@@ -1057,7 +1065,7 @@ enum theft_trial_res add_1month_tq(struct theft* t, void* test_input)
 
 	struct mon13_Date res;
 	int status;
-	status = mon13_add(d, c, 1, MON13_ADD_MONTHS, &res);
+	status = mon13_addMonths(d, c, 1, &res);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //Adding 1 month is unlikely to be legitimate error.
 	}
@@ -1101,7 +1109,7 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3)
 	const struct mon13_Cal* c = a3;
 
 	struct mon13_Date res;
-	int status = mon13_add(d, c, offset, MON13_ADD_YEARS, &res);
+	int status = mon13_addYears(d, c, offset, &res);
 	if(status) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
@@ -1121,7 +1129,7 @@ enum theft_trial_res add_year_leap(struct theft* t, void* a1, void* a2, void* a3
 	const struct mon13_Cal* c = a3;
 
 	struct mon13_Date res;
-	int status = mon13_add(d, c, offset, MON13_ADD_YEARS, &res);
+	int status = mon13_addYears(d, c, offset, &res);
 	if(status) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
@@ -1158,13 +1166,22 @@ enum theft_trial_res add_zero(struct theft* t, void* a1, void* a2, void* a3)
 	const struct mon13_Cal* c = a3;
 
 	struct mon13_Date res0, res1;
-	int status;
-	status = mon13_add(d, c, 0, m, &res0);
-	if(status) {
-		return THEFT_TRIAL_FAIL;
+	int status0, status1;
+
+	if(m == MON13_ADD_DAYS) {
+		status0 = mon13_addDays(d, c, 0, &res0);
+		status1 = mon13_addDays(&res0, c, 0, &res1);
 	}
-	status = mon13_add(&res0, c, 0, m, &res1);
-	if(status) {
+	if(m == MON13_ADD_MONTHS) {
+		status0 = mon13_addMonths(d, c, 0, &res0);
+		status1 = mon13_addMonths(&res0, c, 0, &res1);
+	}
+	if(m == MON13_ADD_YEARS || m == MON13_ADD_NONE) {
+		status0 = mon13_addYears(d, c, 0, &res0);
+		status1 = mon13_addYears(&res0, c, 0, &res1);
+	}
+	
+	if(status0 || status1) {
 		return THEFT_TRIAL_FAIL;
 	}
 
@@ -1193,20 +1210,31 @@ enum theft_trial_res add_like_other_cal(struct theft* t, void* a1, void* a2, voi
 	int32_t offset = (int32_t) ((uint64_t)a5 % INT32_MAX);
 
 	struct mon13_Date d_yz, res_yz, res0, res1;
-	int status;
+	int status, status0, status1;
 	status = mon13_convert(d, c, c_yz, &d_yz);
 	if(status) {
 		return THEFT_TRIAL_FAIL;
 	}
 
-	status = mon13_add(&d_yz, c_yz, offset, m, &res_yz);
-	if(status) {
-		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+	if(m == MON13_ADD_DAYS) {
+		status0 = mon13_addDays(&d_yz, c_yz, offset, &res_yz);
+		status1 = mon13_addDays(d, c, offset, &res0);
+	}
+	if(m == MON13_ADD_MONTHS) {
+		status0 = mon13_addMonths(&d_yz, c_yz, offset, &res_yz);
+		status1 = mon13_addMonths(d, c, offset, &res0);
+	}
+	if(m == MON13_ADD_YEARS || m == MON13_ADD_NONE) {
+		status0 = mon13_addYears(&d_yz, c_yz, offset, &res_yz);
+		status1 = mon13_addYears(d, c, offset, &res0);
 	}
 
-	status = mon13_add(d, c, offset, m, &res0);
-	if(status) {
-		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+	if(status0) {
+		return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+	}
+
+	if(status1) {
+		return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 
 	status = mon13_convert(&res_yz, c_yz, c, &res1);
@@ -1234,7 +1262,16 @@ enum theft_trial_res add_no_year_zero(struct theft* t, void* a1, void* a2, void*
 
 	struct mon13_Date res;
 	int status;
-	status = mon13_add(d, c, offset, m, &res);
+	if(m == MON13_ADD_DAYS) {
+		status = mon13_addDays(d, c, offset, &res);
+	}
+	if(m == MON13_ADD_MONTHS) {
+		status = mon13_addMonths(d, c, offset, &res);
+	}
+	if(m == MON13_ADD_YEARS || m == MON13_ADD_NONE) {
+		status = mon13_addYears(d, c, offset, &res);
+	}
+	
 	if(status) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
@@ -1247,20 +1284,28 @@ enum theft_trial_res add_result_valid(struct theft* t, void* a1, void* a2, void*
 	const struct mon13_Cal* c = a3;
 	int32_t offset = (int32_t) ((uint64_t)a4 % INT32_MAX);
 
-	struct mon13_Date res0, res1;
+	struct mon13_Date res;
 	int status;
-	status = mon13_add(d, c, offset, m, &res0);
+	if(m == MON13_ADD_DAYS) {
+		status = mon13_addDays(d, c, offset, &res);
+	}
+	if(m == MON13_ADD_MONTHS) {
+		status = mon13_addMonths(d, c, offset, &res);
+	}
+	if(m == MON13_ADD_YEARS || m == MON13_ADD_NONE) {
+		status = mon13_addYears(d, c, offset, &res);
+	}
+
 	if(status) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
 
-	return mon13_valid(d, c) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+	return mon13_valid(&res, c) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res add_month_feb_29(struct theft* t, void* a1, void* a2) {
 	struct mon13_Date* d = a1;
 	const struct mon13_Cal* c = a2;
-	enum mon13_AddMode m = MON13_ADD_MONTHS;
 
 	int32_t offset;
 	if(d->month == 2) {
@@ -1276,7 +1321,7 @@ enum theft_trial_res add_month_feb_29(struct theft* t, void* a1, void* a2) {
 
 	struct mon13_Date res;
 	int status;
-	status = mon13_add(d, c, offset, m, &res);
+	status = mon13_addMonths(d, c, offset, &res);
 	if(status) {
 		return THEFT_TRIAL_FAIL;
 	}
@@ -1301,18 +1346,23 @@ enum theft_trial_res add_null(struct theft* t, void* a1, void* a2, void* a3, voi
 	int32_t offset = (int32_t) ((uint64_t)a4 % INT32_MAX);
 
 	struct mon13_Date res0;
-	int status;
-	status = mon13_add(NULL, c, offset, m, &res0);
-	if(!status) {
-		return THEFT_TRIAL_FAIL;
-	}
-	status = mon13_add(d, NULL, offset, m, &res0);
-	if(!status) {
-		return THEFT_TRIAL_FAIL;
-	}
-	status = mon13_add(d, c, offset, m, NULL);
-	if(!status) {
-		return THEFT_TRIAL_FAIL;
+	int status[9];
+	status[0] = mon13_addDays(NULL, c, offset, &res0);
+	status[1] = mon13_addMonths(NULL, c, offset, &res0);
+	status[2] = mon13_addYears(NULL, c, offset, &res0);
+
+	status[3] = mon13_addDays(d, NULL, offset, &res0);
+	status[4] = mon13_addMonths(d, NULL, offset, &res0);
+	status[5] = mon13_addYears(d, NULL, offset, &res0);
+	
+	status[6] = mon13_addDays(d, c, offset, NULL);
+	status[7] = mon13_addMonths(d, c, offset, NULL);
+	status[8] = mon13_addYears(d, c, offset, NULL);
+	
+	for(size_t i = 0; i < SIZEOF_ARR(status); i++) {
+		if(!status[i]) {
+			return THEFT_TRIAL_FAIL;
+		}
 	}
 
 	return THEFT_TRIAL_PASS;
@@ -1330,26 +1380,34 @@ enum theft_trial_res compare_nearby(struct theft* t, void* a1, void* a2, void* a
 	offset = offset >= 0 ? offset : -offset;
 	
 	struct mon13_Date sum[5];
-	int status;
-	status = mon13_add(d, c, 2*(-offset), m, &(sum[0]));
-	if(status) {
-		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+	int status[5];
+	if(m == MON13_ADD_DAYS) {
+		status[0] = mon13_addDays(d, c, 2*(-offset), &(sum[0]));
+		status[1] = mon13_addDays(d, c, 1*(-offset), &(sum[1]));
+		status[2] = mon13_addDays(d, c, 0*( offset), &(sum[2]));
+		status[3] = mon13_addDays(d, c, 1*( offset), &(sum[3]));
+		status[4] = mon13_addDays(d, c, 2*( offset), &(sum[4]));
 	}
-	status = mon13_add(d, c, 1*(-offset), m, &(sum[1]));
-	if(status) {
-		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+	if(m == MON13_ADD_MONTHS) {
+		status[0] = mon13_addMonths(d, c, 2*(-offset), &(sum[0]));
+		status[1] = mon13_addMonths(d, c, 1*(-offset), &(sum[1]));
+		status[2] = mon13_addMonths(d, c, 0*( offset), &(sum[2]));
+		status[3] = mon13_addMonths(d, c, 1*( offset), &(sum[3]));
+		status[4] = mon13_addMonths(d, c, 2*( offset), &(sum[4]));
 	}
-	status = mon13_add(d, c, 0*( offset), m, &(sum[2]));
-	if(status) {
-		return THEFT_TRIAL_FAIL; //Adding zero should never error!!
+	if(m == MON13_ADD_YEARS || m == MON13_ADD_NONE)
+	{
+		status[0] = mon13_addYears(d, c, 2*(-offset), &(sum[0]));
+		status[1] = mon13_addYears(d, c, 1*(-offset), &(sum[1]));
+		status[2] = mon13_addYears(d, c, 0*( offset), &(sum[2]));
+		status[3] = mon13_addYears(d, c, 1*( offset), &(sum[3]));
+		status[4] = mon13_addYears(d, c, 2*( offset), &(sum[4]));
 	}
-	status = mon13_add(d, c, 1*( offset), m, &(sum[3]));
-	if(status) {
-		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
-	}
-	status = mon13_add(d, c, 2*( offset), m, &(sum[4]));
-	if(status) {
-		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+
+	for(size_t i = 0; i < SIZEOF_ARR(status); i++) {
+		if(status[i]) {
+			return (status[i] == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+		}
 	}
 
 	for(int i = 0; i < 5; i++) {
@@ -1435,7 +1493,7 @@ enum theft_trial_res extract_is_leap(struct theft* t, void* a1, void* a2)
 	int leap_count = 0;
 	for(int i = 1; i < 9; i++) {
 		struct mon13_Date sum;
-		int status = mon13_add(d, c, i, MON13_ADD_YEARS, &sum);
+		int status = mon13_addYears(d, c, i, &sum);
 		if(status) {
 			return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 		}
@@ -1457,12 +1515,12 @@ enum theft_trial_res extract_day_of_week_gr(struct theft* t, void* a1, void* a2)
 	
 	struct mon13_Date sum0, sum1;
 	int status;
-	status = mon13_add(d, c, 0, MON13_ADD_DAYS, &sum0);
+	status = mon13_addDays(d, c, 0, &sum0);
 	if(status) {
 		//Adding zero to a valid date should not cause errors!
 		return THEFT_TRIAL_FAIL;
 	}
-	status = mon13_add(d, c, 1, MON13_ADD_DAYS, &sum1);
+	status = mon13_addDays(d, c, 1, &sum1);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //Adding 1 unlikely to cause errors.
 	}
@@ -1488,7 +1546,7 @@ enum theft_trial_res extract_day_of_week_tq(struct theft* t, void* a1, void* a2)
 	const struct mon13_Cal* c = a2;
 	
 	struct mon13_Date sum;
-	int status = mon13_add(d, c, 0, MON13_ADD_DAYS, &sum);
+	int status = mon13_addDays(d, c, 0, &sum);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //Adding 0 should never cause error!
 	}
@@ -1521,7 +1579,7 @@ enum theft_trial_res extract_day_of_year_add_one(struct theft* t, void* a1, void
 	const struct mon13_Cal* c = a2;
 
 	struct mon13_Date sum;
-	int status = mon13_add(d, c, 1, MON13_ADD_DAYS, &sum);
+	int status = mon13_addDays(d, c, 1, &sum);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //Adding 1 unlikely to cause error.
 	}
@@ -1561,19 +1619,19 @@ enum theft_trial_res extract_day_of_year_split(struct theft* t, void* a1, void* 
 
 	struct mon13_Date res0, res1, res2, res3;
 	int status;
-	status = mon13_add(d, c, offset, MON13_ADD_DAYS, &res0);
+	status = mon13_addDays(d, c, offset, &res0);
 	if(status) {
 		return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
 	}
-	status = mon13_add(d, c, offset/2, MON13_ADD_DAYS, &res1);
+	status = mon13_addDays(d, c, offset/2, &res1);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //Already added offset, so why error for offset/2?
 	}
-	status = mon13_add(&res1, c, offset/2, MON13_ADD_DAYS, &res2);
+	status = mon13_addDays(&res1, c, offset/2, &res2);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //Already added offset, so why error for offset/2?
 	}
-	status = mon13_add(&res2, c, offset%2, MON13_ADD_DAYS, &res3);
+	status = mon13_addDays(&res2, c, offset%2, &res3);
 	if(status) {
 		return THEFT_TRIAL_FAIL; //Already added offset, so why error for offset%2?
 	}

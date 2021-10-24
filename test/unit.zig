@@ -102,12 +102,7 @@ test "import mjd" {
 
     const d0 = try mon13.importMjd(c, &mjd0);
 
-    const d1 = try mon13.add(
-        d0,
-        c,
-        offset,
-        mon13.AddMode.DAYS,
-    );
+    const d1 = try mon13.addDays(d0, c, offset);
     var mjd1 = try mon13.extract(
         d1,
         c,
@@ -135,23 +130,17 @@ test "strange add gregorian" {
     const c = &mon13.gregorian_year_zero;
 
     const offset: i32 = @truncate(i32, a2);
-    const res = mon13.add(
-        d,
-        c,
-        offset,
-        mon13.AddMode.YEARS,
-    ) catch return;
+    const res = mon13.addYears(d, c, offset) catch return;
     try expect(res.year == (d.year +% offset));
 }
 
 test "add zero years" {
     const d = mon13.Date{ .year = -89713, .month = 2, .day = 29 };
     const c = &mon13.gregorian;
-    const res = try mon13.add(
+    const res = try mon13.addYears(
         d,
         c,
         0,
-        mon13.AddMode.YEARS,
     );
     try expect((try mon13.compare(d, res, c)) == 0);
 }
@@ -166,7 +155,7 @@ test "strange convert" {
     const offset: i32 = 6356633119034338304 % std.math.maxInt(i32);
 
     const d0 = try mon13.importRd(c, &rd0);
-    const d1 = try mon13.add(d0, c, offset, mon13.AddMode.DAYS);
+    const d1 = try mon13.addDays(d0, c, offset);
     const rd1: i64 = try mon13.extract(d1, c, mon13.ExtractMode.RD);
     try expect((rd1 - rd0) == offset);
 }
@@ -175,9 +164,8 @@ test "Tranquility strange add" {
     const d_yz = mon13.Date{ .year = -2796441, .month = 0, .day = 1 };
     const c_yz = &mon13.tranquility_year_zero;
     const offset: i32 = 544641169;
-    const m = mon13.AddMode.MONTHS;
 
-    const res = try mon13.add(d_yz, c_yz, offset, m);
+    const res = try mon13.addMonths(d_yz, c_yz, offset);
 }
 
 test "holocene" {
@@ -227,11 +215,10 @@ test "Cotsworth format" {
 
 test "Cotsworth add many months" {
     const d = mon13.Date{ .year = 992456, .month = 06, .day = 29 };
-    const m = mon13.AddMode.MONTHS;
     const c = &mon13.cotsworth;
     const offset = 209601470;
 
-    const res0 = try mon13.add(d, c, offset, m);
+    const res0 = try mon13.addMonths(d, c, offset);
 }
 
 test "Valid" {
@@ -253,4 +240,16 @@ test "Tempting overflow" {
 
     const res = try mon13.extract(d, c, m);
     try expect(res != 0);
+}
+
+test "Add like other cal" {
+    const d = mon13.Date{ .year = 2302144, .month = 06, .day = 25 };
+    const c_yz = &mon13.gregorian_year_zero;
+    const c = &mon13.gregorian;
+    const offset: i32 = (11113292707091716096 % std.math.maxInt(i32));
+
+    const d_yz = try mon13.convert(d, c, c_yz);
+    if (mon13.addDays(d_yz, c_yz, offset)) |res| {} else |err| {
+        try expect(err == mon13.Err.Overflow);
+    }
 }

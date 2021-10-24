@@ -374,41 +374,6 @@ fn noYzToValidYz(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
     return base.Err.InvalidDate;
 }
 
-//Adding
-fn addDays(d: base.Date, offset: i32, cal: *const base.Cal) base.Err!base.Date {
-    const d_doy = try monthDayToDoy(d, cal);
-    const d_mjd = try doyToMjd(d_doy, cal);
-    var res_mjd: i32 = 0;
-    if (@addWithOverflow(i32, d_mjd, offset, &res_mjd)) {
-        return base.Err.Overflow;
-    }
-    const res_doy = try mjdToDoy(res_mjd, cal);
-    const res = try doyToMonthDay(res_doy, cal);
-    return res;
-}
-
-fn addYears(d: base.Date, offset: i32, cal: *const base.Cal) base.Err!base.Date {
-    var y: i32 = 0;
-    if (@addWithOverflow(i32, d.year, offset, &y)) {
-        return base.Err.Overflow;
-    }
-    const res = base.Date{ .year = y, .month = d.month, .day = d.day };
-    if (valid(res, cal)) {
-        return res;
-    } else {
-        const d_doy = try monthDayToDoy(d, cal);
-        const sum_doy = DoyDate{ .year = y, .doy = d_doy.doy };
-        const res_doy = normDoy(sum_doy, cal);
-        return try doyToMonthDay(res_doy, cal);
-    }
-}
-
-fn addMonths(d: base.Date, offset: i32, cal: *const base.Cal) base.Err!base.Date {
-    const skipped_d = try skipIntercalary(d, cal);
-    const rolled_d = try rollMonth(skipped_d, offset, cal);
-    return normDay(rolled_d, cal);
-}
-
 //Day of Week
 fn getDayOfWeek(d: base.Date, cal: *const base.Cal) base.Err!base.Weekday {
     if (cal.*.CAL_PERENNIAL) {
@@ -566,31 +531,70 @@ pub fn convert(
     return yzToNoYz(dest_yz, dest);
 }
 
-pub fn add(
+pub fn addDays(
     d: base.Date,
     cal: *const base.Cal,
     offset: i32,
-    mode: base.AddMode,
 ) base.Err!base.Date {
     const d_yz = try noYzToValidYz(d, cal);
-    var res_yz = d_yz;
-    if (offset != 0) { //Adding 0 shouldn't cause errors for valid cal.
-        switch (mode) {
-            base.AddMode.NONE => {
-                res_yz = d_yz;
-            },
-            base.AddMode.DAYS => {
-                res_yz = try addDays(d_yz, offset, cal);
-            },
-            base.AddMode.MONTHS => {
-                res_yz = try addMonths(d_yz, offset, cal);
-            },
-            base.AddMode.YEARS => {
-                res_yz = try addYears(d_yz, offset, cal);
-            },
-        }
+    if (offset == 0) {
+        return d;
     }
+
+    const d_doy = try monthDayToDoy(d_yz, cal);
+    const d_mjd = try doyToMjd(d_doy, cal);
+    var res_mjd: i32 = 0;
+    if (@addWithOverflow(i32, d_mjd, offset, &res_mjd)) {
+        return base.Err.Overflow;
+    }
+    const res_doy = try mjdToDoy(res_mjd, cal);
+    const res_yz = try doyToMonthDay(res_doy, cal);
+
     return yzToNoYz(res_yz, cal);
+}
+
+pub fn addMonths(
+    d: base.Date,
+    cal: *const base.Cal,
+    offset: i32,
+) base.Err!base.Date {
+    const d_yz = try noYzToValidYz(d, cal);
+    if (offset == 0) {
+        return d;
+    }
+
+    const skipped_d = try skipIntercalary(d_yz, cal);
+    const rolled_d = try rollMonth(skipped_d, offset, cal);
+    const res_yz = try normDay(rolled_d, cal);
+
+    return yzToNoYz(res_yz, cal);
+}
+
+pub fn addYears(
+    d: base.Date,
+    cal: *const base.Cal,
+    offset: i32,
+) base.Err!base.Date {
+    const d_yz = try noYzToValidYz(d, cal);
+    if (offset == 0) {
+        return d;
+    }
+
+    var y: i32 = 0;
+    if (@addWithOverflow(i32, d_yz.year, offset, &y)) {
+        return base.Err.Overflow;
+    }
+    const res = base.Date{ .year = y, .month = d_yz.month, .day = d_yz.day };
+
+    if (valid(res, cal)) {
+        return yzToNoYz(res, cal);
+    } else {
+        const d_doy = try monthDayToDoy(d_yz, cal);
+        const sum_doy = DoyDate{ .year = y, .doy = d_doy.doy };
+        const res_doy = normDoy(sum_doy, cal);
+        const res_yz = try doyToMonthDay(res_doy, cal);
+        return yzToNoYz(res_yz, cal);
+    }
 }
 
 pub fn compare(

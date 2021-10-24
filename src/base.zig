@@ -11,13 +11,6 @@ pub const Err = error{
     InvalidDate,
 };
 
-pub const AddMode = extern enum {
-    NONE,
-    DAYS,
-    MONTHS,
-    YEARS,
-};
-
 pub const ExtractMode = extern enum {
     DAY_OF_YEAR,
     DAY_OF_WEEK,
