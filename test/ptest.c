@@ -2521,13 +2521,13 @@ int main(int argc, char** argv) {
 		{
 			.name = "mon13_convert: Gregorian Year 0 (Reverse)",
 			.prop1 = convert_gr_year0_reverse,
-			.type_info = {&gr_year0_date_info},
+			.type_info = {&gr_date_info},
 			.seed = seed
 		},
 		{
 			.name = "mon13_convert: Tranquility Year 0 (Reverse)",
 			.prop1 = convert_tq_year0_reverse,
-			.type_info = {&tq_year0_date_info},
+			.type_info = {&tq_date_info},
 			.seed = seed
 		},
 		{
