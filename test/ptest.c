@@ -60,6 +60,9 @@ void print_cal(FILE* f, const void* instance, void* env) {
     else if(c == &mon13_julian) {
         fprintf(f, "%s", mon13_julian_names_en_US.calendar_name);
     }
+    else if(c == &mon13_positivist) {
+        fprintf(f, "%s", mon13_positivist_names_en_US.calendar_name);
+    }
     else {
         fprintf(f, "UNKNOWN");
     }
@@ -209,6 +212,9 @@ bool is_leap_day(struct mon13_Date d, const struct mon13_Cal* c) {
     if(c == &mon13_cotsworth) {
         return d.month == 6 && d.day == 29;
     }
+    if(c == &mon13_positivist) {
+        return d.month == 0 && d.day == 2;
+    }
     return false;
 }
 
@@ -317,6 +323,17 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance) {
             return THEFT_ALLOC_ERROR;
         }
     }
+    else if(env == &mon13_positivist) {
+        //Every valid Tranquility (Year 0) date is a valid Positivist date
+        //except if month == 0
+        if(mon13_addDays(&(kcd->d1), kcd->c1, offset, res)) {
+            return THEFT_ALLOC_ERROR;
+        }
+        if(res->month == 0) {
+            bool day_of_dead = (res->day == 1);
+            res->year = day_of_dead ? res->year : (res->year + 180);
+        }
+    }
     else {
         return THEFT_ALLOC_ERROR;
     }
@@ -359,6 +376,11 @@ enum theft_alloc_res alloc_leap_day(struct theft* t, void* env, void** instance)
         res->year = y;
         res->month = 6;
         res->day = 29;
+    }
+    else if(cal == &mon13_positivist) {
+        res->year = y + 212; //211
+        res->month = 0;
+        res->day = 2;
     }
     else {
         return THEFT_ALLOC_ERROR;
@@ -886,6 +908,27 @@ enum theft_trial_res convert_same_year(struct theft* t, void* a1, void* a2, void
         return THEFT_TRIAL_FAIL;
     }
     return (res.year == d0->year) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res convert_same_doy(struct theft* t, void* a1, void* a2, void* a3) {
+    const struct mon13_Date* d0 = a1;
+    const struct mon13_Cal* c0 = a2;
+    const struct mon13_Cal* c1 = a3;
+    struct mon13_Date d1;
+    int status = mon13_convert(d0, c0, c1, &d1);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+    int64_t doy0, doy1;
+    status = mon13_extractDayOfYear(d0, c0, &doy0);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+    status = mon13_extractDayOfYear(&d1, c1, &doy1);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+    return (doy0 == doy1) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 //Theft trials: add
@@ -2349,6 +2392,11 @@ struct theft_type_info jl_cal_info = {
     .env = (void*)&mon13_julian
 };
 
+struct theft_type_info ps_cal_info = {
+    .alloc = select_env, //nothing to free
+    .env = (void*)&mon13_positivist
+};
+
 struct theft_type_info gr_date_info = {
     .alloc = alloc_date,
     .free = theft_generic_free_cb,
@@ -2398,6 +2446,13 @@ struct theft_type_info jl_date_info = {
     .env = (void*)&mon13_julian
 };
 
+struct theft_type_info ps_date_info = {
+    .alloc = alloc_date,
+    .free = theft_generic_free_cb,
+    .print = print_date,
+    .env = (void*)&mon13_positivist
+};
+
 struct theft_type_info gr_year0_leap_info = {
     .alloc = alloc_leap_day,
     .free = theft_generic_free_cb,
@@ -2424,6 +2479,13 @@ struct theft_type_info jl_leap_info = {
     .free = theft_generic_free_cb,
     .print = print_date,
     .env = (void*)&mon13_julian
+};
+
+struct theft_type_info ps_leap_info = {
+    .alloc = alloc_leap_day,
+    .free = theft_generic_free_cb,
+    .print = print_date,
+    .env = (void*)&mon13_positivist
 };
 
 struct theft_type_info strftime_fmt_info = {
@@ -2474,6 +2536,17 @@ struct theft_type_info jl_name_en_info = {
     .alloc = select_env, //nothing to free
     .env = (void*)&mon13_julian_names_en_US
 };
+
+struct theft_type_info ps_name_en_info = {
+    .alloc = select_env, //nothing to free
+    .env = (void*)&mon13_positivist_names_en_US
+};
+
+struct theft_type_info ps_name_fr_info = {
+    .alloc = select_env, //nothing to free
+    .env = (void*)&mon13_positivist_names_fr_FR
+};
+
 
 int main(int argc, char** argv) {
     theft_seed seed;
@@ -2535,6 +2608,16 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_import: Positivist<->MJD",
+            .prop3 = import_mjd,
+            .type_info = {
+                &ps_cal_info,
+                &random_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_import: Gregorian Year 0<->Unix time",
             .prop3 = import_unix,
             .type_info = {
@@ -2579,6 +2662,16 @@ int main(int argc, char** argv) {
             .prop3 = import_unix,
             .type_info = {
                 &jl_cal_info,
+                &random_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_import: Positivist<->Unix",
+            .prop3 = import_unix,
+            .type_info = {
+                &ps_cal_info,
                 &random_info,
                 &random_info
             },
@@ -2651,6 +2744,16 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_import: Positivist<->RD",
+            .prop3 = import_rd,
+            .type_info = {
+                &ps_cal_info,
+                &random_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_import: struct tm, localtime",
             .prop1 = import_c99_tm,
             .type_info = {&random_info},
@@ -2697,6 +2800,15 @@ int main(int argc, char** argv) {
             .prop2 = import_null,
             .type_info = {
                 &jl_cal_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_import: NULL args, Positivist",
+            .prop2 = import_null,
+            .type_info = {
+                &ps_cal_info,
                 &random_info
             },
             .seed = seed
@@ -2818,6 +2930,46 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_convert: Gregorian Year 0 -> Cotsworth, Same Day of Year",
+            .prop3 = convert_same_doy,
+            .type_info = {
+                &gr_year0_date_info,
+                &gr_year0_cal_info,
+                &ct_cal_info,
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_convert: Cotsworth -> Gregorian Year 0, Same Day of Year",
+            .prop3 = convert_same_doy,
+            .type_info = {
+                &ct_date_info,
+                &ct_cal_info,
+                &gr_year0_cal_info,
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_convert: Gregorian Year 0 -> Positivist, Same Day of Year",
+            .prop3 = convert_same_doy,
+            .type_info = {
+                &gr_year0_date_info,
+                &gr_year0_cal_info,
+                &ps_cal_info,
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_convert: Positivist -> Gregorian Year 0, Same Day of Year",
+            .prop3 = convert_same_doy,
+            .type_info = {
+                &ps_date_info,
+                &ps_cal_info,
+                &gr_year0_cal_info,
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_add: 1 Day, Gregorian Year 0",
             .prop1 = add_1day_gr,
             .type_info = {&gr_year0_date_info},
@@ -2880,6 +3032,16 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_add: Day Round Trip, Positivist",
+            .prop3 = add_day_roundtrip,
+            .type_info = {
+                &ps_date_info,
+                &random_info,
+                &ps_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_add: Day Split, Gregorian Year 0",
             .prop3 = add_day_split,
             .type_info = {
@@ -2896,6 +3058,16 @@ int main(int argc, char** argv) {
                 &tq_year0_date_info,
                 &random_info,
                 &tq_year0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_add: Day Split, Positivist",
+            .prop3 = add_day_split,
+            .type_info = {
+                &ps_date_info,
+                &random_info,
+                &ps_cal_info
             },
             .seed = seed
         },
@@ -2950,6 +3122,16 @@ int main(int argc, char** argv) {
                 &ct_date_info,
                 &random_info,
                 &ct_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_add: Year, Positivist",
+            .prop3 = add_year,
+            .type_info = {
+                &ps_date_info,
+                &random_info,
+                &ps_cal_info
             },
             .seed = seed
         },
@@ -3014,6 +3196,16 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_add: Zero, Positivist",
+            .prop3 = add_zero,
+            .type_info = {
+                &ps_date_info,
+                &add_mode_info,
+                &ps_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_add: Zero On Leap Day, Gregorian Year 0",
             .prop3 = add_zero,
             .type_info = {
@@ -3030,6 +3222,16 @@ int main(int argc, char** argv) {
                 &tq_year0_leap_info,
                 &add_mode_info,
                 &tq_year0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_add: Zero On Leap Day, Positivist",
+            .prop3 = add_zero,
+            .type_info = {
+                &ps_leap_info,
+                &add_mode_info,
+                &ps_cal_info
             },
             .seed = seed
         },
@@ -3192,6 +3394,17 @@ int main(int argc, char** argv) {
                 &ct_date_info,
                 &add_mode_info,
                 &ct_cal_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_add: Valid Result, Positivist",
+            .prop4 = add_result_valid,
+            .type_info = {
+                &ps_date_info,
+                &add_mode_info,
+                &ps_cal_info,
                 &random_info
             },
             .seed = seed
@@ -3496,6 +3709,36 @@ int main(int argc, char** argv) {
                 &jl_date_info,
                 &jl_date_info,
                 &jl_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip day, Positivist",
+            .prop3 = diff_days_roundtrip,
+            .type_info = {
+                &ps_date_info,
+                &ps_date_info,
+                &ps_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip months, Positivist",
+            .prop3 = diff_months_roundtrip,
+            .type_info = {
+                &ps_date_info,
+                &ps_date_info,
+                &ps_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Roundtrip years, Positivist",
+            .prop3 = diff_years_roundtrip,
+            .type_info = {
+                &ps_date_info,
+                &ps_date_info,
+                &ps_cal_info
             },
             .seed = seed
         },
@@ -3852,6 +4095,17 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_format: %A, Positivist (en_US)",
+            .prop4 = format_weekday,
+            .type_info = {
+                &ps_date_info,
+                &ps_cal_info,
+                &ps_name_en_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_format: %B, Gregorian Year 0 (en_US)",
             .prop4 = format_month,
             .type_info = {
@@ -3923,6 +4177,28 @@ int main(int argc, char** argv) {
                 &jl_date_info,
                 &jl_cal_info,
                 &jl_name_en_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_format: %B, Positivist (en_US)",
+            .prop4 = format_month,
+            .type_info = {
+                &ps_date_info,
+                &ps_cal_info,
+                &ps_name_en_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_format: %B, Positivist (fr_FR)",
+            .prop4 = format_month,
+            .type_info = {
+                &ps_date_info,
+                &ps_cal_info,
+                &ps_name_en_info,
                 &random_info
             },
             .seed = seed
@@ -4464,6 +4740,28 @@ int main(int argc, char** argv) {
                 &strftime_fmt_info
             },
             .seed = seed
+        },
+        {
+            .name = "mon13_format: truncate, Positivist (en_US)",
+            .prop4 = format_truncate,
+            .type_info = {
+                &ps_date_info,
+                &ps_cal_info,
+                &ps_name_en_info,
+                &strftime_fmt_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_format: truncate, Positivist (fr_FR)",
+            .prop4 = format_truncate,
+            .type_info = {
+                &ps_date_info,
+                &ps_cal_info,
+                &ps_name_fr_info,
+                &strftime_fmt_info
+            },
+            .seed = seed
         }
     };
     size_t prop_count = SIZEOF_ARR(config);
@@ -4478,7 +4776,7 @@ int main(int argc, char** argv) {
             case THEFT_RUN_PASS: pass++; break;
             case THEFT_RUN_FAIL: fail++; break;
             case THEFT_RUN_SKIP: skip++; break;
-            case THEFT_RUN_ERROR: error++; break;
+            case THEFT_RUN_ERROR: error++; return 1;
             default: other++;
         }
     }
