@@ -931,6 +931,29 @@ enum theft_trial_res convert_same_doy(struct theft* t, void* a1, void* a2, void*
     return (doy0 == doy1) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res convert_same_leap(struct theft* t, void* a1, void* a2, void* a3) {
+    const struct mon13_Date* d0 = a1;
+    const struct mon13_Cal* c0 = a2;
+    const struct mon13_Cal* c1 = a3;
+    struct mon13_Date d1;
+    int status = mon13_convert(d0, c0, c1, &d1);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+    int64_t is_leap0, is_leap1;
+    status = mon13_extractIsLeapYear(d0, c0, &is_leap0);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+    status = mon13_extractIsLeapYear(&d1, c1, &is_leap1);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    bool correct_res = (is_leap0 && is_leap1) || ((!is_leap0) && (!is_leap1));
+    return correct_res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
 //Theft trials: add
 enum theft_trial_res add_1day_gr(struct theft* t, void* test_input) {
     const struct mon13_Date* d = test_input;
@@ -2962,6 +2985,46 @@ int main(int argc, char** argv) {
         {
             .name = "mon13_convert: Positivist -> Gregorian Year 0, Same Day of Year",
             .prop3 = convert_same_doy,
+            .type_info = {
+                &ps_date_info,
+                &ps_cal_info,
+                &gr_year0_cal_info,
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_convert: Gregorian Year 0 -> Cotsworth, Same Leap Year",
+            .prop3 = convert_same_leap,
+            .type_info = {
+                &gr_year0_date_info,
+                &gr_year0_cal_info,
+                &ct_cal_info,
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_convert: Cotsworth -> Gregorian Year 0, Same Leap Year",
+            .prop3 = convert_same_leap,
+            .type_info = {
+                &ct_date_info,
+                &ct_cal_info,
+                &gr_year0_cal_info,
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_convert: Gregorian Year 0 -> Positivist, Same Leap Year",
+            .prop3 = convert_same_leap,
+            .type_info = {
+                &gr_year0_date_info,
+                &gr_year0_cal_info,
+                &ps_cal_info,
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_convert: Positivist -> Gregorian Year 0, Same Leap Year",
+            .prop3 = convert_same_leap,
             .type_info = {
                 &ps_date_info,
                 &ps_cal_info,
