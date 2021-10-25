@@ -891,4 +891,46 @@ const struct known_convert_date gr2jl_wiki[] = {
 		.d1 = {.year =  2100 , .month =  2 , .day =  29 },
 	}
 };
+
+//From these pages:
+// + http://positivists.org/calendar.html
+// + http://positivists.org/c/p-date.js
+const struct known_convert_date gr2ps_positivists_org[] = {
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_positivist,
+		.d0 = {.year =  1789 , .month =  1 , .day =  1 },
+		.d1 = {.year =  1 , .month =  1 , .day =  1 },
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_positivist,
+		.d0 = {.year =  2021 , .month =  10 , .day =  25 },
+		.d1 = {.year =  233 , .month =  11 , .day =  18 },
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_positivist,
+		.d0 = {.year =  2020 , .month =  12 , .day =  31 },
+		.d1 = {.year =  232 , .month =  0 , .day =  2 },
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_positivist,
+		.d0 = {.year =  1969 , .month =  7 , .day =  20 },
+		.d1 = {.year =  181 , .month =  8 , .day =  5 },
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_positivist,
+		.d0 = {.year =  1798 , .month =  1 , .day =  19 },
+		.d1 = {.year =  10 , .month =  1 , .day =  19 },
+	},
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_positivist,
+		.d0 = {.year =  1857 , .month =  9 , .day =  5 },
+		.d1 = {.year =  69 , .month =  9 , .day =  24 },
+	},
+};
 #endif //MON13_KNOWN_H
