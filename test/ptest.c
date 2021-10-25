@@ -331,7 +331,7 @@ enum theft_alloc_res alloc_date(struct theft* t, void* env, void** instance) {
         }
         if(res->month == 0) {
             bool day_of_dead = (res->day == 1);
-            res->year = day_of_dead ? res->year : (res->year + 180);
+            res->year = day_of_dead ? res->year : (res->year + 181);
         }
     }
     else {
