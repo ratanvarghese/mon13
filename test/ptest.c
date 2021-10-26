@@ -1185,12 +1185,24 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
     if(status) {
         return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(res.year != (d->year + offset)) {
-        return THEFT_TRIAL_FAIL;
+
+    if(c == &mon13_positivist && d->month == 0 && d->day == 2) {
+        if(res.year != ((d->year + offset) + 1)) {
+            return THEFT_TRIAL_FAIL;
+        }
+        if(res.month != 1 || res.day != 1) {
+            return THEFT_TRIAL_FAIL;
+        }
     }
-    if(!is_leap_day(*d, c) && (res.month != d->month || res.day != d->day)) {
-        return THEFT_TRIAL_FAIL;
+    else {
+        if(res.year != (d->year + offset)) {
+            return THEFT_TRIAL_FAIL;
+        }
+        if(!is_leap_day(*d, c) && (res.month != d->month || res.day != d->day)) {
+            return THEFT_TRIAL_FAIL;
+        }
     }
+
     return THEFT_TRIAL_PASS;
 }
 
