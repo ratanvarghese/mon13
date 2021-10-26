@@ -70,9 +70,11 @@ fn getSegments(year: i32, cal: *const base.Cal) [*:null]const ?base.Segment {
     }
 }
 
-fn monthDayToDoy(d: base.Date, cal: *const base.Cal) base.Err!DoyDate {
-    const segments = getSegments(d.year, cal);
-
+fn monthDayToDoyFromSegments(
+    d: base.Date,
+    cal: *const base.Cal,
+    segments: [*:null]const ?base.Segment,
+) base.Err!DoyDate {
     var si: u8 = 0;
     while (segments[si]) |s| : (si += 1) {
         if (d.month == s.month and d.day >= s.day_start and d.day <= s.day_end) {
@@ -82,6 +84,10 @@ fn monthDayToDoy(d: base.Date, cal: *const base.Cal) base.Err!DoyDate {
     }
 
     return base.Err.DateNotFound;
+}
+
+fn monthDayToDoy(d: base.Date, cal: *const base.Cal) base.Err!DoyDate {
+    return monthDayToDoyFromSegments(d, cal, getSegments(d.year, cal));
 }
 
 fn doyToMonthDay(d: DoyDate, cal: *const base.Cal) base.Err!base.Date {
@@ -229,6 +235,16 @@ fn normDay(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
     } else {
         return base.Err.BadCalendar;
     }
+}
+
+fn diffModifier(bigDiff: i64, smallDiff: i64) i64 {
+    if (bigDiff > 0 and smallDiff < 0) {
+        return -1;
+    }
+    if (bigDiff < 0 and smallDiff > 0) {
+        return 1;
+    }
+    return 0;
 }
 
 //MJD conversions
@@ -627,11 +643,13 @@ pub fn diffMonths(
     const d1_skip = try skipIntercalary(d1_norm, cal);
 
     //Prevent overflow by promoting all quantities to i64
+    const y_diff = @intCast(i64, d0_skip.year) - @intCast(i64, d1_skip.year);
+    const m_diff = @intCast(i64, d0_skip.month) - @intCast(i64, d1_skip.month);
+    const d_diff = @intCast(i64, d0_skip.day) - @intCast(i64, d1_skip.day);
     const month_max = @intCast(i64, getMonthMax(cal));
-    const year_diff = @intCast(i64, d0_skip.year) - @intCast(i64, d1_skip.year);
-    const m0 = @intCast(i64, d0_skip.month);
-    const m1 = @intCast(i64, d1_skip.month);
-    return (m0 - m1) + (year_diff * month_max);
+    const ym_diff = (y_diff * month_max) + m_diff;
+    const modifier = diffModifier(ym_diff, d_diff);
+    return ym_diff + modifier;
 }
 
 pub fn diffYears(
@@ -641,7 +659,16 @@ pub fn diffYears(
 ) base.Err!i64 {
     const d0_norm = try noYzToValidYz(d0, cal);
     const d1_norm = try noYzToValidYz(d1, cal);
-    return d0_norm.year - d1_norm.year;
+
+    const segments = cal.*.leap_lookup_list; //Avoid shifted doy on leap years
+    const doy0 = try monthDayToDoyFromSegments(d0_norm, cal, segments);
+    const doy1 = try monthDayToDoyFromSegments(d1_norm, cal, segments);
+
+    //Prevent overflow by promoting all quantities to i64
+    const y_diff = @intCast(i64, doy0.year) - @intCast(i64, doy1.year);
+    const d_diff = @intCast(i64, doy0.doy) - @intCast(i64, doy1.doy);
+    const modifier = diffModifier(y_diff, d_diff);
+    return y_diff + modifier;
 }
 
 pub fn compare(

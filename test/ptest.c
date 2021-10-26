@@ -1462,12 +1462,13 @@ enum theft_trial_res diff_days_roundtrip(struct theft* t, void* a1, void* a2, vo
 
 enum theft_trial_res diff_months_roundtrip(struct theft* t, void* a1, void* a2, void* a3) {
     const struct mon13_Date* d0 = a1;
-    const struct mon13_Date* d1 = a2;
+    struct mon13_Date* d1 = a2;
     const struct mon13_Cal* c = a3;
 
     if(d0->month == 0 || d0->day > 28 || d1->month == 0 || d1->day > 28) {
         return THEFT_TRIAL_SKIP;
     }
+    d1->day = d0->day;
 
     int status;
     int64_t diff;
@@ -1485,14 +1486,45 @@ enum theft_trial_res diff_months_roundtrip(struct theft* t, void* a1, void* a2, 
     return (d0->year == sum.year && d0->month == sum.month) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res diff_months_small_day(struct theft* t, void* a1, void* a2, void* a3) {
+    const struct mon13_Date* d = a1;
+    const struct mon13_Cal* c = a2;
+    int32_t offset = (int32_t) ((int64_t)a3 % 10);
+
+
+    struct mon13_Date sum0, sum1;
+    int status;
+    status = mon13_addDays(d, c, offset, &sum0);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+    status = mon13_addDays(d, c, -offset, &sum1);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    int64_t diff0, diff1;
+    status = mon13_diffMonths(d, &sum0, c, &diff0);
+    if(status) {
+        return THEFT_TRIAL_FAIL;
+    }
+    status = mon13_diffMonths(d, &sum1, c, &diff1);
+    if(status) {
+        return THEFT_TRIAL_FAIL;
+    }
+    return (diff0 == 0 && diff1 == 0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
 enum theft_trial_res diff_years_roundtrip(struct theft* t, void* a1, void* a2, void* a3) {
     const struct mon13_Date* d0 = a1;
-    const struct mon13_Date* d1 = a2;
+    struct mon13_Date* d1 = a2;
     const struct mon13_Cal* c = a3;
 
     if(d0->month == 0 || d0->day > 28 || d1->month == 0 || d1->day > 28) {
         return THEFT_TRIAL_SKIP;
     }
+    d1->month = d0->month;
+    d1->day = d0->day;
 
     int status;
     int64_t diff;
@@ -1508,6 +1540,34 @@ enum theft_trial_res diff_years_roundtrip(struct theft* t, void* a1, void* a2, v
     }
 
     return (d0->year == sum.year) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res diff_years_smallday(struct theft* t, void* a1, void* a2, void* a3) {
+    const struct mon13_Date* d = a1;
+    const struct mon13_Cal* c = a2;
+    int32_t offset = (int32_t) ((int64_t)a3 % 100);
+
+    struct mon13_Date sum0, sum1;
+    int status;
+    status = mon13_addDays(d, c, offset, &sum0);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+    status = mon13_addDays(d, c, -offset, &sum1);
+    if(status) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    int64_t diff0, diff1;
+    status = mon13_diffYears(d, &sum0, c, &diff0);
+    if(status) {
+        return THEFT_TRIAL_FAIL;
+    }
+    status = mon13_diffYears(d, &sum1, c, &diff1);
+    if(status) {
+        return THEFT_TRIAL_FAIL;
+    }
+    return (diff0 == 0 && diff1 == 0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 //Theft trials: compare
@@ -3604,12 +3664,32 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_diff: Month Diff for Small Days, Gregorian Year 0",
+            .prop3 = diff_months_small_day,
+            .type_info = {
+                &gr_year0_date_info,
+                &gr_year0_cal_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_diff: Roundtrip years, Gregorian Year 0",
             .prop3 = diff_years_roundtrip,
             .type_info = {
                 &gr_year0_date_info,
                 &gr_year0_date_info,
                 &gr_year0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Year Diff for Small Days, Gregorian Year 0",
+            .prop3 = diff_years_smallday,
+            .type_info = {
+                &gr_year0_date_info,
+                &gr_year0_cal_info,
+                &random_info
             },
             .seed = seed
         },
@@ -3634,12 +3714,32 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_diff: Month Diff for Small Days, Gregorian",
+            .prop3 = diff_months_small_day,
+            .type_info = {
+                &gr_date_info,
+                &gr_cal_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_diff: Roundtrip years, Gregorian",
             .prop3 = diff_years_roundtrip,
             .type_info = {
                 &gr_date_info,
                 &gr_date_info,
                 &gr_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Year Diff for Small Days, Gregorian",
+            .prop3 = diff_years_smallday,
+            .type_info = {
+                &gr_date_info,
+                &gr_cal_info,
+                &random_info
             },
             .seed = seed
         },
@@ -3664,12 +3764,32 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_diff: Month Diff for Small Days, Tranquility Year 0",
+            .prop3 = diff_months_small_day,
+            .type_info = {
+                &tq_year0_date_info,
+                &tq_year0_cal_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_diff: Roundtrip years, Tranquility Year 0",
             .prop3 = diff_years_roundtrip,
             .type_info = {
                 &tq_year0_date_info,
                 &tq_year0_date_info,
                 &tq_year0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Year Diff for Small Days, Tranquility Year 0",
+            .prop3 = diff_years_smallday,
+            .type_info = {
+                &tq_year0_date_info,
+                &tq_year0_cal_info,
+                &random_info
             },
             .seed = seed
         },
@@ -3694,12 +3814,32 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_diff: Month Diff for Small Days, Tranquility",
+            .prop3 = diff_months_small_day,
+            .type_info = {
+                &tq_date_info,
+                &tq_cal_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_diff: Roundtrip years, Tranquility",
             .prop3 = diff_years_roundtrip,
             .type_info = {
                 &tq_date_info,
                 &tq_date_info,
                 &tq_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Year Diff for Small Days, Tranquility",
+            .prop3 = diff_years_smallday,
+            .type_info = {
+                &tq_date_info,
+                &tq_cal_info,
+                &random_info
             },
             .seed = seed
         },
@@ -3724,12 +3864,32 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_diff: Month Diff for Small Days, Cotsworth",
+            .prop3 = diff_months_small_day,
+            .type_info = {
+                &ct_date_info,
+                &ct_cal_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_diff: Roundtrip years, Cotsworth",
             .prop3 = diff_years_roundtrip,
             .type_info = {
                 &ct_date_info,
                 &ct_date_info,
                 &ct_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Year Diff for Small Days, Cotsworth",
+            .prop3 = diff_years_smallday,
+            .type_info = {
+                &ct_date_info,
+                &ct_cal_info,
+                &random_info
             },
             .seed = seed
         },
@@ -3754,12 +3914,32 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_diff: Month Diff for Small Days, Holocene",
+            .prop3 = diff_months_small_day,
+            .type_info = {
+                &hl_date_info,
+                &hl_cal_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_diff: Roundtrip years, Holocene",
             .prop3 = diff_years_roundtrip,
             .type_info = {
                 &hl_date_info,
                 &hl_date_info,
                 &hl_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Year Diff for Small Days, Holocene",
+            .prop3 = diff_years_smallday,
+            .type_info = {
+                &hl_date_info,
+                &hl_cal_info,
+                &random_info
             },
             .seed = seed
         },
@@ -3784,12 +3964,32 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_diff: Month Diff for Small Days, Julian",
+            .prop3 = diff_months_small_day,
+            .type_info = {
+                &jl_date_info,
+                &jl_cal_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_diff: Roundtrip years, Julian",
             .prop3 = diff_years_roundtrip,
             .type_info = {
                 &jl_date_info,
                 &jl_date_info,
                 &jl_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Year Diff for Small Days, Julian",
+            .prop3 = diff_years_smallday,
+            .type_info = {
+                &jl_date_info,
+                &jl_cal_info,
+                &random_info
             },
             .seed = seed
         },
@@ -3814,12 +4014,32 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_diff: Month Diff for Small Days, Positivist",
+            .prop3 = diff_months_small_day,
+            .type_info = {
+                &ps_date_info,
+                &ps_cal_info,
+                &random_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_diff: Roundtrip years, Positivist",
             .prop3 = diff_years_roundtrip,
             .type_info = {
                 &ps_date_info,
                 &ps_date_info,
                 &ps_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_diff: Year Diff for Small Days, Positivist",
+            .prop3 = diff_years_smallday,
+            .type_info = {
+                &ps_date_info,
+                &ps_cal_info,
+                &random_info
             },
             .seed = seed
         },
