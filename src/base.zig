@@ -63,6 +63,8 @@ pub const Cal = extern struct {
     epoch_mjd: i32,
     start_weekday: Weekday,
     week_length: u8,
+    common_month_max: u8,
+    leap_month_max: u8,
     CAL_YEAR_ZERO: bool,
     CAL_PERENNIAL: bool,
 };

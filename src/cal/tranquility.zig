@@ -1,4 +1,5 @@
 const base = @import("../base.zig");
+const gen = @import("../gen.zig");
 const cal_gr = @import("gregorian.zig");
 
 var tranquility_ic = [_:null]?base.Intercalary{
@@ -22,7 +23,7 @@ var tranquility_ic = [_:null]?base.Intercalary{
     },
 };
 
-var tranquility_common_lookup = [_:null]?base.Segment{
+const COMMON = [_:null]?base.Segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 28 },
     .{ .offset = 28, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 56, .month = 3, .day_start = 1, .day_end = 28 },
@@ -39,7 +40,7 @@ var tranquility_common_lookup = [_:null]?base.Segment{
     .{ .offset = 364, .month = 0, .day_start = 1, .day_end = 1 },
 };
 
-var tranquility_leap_lookup = [_:null]?base.Segment{
+const LEAP = [_:null]?base.Segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 28 },
     .{ .offset = 28, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 56, .month = 3, .day_start = 1, .day_end = 28 },
@@ -58,22 +59,27 @@ var tranquility_leap_lookup = [_:null]?base.Segment{
     .{ .offset = 365, .month = 0, .day_start = 1, .day_end = 1 },
 };
 
+var common_var: [COMMON.len:null]?base.Segment = COMMON;
+var leap_var: [LEAP.len:null]?base.Segment = LEAP;
+
 pub const tranquility = base.Cal{
     .intercalary_list = @as([*:null]?base.Intercalary, &tranquility_ic),
-    .common_lookup_list = @as([*:null]?base.Segment, &tranquility_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.Segment, &tranquility_leap_lookup),
+    .common_lookup_list = @as([*:null]?base.Segment, &common_var),
+    .leap_lookup_list = @as([*:null]?base.Segment, &leap_var),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
         .offset_years = 31,
-        .common_days = 365,
-        .leap_days = 1,
+        .common_days = gen.getDayCount(COMMON[0..COMMON.len]),
+        .leap_days = gen.getLeapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
         .offset_days = 11323,
         .LEAP_GREGORIAN_SKIP = true,
     },
     .epoch_mjd = 40423, //1 day after Moon Landing Day
     .start_weekday = base.Weekday.MON13_FRIDAY,
     .week_length = cal_gr.gregorian.week_length,
+    .common_month_max = gen.getMonthMax(COMMON[0..COMMON.len]),
+    .leap_month_max = gen.getMonthMax(LEAP[0..LEAP.len]),
     .CAL_YEAR_ZERO = false,
     .CAL_PERENNIAL = true,
 };
@@ -86,6 +92,8 @@ pub const tranquility_year_zero = base.Cal{
     .epoch_mjd = tranquility.epoch_mjd,
     .start_weekday = tranquility.start_weekday,
     .week_length = cal_gr.gregorian.week_length,
+    .common_month_max = tranquility.common_month_max,
+    .leap_month_max = tranquility.leap_month_max,
     .CAL_YEAR_ZERO = true,
     .CAL_PERENNIAL = tranquility.CAL_PERENNIAL,
 };

@@ -1,6 +1,7 @@
 const base = @import("../base.zig");
+const gen = @import("../gen.zig");
 
-var gregorian_common_lookup = [_:null]?base.Segment{
+const COMMON = [_:null]?base.Segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 31 },
     .{ .offset = 31, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 59, .month = 3, .day_start = 1, .day_end = 31 },
@@ -15,7 +16,7 @@ var gregorian_common_lookup = [_:null]?base.Segment{
     .{ .offset = 334, .month = 12, .day_start = 1, .day_end = 31 },
 };
 
-var gregorian_leap_lookup = [_:null]?base.Segment{
+const LEAP = [_:null]?base.Segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 31 },
     .{ .offset = 31, .month = 2, .day_start = 1, .day_end = 29 },
     .{ .offset = 60, .month = 3, .day_start = 1, .day_end = 31 },
@@ -30,22 +31,27 @@ var gregorian_leap_lookup = [_:null]?base.Segment{
     .{ .offset = 335, .month = 12, .day_start = 1, .day_end = 31 },
 };
 
+var common_var: [COMMON.len:null]?base.Segment = COMMON;
+var leap_var: [LEAP.len:null]?base.Segment = LEAP;
+
 pub const gregorian = base.Cal{
     .intercalary_list = null,
-    .common_lookup_list = @as([*:null]?base.Segment, &gregorian_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.Segment, &gregorian_leap_lookup),
+    .common_lookup_list = @ptrCast([*:null]?base.Segment, &common_var),
+    .leap_lookup_list = @as([*:null]?base.Segment, &leap_var),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
         .offset_years = 0,
-        .common_days = 365,
-        .leap_days = 1,
+        .common_days = gen.getDayCount(COMMON[0..COMMON.len]),
+        .leap_days = gen.getLeapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
         .offset_days = 0,
         .LEAP_GREGORIAN_SKIP = true,
     },
     .start_weekday = base.Weekday.MON13_NO_WEEKDAY,
     .epoch_mjd = -678575, //1 Jan, 1 CE
     .week_length = 7,
+    .common_month_max = gen.getMonthMax(COMMON[0..COMMON.len]),
+    .leap_month_max = gen.getMonthMax(LEAP[0..LEAP.len]),
     .CAL_YEAR_ZERO = false,
     .CAL_PERENNIAL = false,
 };
@@ -58,6 +64,8 @@ pub const gregorian_year_zero = base.Cal{
     .epoch_mjd = gregorian.epoch_mjd,
     .start_weekday = gregorian.start_weekday,
     .week_length = gregorian.week_length,
+    .common_month_max = gregorian.common_month_max,
+    .leap_month_max = gregorian.leap_month_max,
     .CAL_YEAR_ZERO = true,
     .CAL_PERENNIAL = gregorian.CAL_PERENNIAL,
 };

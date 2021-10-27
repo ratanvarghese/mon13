@@ -1,4 +1,5 @@
 const base = @import("../base.zig");
+const gen = @import("../gen.zig");
 const cal_gr = @import("gregorian.zig");
 
 var positivist_ic = [_:null]?base.Intercalary{
@@ -22,7 +23,7 @@ var positivist_ic = [_:null]?base.Intercalary{
     },
 };
 
-var positivist_common_lookup = [_:null]?base.Segment{
+const COMMON = [_:null]?base.Segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 28 },
     .{ .offset = 28, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 56, .month = 3, .day_start = 1, .day_end = 28 },
@@ -39,7 +40,7 @@ var positivist_common_lookup = [_:null]?base.Segment{
     .{ .offset = 364, .month = 0, .day_start = 1, .day_end = 1 },
 };
 
-var positivist_leap_lookup = [_:null]?base.Segment{
+const LEAP = [_:null]?base.Segment{
     .{ .offset = 0, .month = 1, .day_start = 1, .day_end = 28 },
     .{ .offset = 28, .month = 2, .day_start = 1, .day_end = 28 },
     .{ .offset = 56, .month = 3, .day_start = 1, .day_end = 28 },
@@ -56,22 +57,27 @@ var positivist_leap_lookup = [_:null]?base.Segment{
     .{ .offset = 364, .month = 0, .day_start = 1, .day_end = 2 },
 };
 
+var common_var: [COMMON.len:null]?base.Segment = COMMON;
+var leap_var: [LEAP.len:null]?base.Segment = LEAP;
+
 pub const positivist = base.Cal{
     .intercalary_list = @as([*:null]?base.Intercalary, &positivist_ic),
-    .common_lookup_list = @as([*:null]?base.Segment, &positivist_common_lookup),
-    .leap_lookup_list = @as([*:null]?base.Segment, &positivist_leap_lookup),
+    .common_lookup_list = @as([*:null]?base.Segment, &common_var),
+    .leap_lookup_list = @as([*:null]?base.Segment, &leap_var),
     .leap_cycle = .{
         .year_count = 4,
         .leap_year_count = 1,
         .offset_years = 212, //211
-        .common_days = 365,
-        .leap_days = 1,
+        .common_days = gen.getDayCount(COMMON[0..COMMON.len]),
+        .leap_days = gen.getLeapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
         .offset_days = 77430, //77064
         .LEAP_GREGORIAN_SKIP = true,
     },
     .epoch_mjd = -25520, //1 Jan, 1789 CE
     .start_weekday = base.Weekday.MON13_MONDAY,
     .week_length = cal_gr.gregorian.week_length,
+    .common_month_max = gen.getMonthMax(COMMON[0..COMMON.len]),
+    .leap_month_max = gen.getMonthMax(LEAP[0..LEAP.len]),
     .CAL_YEAR_ZERO = true,
     .CAL_PERENNIAL = true,
 };

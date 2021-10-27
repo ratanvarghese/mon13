@@ -133,20 +133,11 @@ fn seekIc(d: base.Date, cal: *const base.Cal) ?base.Intercalary {
     return null;
 }
 
-fn getMonthMax(cal: *const base.Cal) u8 {
-    //Assumes same months for leap and non-leap years.
-    var month_max: u8 = 1;
-    var si: u8 = 0;
-    while (cal.*.common_lookup_list[si]) |s| : (si += 1) {
-        if (s.month > month_max) {
-            month_max = s.month;
-        }
-    }
-    return month_max;
-}
-
 fn rollMonth(d: base.Date, offset: i32, cal: *const base.Cal) base.Err!base.Date {
-    const month_max = getMonthMax(cal);
+    if (cal.common_month_max != cal.leap_month_max) {
+        unreachable;
+    }
+    const month_max = cal.common_month_max;
     var month_sum: i32 = 0;
     if (@addWithOverflow(i32, d.month, offset, &month_sum)) {
         return base.Err.Overflow;
@@ -642,11 +633,15 @@ pub fn diffMonths(
     const d0_skip = try skipIntercalary(d0_norm, cal);
     const d1_skip = try skipIntercalary(d1_norm, cal);
 
+    if (cal.common_month_max != cal.leap_month_max) {
+        unreachable;
+    }
+
     //Prevent overflow by promoting all quantities to i64
     const y_diff = @intCast(i64, d0_skip.year) - @intCast(i64, d1_skip.year);
     const m_diff = @intCast(i64, d0_skip.month) - @intCast(i64, d1_skip.month);
     const d_diff = @intCast(i64, d0_skip.day) - @intCast(i64, d1_skip.day);
-    const month_max = @intCast(i64, getMonthMax(cal));
+    const month_max = @intCast(i64, cal.common_month_max);
     const ym_diff = (y_diff * month_max) + m_diff;
     const modifier = diffModifier(ym_diff, d_diff);
     return ym_diff + modifier;
