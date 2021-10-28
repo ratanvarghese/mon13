@@ -66,8 +66,8 @@ pub const cotsworth = base.Cal{
     .epoch_mjd = cal_gr.gregorian.epoch_mjd,
     .start_weekday = base.Weekday.MON13_SUNDAY,
     .week_length = cal_gr.gregorian.week_length,
-    .common_month_max = gen.getMonthMax(COMMON[0..COMMON.len]),
-    .leap_month_max = gen.getMonthMax(LEAP[0..LEAP.len]),
+    .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
+    .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
     .CAL_YEAR_ZERO = true,
     .CAL_PERENNIAL = true,
 };

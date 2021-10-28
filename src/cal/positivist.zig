@@ -68,16 +68,16 @@ pub const positivist = base.Cal{
         .year_count = 4,
         .leap_year_count = 1,
         .offset_years = 212, //211
-        .common_days = gen.getDayCount(COMMON[0..COMMON.len]),
-        .leap_days = gen.getLeapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
+        .common_days = gen.dayCount(COMMON[0..COMMON.len]),
+        .leap_days = gen.leapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
         .offset_days = 77430, //77064
         .LEAP_GREGORIAN_SKIP = true,
     },
     .epoch_mjd = -25520, //1 Jan, 1789 CE
     .start_weekday = base.Weekday.MON13_MONDAY,
     .week_length = cal_gr.gregorian.week_length,
-    .common_month_max = gen.getMonthMax(COMMON[0..COMMON.len]),
-    .leap_month_max = gen.getMonthMax(LEAP[0..LEAP.len]),
+    .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
+    .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
     .CAL_YEAR_ZERO = true,
     .CAL_PERENNIAL = true,
 };

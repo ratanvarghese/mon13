@@ -1,6 +1,6 @@
 const base = @import("base.zig");
 
-pub fn getMonthMax(segments: []const ?base.Segment) u8 {
+pub fn monthMax(segments: []const ?base.Segment) u8 {
     //Assumes same months for leap and non-leap years.
     var month_max: u8 = 1;
     var si: u8 = 0;
@@ -14,13 +14,13 @@ pub fn getMonthMax(segments: []const ?base.Segment) u8 {
     return month_max;
 }
 
-pub fn getDayCount(segments: []const ?base.Segment) u16 {
+pub fn dayCount(segments: []const ?base.Segment) u16 {
     if (segments[segments.len - 1]) |final_segment| {
         return final_segment.offset + final_segment.day_end;
     }
     unreachable;
 }
 
-pub fn getLeapDayCount(common: []const ?base.Segment, leap: []const ?base.Segment) u16 {
-    return getDayCount(leap) - getDayCount(common);
+pub fn leapDayCount(common: []const ?base.Segment, leap: []const ?base.Segment) u16 {
+    return dayCount(leap) - dayCount(common);
 }
