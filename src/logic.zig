@@ -275,20 +275,24 @@ fn mjdToDoy(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
     const total_cycle = common_cycle + leap_cycle;
     const f_cycle_quot = @divFloor(f_100_rem, total_cycle);
     const f_cycle_rem = @mod(f_100_rem, total_cycle);
-    const f_common_quot = @divFloor(f_cycle_rem, yearLen(false, cal));
-    const f_common_rem = @mod(f_cycle_rem, yearLen(false, cal));
-
-    var res: DoyDate = .{ .year = 0, .doy = 0 };
-    res.year = 400 * f_400_quot + 100 * f_100_quot + lc.year_count * f_cycle_quot + f_common_quot;
-    res.year += lc.offset_years;
-
-    if (f_100_quot == lc.year_count or f_common_quot == lc.year_count) {
-        res.doy = yearLen(true, cal);
+    if (lc.leap_year_count > 1) {
+        unreachable;
     } else {
-        res.year += 1;
-        res.doy = @intCast(u16, f_common_rem + 1);
+        const f_common_quot = @divFloor(f_cycle_rem, yearLen(false, cal));
+        const f_common_rem = @mod(f_cycle_rem, yearLen(false, cal));
+
+        var res: DoyDate = .{ .year = 0, .doy = 0 };
+        res.year = 400 * f_400_quot + 100 * f_100_quot + lc.year_count * f_cycle_quot + f_common_quot;
+        res.year += lc.offset_years;
+
+        if (f_100_quot == lc.year_count or f_common_quot == lc.year_count) {
+            res.doy = yearLen(true, cal);
+        } else {
+            res.year += 1;
+            res.doy = @intCast(u16, f_common_rem + 1);
+        }
+        return res;
     }
-    return res;
 }
 
 fn doyToMjd(doy: DoyDate, cal: *const base.Cal) base.Err!i32 {
