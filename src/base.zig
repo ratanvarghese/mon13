@@ -49,7 +49,7 @@ pub const LeapCycleInfo = packed struct {
     offset_days: i32,
     year_count: u16,
     leap_year_count: u16,
-    offset_years: u16,
+    offset_years: i16,
     common_days: u16,
     leap_days: u16,
     LEAP_GREGORIAN_SKIP: bool,
