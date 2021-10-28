@@ -6,8 +6,8 @@ var tranquility_ic = [_:null]?base.Intercalary{
     .{
         .month = 0,
         .day = 1,
-        .day_of_year = 365,
-        .day_of_leap_year = 366,
+        .day_of_year = 28 * 13 + 1,
+        .day_of_leap_year = 28 * 13 + 2,
         .IC_YEAR = true,
         .IC_ERA_START_ALT_NAME = true,
         .IC_LEAP = false,
@@ -15,8 +15,8 @@ var tranquility_ic = [_:null]?base.Intercalary{
     .{
         .month = 0,
         .day = 2,
-        .day_of_year = 224,
-        .day_of_leap_year = 224,
+        .day_of_year = 28 * 8,
+        .day_of_leap_year = 28 * 8,
         .IC_YEAR = false,
         .IC_ERA_START_ALT_NAME = false,
         .IC_LEAP = true,
