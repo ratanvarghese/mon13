@@ -32,24 +32,38 @@ const Sequence = enum(u8) {
     weekday_number = 'u',
     year = 'Y',
 
-    fn getNum(self: Sequence, d: base.Date, cal: *const base.Cal) ?i32 {
+    fn getNum(self: Sequence, mjd: i32, cal: *const base.Cal) base.Err!?i32 {
         return switch (self) {
-            .day_of_month => d.day,
+            .day_of_month => day: {
+                var res: u8 = 0;
+                try logic.mjdToYmd(mjd, cal, null, null, &res);
+                break :day @intCast(i32, res);
+            },
             .day_of_year => doy: {
-                const res = logic.extractDayOfYear(d, cal) catch break :doy null;
-                return @intCast(i32, res);
+                const res = try logic.mjdToDayOfYear(mjd, cal);
+                break :doy @intCast(i32, res);
             },
-            .month_number => d.month,
+            .month_number => month: {
+                var res: u8 = 0;
+                try logic.mjdToYmd(mjd, cal, null, &res, null);
+                break :month @intCast(i32, res);
+            },
             .weekday_number => weekday: {
-                const res = logic.extractDayOfWeek(d, cal) catch break :weekday null;
-                return @intCast(i32, res);
+                const res = try logic.mjdToDayOfWeek(mjd, cal);
+                break :weekday @intCast(i32, @enumToInt(res));
             },
-            .year => d.year,
+            .year => year: {
+                var res: i32 = 0;
+                try logic.mjdToYmd(mjd, cal, &res, null, null);
+                break :year res;
+            },
             else => null,
         };
     }
 
-    fn getEraName(year: i32, nlist: *const base.NameList) ?[*:0]const u8 {
+    fn getEraName(mjd: i32, cal: *const base.Cal, nlist: *const base.NameList) base.Err!?[*:0]const u8 {
+        var year: i32 = 0;
+        try logic.mjdToYmd(mjd, cal, &year, null, null);
         const era_list = nlist.*.era_list;
         if (year < 0) {
             return era_list[0];
@@ -58,7 +72,9 @@ const Sequence = enum(u8) {
         }
     }
 
-    fn getIcName(d: base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
+    fn getIcName(mjd: i32, cal: *const base.Cal, nlist: *const base.NameList) base.Err!?[*:0]const u8 {
+        var d = base.Date{ .year = 0, .month = 0, .day = 0 };
+        try logic.mjdToYmd(mjd, cal, &d.year, &d.month, &d.day);
         const icr = logic.seekIcRes(d, cal) orelse return null;
         if (icr.ic.IC_ERA_START_ALT_NAME and d.year == 0 and icr.ic.day_of_year == logic.yearLen(false, cal)) {
             const alt_ic_list = nlist.*.alt_intercalary_list orelse return null;
@@ -69,34 +85,34 @@ const Sequence = enum(u8) {
         }
     }
 
-    fn getWeekdayName(d: base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
-        const weekday_num = logic.extractDayOfWeek(d, cal) catch return null;
-        const weekday = @intToEnum(base.Weekday, @intCast(c_int, weekday_num));
+    fn getWeekdayName(mjd: i32, cal: *const base.Cal, nlist: *const base.NameList) base.Err!?[*:0]const u8 {
+        const weekday = try logic.mjdToDayOfWeek(mjd, cal);
         if (weekday == base.Weekday.MON13_NO_WEEKDAY) {
-            return getIcName(d, cal, nlist);
+            return getIcName(mjd, cal, nlist);
         } else {
-            const i = @intCast(usize, weekday_num - 1);
+            const i = @intCast(usize, @enumToInt(weekday) - 1);
             return nlist.*.weekday_list[i];
         }
     }
 
-    fn getMonthName(d: base.Date, cal: *const base.Cal, nlist: *const base.NameList) ?[*:0]const u8 {
-        if (d.month == 0) {
-            return getIcName(d, cal, nlist);
+    fn getMonthName(mjd: i32, cal: *const base.Cal, nlist: *const base.NameList) base.Err!?[*:0]const u8 {
+        var month: u8 = 0;
+        try logic.mjdToYmd(mjd, cal, null, &month, null);
+        if (month == 0) {
+            return getIcName(mjd, cal, nlist);
         } else {
-            const i = @intCast(usize, d.month - 1);
+            const i = @intCast(usize, month - 1);
             return nlist.*.month_list[i];
         }
     }
 
-    fn getName(self: Sequence, d: base.Date, cal: *const base.Cal, raw_nlist: ?*const base.NameList) ?[*:0]const u8 {
+    fn getName(self: Sequence, mjd: i32, cal: *const base.Cal, raw_nlist: ?*const base.NameList) base.Err!?[*:0]const u8 {
         const nlist = raw_nlist orelse return null;
-
         return switch (self) {
-            .weekday_name => getWeekdayName(d, cal, nlist),
-            .month_name => getMonthName(d, cal, nlist),
+            .weekday_name => try getWeekdayName(mjd, cal, nlist),
+            .month_name => try getMonthName(mjd, cal, nlist),
             .calendar_name => nlist.calendar_name,
-            .era_name => getEraName(d.year, nlist),
+            .era_name => try getEraName(mjd, cal, nlist),
             else => null,
         };
     }
@@ -355,7 +371,7 @@ fn doName(name: [*:0]const u8, pos: *Position, raw_buf: ?[]u8) base.Err!void {
 }
 
 pub fn format(
-    d: base.Date,
+    mjd: i32,
     cal: *const base.Cal,
     raw_nlist: ?*const base.NameList,
     fmt: [*]const u8,
@@ -379,9 +395,9 @@ pub fn format(
                 spec.seq = @intToEnum(Sequence, c);
                 if (spec.seq.getChar()) |ch| {
                     doChar(ch, &pos, raw_buf);
-                } else if (spec.seq.getNum(d, cal)) |n| {
+                } else if (try spec.seq.getNum(mjd, cal)) |n| {
                     try doNumber(n, spec, &pos, raw_buf);
-                } else if (spec.seq.getName(d, cal, raw_nlist)) |name| {
+                } else if (try spec.seq.getName(mjd, cal, raw_nlist)) |name| {
                     try doName(name, &pos, raw_buf);
                 } else {
                     return base.Err.InvalidSequence;

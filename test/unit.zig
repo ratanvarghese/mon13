@@ -4,50 +4,46 @@ const std = @import("std");
 const expect = std.testing.expect;
 const mem = std.mem;
 
-test "import mjd" {
-    const mjd0: i64 = -279196381;
-    const offset: i32 = 0;
-    const c = &mon13.tranquility_year_zero;
-
-    const d0 = try mon13.importMjd(c, &mjd0);
-
-    const d1 = try mon13.addDays(d0, c, offset);
-    var mjd1 = try mon13.extractMjd(d1, c);
-    try expect((mjd1 - mjd0) == offset);
-}
-
 test "convert year 0" {
-    const d = mon13.Date{ .year = -1639577, .month = 7, .day = 2 };
-    const res = try mon13.convert(
-        d,
-        &mon13.tranquility_year_zero,
-        &mon13.tranquility,
-    );
+    const c0 = &mon13.tranquility_year_zero;
+    const mjd = try mon13.mjdFromYmd(c0, -1639577, 7, 2);
 
-    try expect(res.year == -1639578);
-    try expect(res.month == 7);
-    try expect(res.day == 2);
+    const c1 = &mon13.tranquility;
+    var year: i32 = 0;
+    var month: u8 = 0;
+    var day: u8 = 0;
+    try mon13.mjdToYmd(mjd, c1, &year, &month, &day);
+
+    try expect(year == -1639578);
+    try expect(month == 7);
+    try expect(day == 2);
 }
 
 test "strange add gregorian" {
-    const d = mon13.Date{ .year = -2055615, .month = 08, .day = 19 };
+    const d_year: i32 = -2055615;
+    const d_month: u8 = 08;
+    const d_day: u8 = 19;
     const a2: i64 = 2763584833174830080;
     const c = &mon13.gregorian_year_zero;
 
+    const mjd = try mon13.mjdFromYmd(c, d_year, d_month, d_day);
+
     const offset: i32 = @truncate(i32, a2);
-    const res = mon13.addYears(d, c, offset) catch return;
-    try expect(res.year == (d.year +% offset));
+    const res_mjd = mon13.addYears(mjd, c, offset) catch return;
+    var res_year: i32 = 0;
+    try mon13.mjdToYmd(mjd, c, &res_year, null, null);
+    try expect(res_year == (d_year +% offset));
 }
 
 test "add zero years" {
-    const d = mon13.Date{ .year = -89713, .month = 2, .day = 29 };
+    const d_year = -89713;
+    const d_month = 2;
+    const d_day = 29;
     const c = &mon13.gregorian;
-    const res = try mon13.addYears(
-        d,
-        c,
-        0,
-    );
-    try expect((try mon13.compare(d, res, c)) == 0);
+
+    const mjd0 = try mon13.mjdFromYmd(c, d_year, d_month, d_day);
+    const mjd1 = try mon13.addYears(mjd0, c, 0);
+    try expect(mjd0 == mjd1);
 }
 
 fn skip_import(x: i64) bool {
@@ -59,58 +55,39 @@ test "strange convert" {
     const rd0: i64 = 5385873414131997696 % std.math.maxInt(i32);
     const offset: i32 = 6356633119034338304 % std.math.maxInt(i32);
 
-    const d0 = try mon13.importRd(c, &rd0);
-    const d1 = try mon13.addDays(d0, c, offset);
-    const rd1: i64 = try mon13.extractRd(d1, c);
-    try expect((rd1 - rd0) == offset);
+    const mjd0 = try mon13.mjdFromRd(rd0);
+    const mjd1 = mjd0 + offset;
+    const rd1 = mon13.mjdToRd(mjd1) catch return;
 }
 
 test "Tranquility strange add" {
-    const d_yz = mon13.Date{ .year = -2796441, .month = 0, .day = 1 };
     const c_yz = &mon13.tranquility_year_zero;
     const offset: i32 = 544641169;
 
-    const res = try mon13.addMonths(d_yz, c_yz, offset);
+    const mjd = try mon13.mjdFromYmd(c_yz, -2796441, 0, 1);
+    const res = mon13.addMonths(mjd, c_yz, offset) catch return;
 }
 
 test "holocene" {
-    const d_gr = mon13.Date{ .year = -9999, .month = 1, .day = 1 };
-    const c_gr = &mon13.gregorian_year_zero;
-    const c_hl = &mon13.holocene;
-    const d_hl = try mon13.convert(d_gr, c_gr, c_hl);
-    try expect(d_hl.year == 1);
-    try expect(d_hl.month == 1);
-    try expect(d_hl.day == 1);
-}
+    const mjd = try mon13.mjdFromYmd(&mon13.gregorian_year_zero, -9999, 1, 1);
+    var hl_year: i32 = 0;
+    var hl_month: u8 = 0;
+    var hl_day: u8 = 0;
+    try mon13.mjdToYmd(mjd, &mon13.holocene, &hl_year, &hl_month, &hl_day);
 
-test "avoid overflow in compare" {
-    const kcd_d0 = mon13.Date{ .year = 1928, .month = 5, .day = 28 };
-    const kcd_d1 = mon13.Date{ .year = 1928, .month = 5, .day = 19 };
-    const kcd_c0 = &mon13.gregorian_year_zero;
-    const kcd_c1 = &mon13.cotsworth;
-
-    const res0 = try mon13.convert(kcd_d1, kcd_c1, kcd_c0);
-    const res1 = try mon13.convert(kcd_d0, kcd_c0, kcd_c1);
-
-    const cmp_res0 = try mon13.compare(res0, kcd_d0, kcd_c0);
-    const cmp_res1 = try mon13.compare(res1, kcd_d1, kcd_c1);
-    if (cmp_res0 == 0) {
-        try expect(cmp_res1 == 0);
-    } else if (cmp_res0 > 0) {
-        try expect(cmp_res1 < 0);
-    } else {
-        try expect(cmp_res1 > 0);
-    }
+    try expect(hl_year == 1);
+    try expect(hl_month == 1);
+    try expect(hl_day == 1);
 }
 
 test "Cotsworth format" {
-    const d = mon13.Date{ .year = -2823980, .month = 06, .day = 29 };
     const c = &mon13.cotsworth;
     const n = &mon13.cotsworth_names_en_US;
+    const mjd = try mon13.mjdFromYmd(c, -2823980, 6, 29);
 
     const buf_size = 100;
     var buf = [_]u8{0} ** buf_size;
-    const res = try mon13.format(d, c, n, "%A", buf[0..buf_size]);
+    const res = try mon13.format(mjd, c, n, "%A", buf[0..buf_size]);
 
     const expected = "Leap Day";
     for (expected) |ch, i| {
@@ -119,41 +96,25 @@ test "Cotsworth format" {
 }
 
 test "Cotsworth add many months" {
-    const d = mon13.Date{ .year = 992456, .month = 06, .day = 29 };
-    const c = &mon13.cotsworth;
-    const offset = 209601470;
-
-    const res0 = try mon13.addMonths(d, c, offset);
+    const mjd = try mon13.mjdFromYmd(&mon13.cotsworth, 992456, 6, 29);
+    const res0 = mon13.addMonths(mjd, &mon13.cotsworth, 209601470) catch return;
 }
 
 test "Valid" {
-    const d = mon13.Date{ .year = 1, .month = 1, .day = 1 };
-    const c = &mon13.tranquility;
-    try expect(mon13.valid(d, c));
+    try expect(mon13.validYmd(&mon13.tranquility, 1, 1, 1));
 }
 
 test "Invalid" {
-    const d = mon13.Date{ .year = 1, .month = 20, .day = 20 };
-    const c = &mon13.tranquility;
-    try expect(!mon13.valid(d, c));
+    try expect(!mon13.validYmd(&mon13.tranquility, 1, 20, 20));
 }
 
 test "Tempting overflow" {
-    const d = mon13.Date{ .year = -2147483641, .month = 0, .day = 2 };
     const c = &mon13.tranquility_year_zero;
-
-    const res = try mon13.extractIsLeapYear(d, c);
-    try expect(res != 0);
+    const mjd = mon13.mjdFromYmd(c, -2147483641, 0, 2) catch return;
 }
 
-test "Add like other cal" {
-    const d = mon13.Date{ .year = 2302144, .month = 06, .day = 25 };
-    const c_yz = &mon13.gregorian_year_zero;
-    const c = &mon13.gregorian;
-    const offset: i32 = (11113292707091716096 % std.math.maxInt(i32));
-
-    const d_yz = try mon13.convert(d, c, c_yz);
-    if (mon13.addDays(d_yz, c_yz, offset)) |res| {} else |err| {
-        try expect(err == mon13.Err.Overflow);
-    }
+test "Day of Year" {
+    const c = &mon13.holocene;
+    const mjd = 383540235;
+    try expect((try mon13.mjdToDayOfYear(mjd, c)) < 366);
 }

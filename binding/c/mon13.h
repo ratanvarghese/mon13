@@ -38,12 +38,6 @@ enum mon13_error {
 };
 
 //Structures
-struct mon13_Date {
-    int32_t year;
-    uint8_t month;
-    uint8_t day;
-};
-
 struct mon13_NameList {
     const char** month_list;
     const char** weekday_list;
@@ -56,133 +50,103 @@ struct mon13_NameList {
 struct mon13_Cal;
 
 //Functions
-int mon13_valid(
-    const struct mon13_Date* d,
-    const struct mon13_Cal* cal
-);
-
-int mon13_importMjd(
+int mon13_validYmd(
     const struct mon13_Cal* cal,
-    const int64_t* input,
-    struct mon13_Date* result
+    int32_t year,
+    uint8_t month,
+    uint8_t day
 );
 
-int mon13_importUnix(
+int mon13_mjdFromYmd(
     const struct mon13_Cal* cal,
-    const int64_t* input,
-    struct mon13_Date* result
+    int32_t year,
+    uint8_t month,
+    uint8_t day,
+    int32_t* res_mjd
 );
-
-int mon13_importRd(
+int mon13_mjdFromC99Tm(
     const struct mon13_Cal* cal,
-    const int64_t* input,
-    struct mon13_Date* result
+    const void* tm,
+    int32_t* res_mjd
+);
+int mon13_mjdFromUnix(
+    int64_t u,
+    int32_t* res_mjd
+);
+int mon13_mjdFromRd(
+    int32_t rd,
+    int32_t* res_mjd
 );
 
-int mon13_importC99Tm(
+int mon13_mjdToYmd(
+    int32_t mjd,
     const struct mon13_Cal* cal,
-    const void* input,
-    struct mon13_Date* result
+    int32_t* res_year,
+    uint8_t* res_month,
+    uint8_t* res_day
 );
-
-int mon13_convert(
-    const struct mon13_Date* d,
-    const struct mon13_Cal* src,
-    const struct mon13_Cal* dest,
-    struct mon13_Date* result
-);
-
-int mon13_addDays(
-    const struct mon13_Date* d,
+int mon13_mjdToC99Tm(
+    int32_t mjd,
     const struct mon13_Cal* cal,
-    const int32_t offset,
-    struct mon13_Date* result
+    void* res_tm
+);
+int mon13_mjdToUnix(
+    int32_t mjd,
+    int64_t* res_unix
+);
+int mon13_mjdToRd(
+    int32_t mjd,
+    int32_t* res_rd
+);
+int mon13_mjdToIsLeapYear(
+    int32_t mjd,
+    const struct mon13_Cal* cal,
+    int* res_isLeap
+);
+int mon13_mjdToDayOfWeek(
+    int32_t mjd,
+    const struct mon13_Cal* cal,
+    int* res_weekday
+);
+int mon13_mjdToDayOfYear(
+    int32_t mjd,
+    const struct mon13_Cal* cal,
+    int* res_yearday
 );
 
 int mon13_addMonths(
-    const struct mon13_Date* d,
+    int32_t mjd,
     const struct mon13_Cal* cal,
-    const int32_t offset,
-    struct mon13_Date* result
+    int32_t offset,
+    int32_t* res_mjd
 );
-
 int mon13_addYears(
-    const struct mon13_Date* d,
+    int32_t mjd,
     const struct mon13_Cal* cal,
-    const int32_t offset,
-    struct mon13_Date* result
-);
-
-int mon13_diffDays(
-    const struct mon13_Date* d0,
-    const struct mon13_Date* d1,
-    const struct mon13_Cal* cal,
-    int64_t* result
+    int32_t offset,
+    int32_t* res_mjd
 );
 
 int mon13_diffMonths(
-    const struct mon13_Date* d0,
-    const struct mon13_Date* d1,
+    int32_t mjd0,
+    int32_t mjd1,
     const struct mon13_Cal* cal,
-    int64_t* result
+    int32_t* res_months
 );
-
 int mon13_diffYears(
-    const struct mon13_Date* d0,
-    const struct mon13_Date* d1,
+    int32_t mjd0,
+    int32_t mjd1,
     const struct mon13_Cal* cal,
-    int64_t* result
-);
-
-int mon13_compare(
-    const struct mon13_Date* d0,
-    const struct mon13_Date* d1,
-    const struct mon13_Cal* cal
-);
-
-int mon13_extractDayOfYear(
-    const struct mon13_Date* d,
-    const struct mon13_Cal* cal,
-    int64_t* result
-);
-
-int mon13_extractDayOfWeek(
-    const struct mon13_Date* d,
-    const struct mon13_Cal* cal,
-    int64_t* result
-);
-
-int mon13_extractIsLeapYear(
-    const struct mon13_Date* d,
-    const struct mon13_Cal* cal,
-    int64_t* result
-);
-
-int mon13_extractMjd(
-    const struct mon13_Date* d,
-    const struct mon13_Cal* cal,
-    int64_t* result
-);
-
-int mon13_extractUnix(
-    const struct mon13_Date* d,
-    const struct mon13_Cal* cal,
-    int64_t* result
-);
-
-int mon13_extractRd(
-    const struct mon13_Date* d,
-    const struct mon13_Cal* cal,
-    int64_t* result
+    int32_t* res_months
 );
 
 int mon13_format(
-    const struct mon13_Date* d,
+    int32_t mjd,
     const struct mon13_Cal* cal,
     const struct mon13_NameList* nlist,
     const char* fmt,
     char* buf,
-    const uint32_t buflen
+    int32_t buflen
 );
 
 //Predefined name lists

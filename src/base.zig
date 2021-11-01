@@ -22,7 +22,7 @@ pub const Weekday = extern enum {
     MON13_SUNDAY = 7,
 };
 
-pub const Date = extern struct {
+pub const Date = struct {
     year: i32,
     month: u8,
     day: u8,

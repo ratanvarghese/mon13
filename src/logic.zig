@@ -189,8 +189,7 @@ fn skipIntercalary(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
         };
         const norm_dd = normDoy(dd, cal);
         const next_day = try doyToMonthDay(norm_dd, cal);
-        const cmp = compare(prev_day, next_day, null) catch unreachable;
-        if (cmp == 0) {
+        if (prev_day.year == next_day.year and prev_day.month == next_day.month and prev_day.day == next_day.day) {
             return base.Err.BadCalendar;
         }
         prev_day = next_day;
@@ -228,7 +227,7 @@ fn normDay(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
     }
 }
 
-fn diffModifier(bigDiff: i64, smallDiff: i64) i64 {
+fn diffModifier(bigDiff: i32, smallDiff: i32) i32 {
     if (bigDiff > 0 and smallDiff < 0) {
         return -1;
     }
@@ -480,11 +479,9 @@ fn C99TmToDate(tm: *const C99Tm) base.Err!base.Date {
     };
 }
 
-//Public functions
-pub fn valid(
-    d: base.Date,
-    cal: *const base.Cal,
-) bool {
+//New Public functions
+pub fn validYmd(cal: *const base.Cal, year: i32, month: u8, day: u8) bool {
+    const d = base.Date{ .year = year, .month = month, .day = day };
     if (valid_year(d, cal)) {
         return valid_assume_yz(noYzToYz(d, cal), cal);
     } else {
@@ -492,148 +489,158 @@ pub fn valid(
     }
 }
 
-pub fn importMjd(
-    cal: *const base.Cal,
-    input_mjd: *const i64,
-) base.Err!base.Date {
-    if (input_mjd.* > maxInt(i32) or input_mjd.* < minInt(i32)) {
-        return base.Err.Overflow;
-    }
-    const mjd_32 = @intCast(i32, input_mjd.*);
-    const doy = try mjdToDoy(mjd_32, cal);
-    const res_yz = try doyToMonthDay(doy, cal);
-    return yzToNoYz(res_yz, cal);
+pub fn mjdFromYmd(cal: *const base.Cal, year: i32, month: u8, day: u8) base.Err!i32 {
+    const d = base.Date{ .year = year, .month = month, .day = day };
+    const d_norm = try noYzToValidYz(d, cal);
+    const d_doy = try monthDayToDoy(d_norm, cal);
+    return try doyToMjd(d_doy, cal);
 }
 
-pub fn importUnix(
-    cal: *const base.Cal,
-    input_unix: *const i64,
-) base.Err!base.Date {
-    const res_yz = try unixToDate(input_unix.*, cal);
-    return yzToNoYz(res_yz, cal);
-}
-
-pub fn importRd(
-    cal: *const base.Cal,
-    input_rd: *const i64,
-) base.Err!base.Date {
-    const res_yz = try rdToDate(input_rd.*, cal);
-    return yzToNoYz(res_yz, cal);
-}
-
-pub fn importC99Tm(
-    cal: *const base.Cal,
-    input: *const c_void,
-) base.Err!base.Date {
-    const input_c99_tm = @ptrCast(*const C99Tm, @alignCast(@alignOf(C99Tm), input));
-    return try C99TmToDate(input_c99_tm);
-}
-
-pub fn convert(
-    d: base.Date,
-    src: *const base.Cal,
-    dest: *const base.Cal,
-) base.Err!base.Date {
-    const src_yz = try noYzToValidYz(d, src);
-    if (src == dest) {
-        return yzToNoYz(src_yz, src);
-    }
-
-    const src_doy = try monthDayToDoy(src_yz, src);
-    const mjd = try doyToMjd(src_doy, src);
-    const dest_doy = try mjdToDoy(mjd, dest);
-    const dest_yz = try doyToMonthDay(dest_doy, dest);
-    return yzToNoYz(dest_yz, dest);
-}
-
-pub fn addDays(
-    d: base.Date,
-    cal: *const base.Cal,
-    offset: i32,
-) base.Err!base.Date {
+pub fn mjdFromC99Tm(cal: *const base.Cal, tm: *const c_void) base.Err!i32 {
+    const input_c99_tm = @ptrCast(*const C99Tm, @alignCast(@alignOf(C99Tm), tm));
+    const d = try C99TmToDate(input_c99_tm);
     const d_yz = try noYzToValidYz(d, cal);
-    if (offset == 0) {
-        return d;
-    }
-
     const d_doy = try monthDayToDoy(d_yz, cal);
     const d_mjd = try doyToMjd(d_doy, cal);
-    var res_mjd: i32 = 0;
-    if (@addWithOverflow(i32, d_mjd, offset, &res_mjd)) {
-        return base.Err.Overflow;
-    }
-    const res_doy = try mjdToDoy(res_mjd, cal);
-    const res_yz = try doyToMonthDay(res_doy, cal);
-
-    return yzToNoYz(res_yz, cal);
+    return d_mjd;
 }
 
-pub fn addMonths(
-    d: base.Date,
-    cal: *const base.Cal,
-    offset: i32,
-) base.Err!base.Date {
-    const d_yz = try noYzToValidYz(d, cal);
-    if (offset == 0) {
-        return d;
+pub fn mjdFromUnix(unix: i64) base.Err!i32 {
+    const unix_days = @divFloor(unix, 24 * 60 * 60);
+    if (unix_days > maxInt(i32) or unix_days < minInt(i32)) {
+        return base.Err.Overflow;
     }
+    const unix_days_32 = @intCast(i32, unix_days);
+    var res_mjd: i32 = 0;
+    if (@addWithOverflow(i32, unix_days_32, UNIX_EPOCH_IN_MJD, &res_mjd)) {
+        return base.Err.Overflow;
+    }
+    return res_mjd;
+}
 
+pub fn mjdFromRd(rd: i32) base.Err!i32 {
+    var res_mjd: i32 = 0;
+    if (@addWithOverflow(i32, rd, RD_EPOCH_IN_MJD, &res_mjd)) {
+        return base.Err.Overflow;
+    }
+    return res_mjd;
+}
+
+pub fn mjdToYmd(
+    mjd: i32,
+    cal: *const base.Cal,
+    raw_year: ?*i32,
+    raw_month: ?*u8,
+    raw_day: ?*u8,
+) base.Err!void {
+    const doy = try mjdToDoy(mjd, cal);
+    const res_yz = try doyToMonthDay(doy, cal);
+    const d = yzToNoYz(res_yz, cal);
+    if (raw_year) |year| {
+        year.* = d.year;
+    }
+    if (raw_month) |month| {
+        month.* = d.month;
+    }
+    if (raw_day) |day| {
+        day.* = d.day;
+    }
+}
+
+pub fn mjdToC99Tm(mjd: i32, cal: *const base.Cal, tm: *c_void) base.Err!void {
+    const doy = try mjdToDoy(mjd, cal);
+    const d_yz = try doyToMonthDay(doy, cal);
+    const d = yzToNoYz(d_yz, cal);
+    const weekday = try getDayOfWeek(d, cal);
+
+    var output_c99_tm = @ptrCast(*C99Tm, @alignCast(@alignOf(C99Tm), tm));
+    output_c99_tm.*.tm_sec = 0;
+    output_c99_tm.*.tm_min = 0;
+    output_c99_tm.*.tm_hour = 0;
+    output_c99_tm.*.tm_mday = @intCast(c_int, d.day);
+    output_c99_tm.*.tm_mon = @intCast(c_int, d.month - 1);
+    output_c99_tm.*.tm_year = @intCast(c_int, d.year - 1900);
+    output_c99_tm.*.tm_wday = @intCast(c_int, @mod(@enumToInt(weekday), 7));
+    output_c99_tm.*.tm_yday = doy.doy - 1;
+    output_c99_tm.*.tm_isdst = 0;
+}
+
+pub fn mjdToUnix(mjd: i32) base.Err!i64 {
+    const mjd_64 = @intCast(i64, mjd);
+    const epoch = @intCast(i64, UNIX_EPOCH_IN_MJD);
+    var unix_days: i64 = 0;
+    if (@subWithOverflow(i64, mjd_64, epoch, &unix_days)) {
+        return base.Err.Overflow;
+    }
+    return 24 * 60 * 60 * unix_days;
+}
+
+pub fn mjdToRd(mjd: i32) base.Err!i32 {
+    var rata_die: i32 = 0;
+    if (@subWithOverflow(i32, mjd, RD_EPOCH_IN_MJD, &rata_die)) {
+        return base.Err.Overflow;
+    }
+    return rata_die;
+}
+
+pub fn mjdToIsLeapYear(mjd: i32, cal: *const base.Cal) base.Err!bool {
+    const doy = try mjdToDoy(mjd, cal);
+    const d_yz = try doyToMonthDay(doy, cal);
+    return isLeap(d_yz.year, cal);
+}
+
+pub fn mjdToDayOfWeek(mjd: i32, cal: *const base.Cal) base.Err!base.Weekday {
+    const doy = try mjdToDoy(mjd, cal);
+    const d_yz = try doyToMonthDay(doy, cal);
+    const weekday = try getDayOfWeek(d_yz, cal);
+    return weekday;
+}
+
+pub fn mjdToDayOfYear(mjd: i32, cal: *const base.Cal) base.Err!u16 {
+    const doy = try mjdToDoy(mjd, cal);
+    return doy.doy;
+}
+
+pub fn addMonths(mjd: i32, cal: *const base.Cal, offset: i32) base.Err!i32 {
+    if (offset == 0) {
+        return mjd;
+    }
+    const doy = try mjdToDoy(mjd, cal);
+    const d_yz = try doyToMonthDay(doy, cal);
     const skipped_d = try skipIntercalary(d_yz, cal);
     const rolled_d = try rollMonth(skipped_d, offset, cal);
     const res_yz = try normDay(rolled_d, cal);
-
-    return yzToNoYz(res_yz, cal);
+    const res_doy = try monthDayToDoy(res_yz, cal);
+    return try doyToMjd(res_doy, cal);
 }
 
-pub fn addYears(
-    d: base.Date,
-    cal: *const base.Cal,
-    offset: i32,
-) base.Err!base.Date {
-    const d_yz = try noYzToValidYz(d, cal);
+pub fn addYears(mjd: i32, cal: *const base.Cal, offset: i32) base.Err!i32 {
     if (offset == 0) {
-        return d;
+        return mjd;
     }
 
+    const doy = try mjdToDoy(mjd, cal);
+    const d_yz = try doyToMonthDay(doy, cal);
     var y: i32 = 0;
     if (@addWithOverflow(i32, d_yz.year, offset, &y)) {
         return base.Err.Overflow;
     }
     const res = base.Date{ .year = y, .month = d_yz.month, .day = d_yz.day };
-
+    const res_doy = try monthDayToDoy(res, cal);
     if (valid_assume_yz(res, cal)) {
-        return yzToNoYz(res, cal);
+        return try doyToMjd(res_doy, cal);
     } else {
-        const d_doy = try monthDayToDoy(d_yz, cal);
-        const sum_doy = DoyDate{ .year = y, .doy = d_doy.doy };
-        const res_doy = normDoy(sum_doy, cal);
-        const res_yz = try doyToMonthDay(res_doy, cal);
-        return yzToNoYz(res_yz, cal);
+        const sum_doy = DoyDate{ .year = y, .doy = res_doy.doy };
+        const sum_norm_doy = normDoy(sum_doy, cal);
+        return try doyToMjd(sum_norm_doy, cal);
     }
 }
 
-pub fn diffDays(
-    d0: base.Date,
-    d1: base.Date,
-    cal: *const base.Cal,
-) base.Err!i64 {
-    const d0_norm = try noYzToValidYz(d0, cal);
-    const d0_doy = try monthDayToDoy(d0_norm, cal);
-    const mjd0 = try doyToMjd(d0_doy, cal);
-
-    const d1_norm = try noYzToValidYz(d1, cal);
-    const d1_doy = try monthDayToDoy(d1_norm, cal);
-    const mjd1 = try doyToMjd(d1_doy, cal);
-    return mjd0 - mjd1;
-}
-
-pub fn diffMonths(
-    d0: base.Date,
-    d1: base.Date,
-    cal: *const base.Cal,
-) base.Err!i64 {
-    const d0_norm = try noYzToValidYz(d0, cal);
-    const d1_norm = try noYzToValidYz(d1, cal);
+pub fn diffMonths(mjd0: i32, mjd1: i32, cal: *const base.Cal) base.Err!i32 {
+    const doy0 = try mjdToDoy(mjd0, cal);
+    const doy1 = try mjdToDoy(mjd1, cal);
+    const d0_norm = try doyToMonthDay(doy0, cal);
+    const d1_norm = try doyToMonthDay(doy1, cal);
     const d0_skip = try skipIntercalary(d0_norm, cal);
     const d1_skip = try skipIntercalary(d1_norm, cal);
 
@@ -641,113 +648,53 @@ pub fn diffMonths(
         unreachable;
     }
 
-    //Prevent overflow by promoting all quantities to i64
-    const y_diff = @intCast(i64, d0_skip.year) - @intCast(i64, d1_skip.year);
-    const m_diff = @intCast(i64, d0_skip.month) - @intCast(i64, d1_skip.month);
-    const d_diff = @intCast(i64, d0_skip.day) - @intCast(i64, d1_skip.day);
-    const month_max = @intCast(i64, cal.common_month_max);
-    const ym_diff = (y_diff * month_max) + m_diff;
+    var y_diff: i32 = 0;
+    if (@subWithOverflow(i32, d0_skip.year, d1_skip.year, &y_diff)) {
+        return base.Err.Overflow;
+    }
+
+    const m_diff = @intCast(i32, d0_skip.month) - @intCast(i32, d1_skip.month);
+    const d_diff = @intCast(i32, d0_skip.day) - @intCast(i32, d1_skip.day);
+    const month_max = @intCast(i32, cal.common_month_max);
+
+    var y_diff_to_m: i32 = 0;
+    if (@mulWithOverflow(i32, y_diff, month_max, &y_diff_to_m)) {
+        return base.Err.Overflow;
+    }
+    var ym_diff: i32 = 0;
+    if (@addWithOverflow(i32, y_diff_to_m, m_diff, &ym_diff)) {
+        return base.Err.Overflow;
+    }
+
     const modifier = diffModifier(ym_diff, d_diff);
-    return ym_diff + modifier;
+
+    var res = ym_diff;
+    if (@addWithOverflow(i32, ym_diff, modifier, &res)) {
+        return base.Err.Overflow;
+    }
+    return res;
 }
 
-pub fn diffYears(
-    d0: base.Date,
-    d1: base.Date,
-    cal: *const base.Cal,
-) base.Err!i64 {
-    const d0_norm = try noYzToValidYz(d0, cal);
-    const d1_norm = try noYzToValidYz(d1, cal);
+pub fn diffYears(mjd0: i32, mjd1: i32, cal: *const base.Cal) base.Err!i32 {
+    const doy0 = try mjdToDoy(mjd0, cal);
+    const doy1 = try mjdToDoy(mjd1, cal);
 
-    const segments = cal.*.leap_lookup_list; //Avoid shifted doy on leap years
-    const doy0 = try monthDayToDoyFromSegments(d0_norm, cal, segments);
-    const doy1 = try monthDayToDoyFromSegments(d1_norm, cal, segments);
+    var y_diff: i32 = 0;
+    if (@subWithOverflow(i32, doy0.year, doy1.year, &y_diff)) {
+        return base.Err.Overflow;
+    }
 
-    //Prevent overflow by promoting all quantities to i64
-    const y_diff = @intCast(i64, doy0.year) - @intCast(i64, doy1.year);
-    const d_diff = @intCast(i64, doy0.doy) - @intCast(i64, doy1.doy);
+    const d0 = try doyToMonthDay(doy0, cal);
+    const d1 = try doyToMonthDay(doy1, cal);
+    const adjusted0 = try monthDayToDoyFromSegments(d0, cal, cal.*.leap_lookup_list);
+    const adjusted1 = try monthDayToDoyFromSegments(d1, cal, cal.*.leap_lookup_list);
+
+    const d_diff = @intCast(i32, adjusted0.doy) - @intCast(i32, adjusted1.doy);
     const modifier = diffModifier(y_diff, d_diff);
-    return y_diff + modifier;
-}
 
-pub fn compare(
-    d0: base.Date,
-    d1: base.Date,
-    raw_cal: ?*const base.Cal,
-) base.Err!c_int {
-    var d0_norm = d0;
-    var d1_norm = d1;
-    if (raw_cal) |cal| {
-        d0_norm = try noYzToValidYz(d0, cal);
-        d1_norm = try noYzToValidYz(d1, cal);
+    var res: i32 = y_diff;
+    if (@addWithOverflow(i32, y_diff, modifier, &res)) {
+        return base.Err.Overflow;
     }
-
-    if (d0_norm.year != d1_norm.year) {
-        return d0_norm.year - d1_norm.year;
-    }
-
-    if (raw_cal) |cal| {
-        if (d0_norm.month == 0 or d1_norm.month == 0) {
-            const doy0 = try monthDayToDoy(d0_norm, cal);
-            const doy1 = try monthDayToDoy(d1_norm, cal);
-            return @intCast(c_int, doy0.doy) - @intCast(c_int, doy1.doy);
-        }
-    }
-
-    if (d0_norm.month != d1_norm.month) {
-        return @intCast(c_int, d0_norm.month) - @intCast(c_int, d1_norm.month);
-    }
-
-    return @intCast(c_int, d0_norm.day) - @intCast(c_int, d1_norm.day);
-}
-
-pub fn extractDayOfYear(
-    d: base.Date,
-    cal: *const base.Cal,
-) base.Err!i64 {
-    const d_norm = try noYzToValidYz(d, cal);
-    const d_doy = try monthDayToDoy(d_norm, cal);
-    return d_doy.doy;
-}
-
-pub fn extractDayOfWeek(
-    d: base.Date,
-    cal: *const base.Cal,
-) base.Err!i64 {
-    const d_norm = try noYzToValidYz(d, cal);
-    const weekday = try getDayOfWeek(d_norm, cal);
-    return @enumToInt(weekday);
-}
-
-pub fn extractIsLeapYear(
-    d: base.Date,
-    cal: *const base.Cal,
-) base.Err!i64 {
-    const d_norm = try noYzToValidYz(d, cal);
-    return @boolToInt(isLeap(d_norm.year, cal));
-}
-
-pub fn extractMjd(
-    d: base.Date,
-    cal: *const base.Cal,
-) base.Err!i64 {
-    const d_norm = try noYzToValidYz(d, cal);
-    const d_doy = try monthDayToDoy(d_norm, cal);
-    return try doyToMjd(d_doy, cal);
-}
-
-pub fn extractUnix(
-    d: base.Date,
-    cal: *const base.Cal,
-) base.Err!i64 {
-    const d_norm = try noYzToValidYz(d, cal);
-    return try dateToUnix(d_norm, cal);
-}
-
-pub fn extractRd(
-    d: base.Date,
-    cal: *const base.Cal,
-) base.Err!i64 {
-    const d_norm = try noYzToValidYz(d, cal);
-    return try dateToRd(d_norm, cal);
+    return res;
 }

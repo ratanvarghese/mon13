@@ -11,7 +11,7 @@ pub fn build(b: *std.build.Builder) void {
     const rawSeed = b.option(u64, "seed", "Seed for ptest");
 
     //Library files
-    const sharedLib = b.addSharedLibrary("mon13", "binding/c/bindc.zig", b.version(0, 4, 1));
+    const sharedLib = b.addSharedLibrary("mon13", "binding/c/bindc.zig", b.version(0, 5, 1));
     sharedLib.addPackage(mon13Pkg);
     sharedLib.setBuildMode(mode);
     sharedLib.install();

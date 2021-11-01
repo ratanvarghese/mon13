@@ -5,11 +5,95 @@
 
 #include "mon13.h"
 
+#define SIZEOF_ARR(arr) sizeof(arr)/sizeof(*arr)
+#define UNIX_DAY (24 * 60 * 60)
+#define STRFTIME_BUF 500
+#define ASCII_COPY_BUF 500
+
+struct test_Date {
+	int32_t year;
+	uint8_t month;
+	uint8_t day;
+};
+
 struct known_convert_date {
 	const struct mon13_Cal* c0;
 	const struct mon13_Cal* c1;
-	const struct mon13_Date d0;
-	const struct mon13_Date d1;
+	const struct test_Date d0;
+	const struct test_Date d1;
+};
+
+struct known_convert_mjd {
+	const struct mon13_Cal* c;
+	const struct test_Date d;
+	int32_t mjd;
+};
+
+struct name_cal {
+	const struct mon13_Cal* c;
+	const struct mon13_NameList* n;
+};
+
+const struct name_cal name_cal_list[] = {
+	{
+		.c = &mon13_gregorian,
+		.n = &mon13_gregorian_names_en_US,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.n = &mon13_gregorian_names_en_US,
+	},
+	{
+		.c = &mon13_gregorian,
+		.n = &mon13_gregorian_names_fr_FR,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.n = &mon13_gregorian_names_fr_FR,
+	},
+	{
+		.c = &mon13_tranquility,
+		.n = &mon13_tranquility_names_en_US,
+	},
+	{
+		.c = &mon13_tranquility_year_zero,
+		.n = &mon13_tranquility_names_en_US,
+	},
+	{
+		.c = &mon13_holocene,
+		.n = &mon13_holocene_names_en_US,
+	},
+	{
+		.c = &mon13_cotsworth,
+		.n = &mon13_cotsworth_names_en_US,
+	},
+	{
+		.c = &mon13_julian,
+		.n = &mon13_julian_names_en_US,
+	},
+	{
+		.c = &mon13_julian,
+		.n = &mon13_julian_names_fr_FR,
+	},
+	{
+		.c = &mon13_positivist,
+		.n = &mon13_positivist_names_en_US,
+	},
+	{
+		.c = &mon13_positivist,
+		.n = &mon13_positivist_names_fr_FR,
+	},
+};
+
+const struct mon13_Cal* cal_list[] = {
+    &mon13_gregorian,
+    &mon13_gregorian_year_zero,
+    &mon13_tranquility,
+    &mon13_tranquility_year_zero,
+    &mon13_holocene,
+    &mon13_cotsworth,
+    &mon13_julian,
+    &mon13_positivist
 };
 
 //Tranquility & Gregorian conversions
@@ -933,4 +1017,1808 @@ const struct known_convert_date gr2ps_positivists_org[] = {
 		.d1 = {.year =  69 , .month =  9 , .day =  24 },
 	},
 };
+
+const struct known_convert_mjd gr2mjd_nasa[] = {
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2000 , .month =  1 , .day =  1 },
+		.mjd =  51544 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2001 , .month =  1 , .day =  1 },
+		.mjd =  51910 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2002 , .month =  1 , .day =  1 },
+		.mjd =  52275 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2003 , .month =  1 , .day =  1 },
+		.mjd =  52640 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2004 , .month =  1 , .day =  1 },
+		.mjd =  53005 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2005 , .month =  1 , .day =  1 },
+		.mjd =  53371 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2006 , .month =  1 , .day =  1 },
+		.mjd =  53736 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2007 , .month =  1 , .day =  1 },
+		.mjd =  54101 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2008 , .month =  1 , .day =  1 },
+		.mjd =  54466 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2009 , .month =  1 , .day =  1 },
+		.mjd =  54832 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2000 , .month =  2 , .day =  1 },
+		.mjd =  51575 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2001 , .month =  2 , .day =  1 },
+		.mjd =  51941 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2002 , .month =  2 , .day =  1 },
+		.mjd =  52306 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2003 , .month =  2 , .day =  1 },
+		.mjd =  52671 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2004 , .month =  2 , .day =  1 },
+		.mjd =  53036 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2005 , .month =  2 , .day =  1 },
+		.mjd =  53402 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2006 , .month =  2 , .day =  1 },
+		.mjd =  53767 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2007 , .month =  2 , .day =  1 },
+		.mjd =  54132 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2008 , .month =  2 , .day =  1 },
+		.mjd =  54497 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2009 , .month =  2 , .day =  1 },
+		.mjd =  54863 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2000 , .month =  3 , .day =  1 },
+		.mjd =  51604 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2001 , .month =  3 , .day =  1 },
+		.mjd =  51969 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2002 , .month =  3 , .day =  1 },
+		.mjd =  52334 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2003 , .month =  3 , .day =  1 },
+		.mjd =  52699 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2004 , .month =  3 , .day =  1 },
+		.mjd =  53065 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2005 , .month =  3 , .day =  1 },
+		.mjd =  53430 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2006 , .month =  3 , .day =  1 },
+		.mjd =  53795 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2007 , .month =  3 , .day =  1 },
+		.mjd =  54160 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2008 , .month =  3 , .day =  1 },
+		.mjd =  54526 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2009 , .month =  3 , .day =  1 },
+		.mjd =  54891 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2000 , .month =  4 , .day =  1 },
+		.mjd =  51635 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2001 , .month =  4 , .day =  1 },
+		.mjd =  52000 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2002 , .month =  4 , .day =  1 },
+		.mjd =  52365 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2003 , .month =  4 , .day =  1 },
+		.mjd =  52730 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2004 , .month =  4 , .day =  1 },
+		.mjd =  53096 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2005 , .month =  4 , .day =  1 },
+		.mjd =  53461 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2006 , .month =  4 , .day =  1 },
+		.mjd =  53826 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2007 , .month =  4 , .day =  1 },
+		.mjd =  54191 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2008 , .month =  4 , .day =  1 },
+		.mjd =  54557 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2009 , .month =  4 , .day =  1 },
+		.mjd =  54922 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2000 , .month =  5 , .day =  1 },
+		.mjd =  51665 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2001 , .month =  5 , .day =  1 },
+		.mjd =  52030 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2002 , .month =  5 , .day =  1 },
+		.mjd =  52395 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2003 , .month =  5 , .day =  1 },
+		.mjd =  52760 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2004 , .month =  5 , .day =  1 },
+		.mjd =  53126 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2005 , .month =  5 , .day =  1 },
+		.mjd =  53491 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2006 , .month =  5 , .day =  1 },
+		.mjd =  53856 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2007 , .month =  5 , .day =  1 },
+		.mjd =  54221 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2008 , .month =  5 , .day =  1 },
+		.mjd =  54587 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2009 , .month =  5 , .day =  1 },
+		.mjd =  54952 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2000 , .month =  6 , .day =  1 },
+		.mjd =  51696 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2001 , .month =  6 , .day =  1 },
+		.mjd =  52061 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2002 , .month =  6 , .day =  1 },
+		.mjd =  52426 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2003 , .month =  6 , .day =  1 },
+		.mjd =  52791 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2004 , .month =  6 , .day =  1 },
+		.mjd =  53157 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2005 , .month =  6 , .day =  1 },
+		.mjd =  53522 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2006 , .month =  6 , .day =  1 },
+		.mjd =  53887 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2007 , .month =  6 , .day =  1 },
+		.mjd =  54252 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2008 , .month =  6 , .day =  1 },
+		.mjd =  54618 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2009 , .month =  6 , .day =  1 },
+		.mjd =  54983 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2000 , .month =  7 , .day =  1 },
+		.mjd =  51726 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2001 , .month =  7 , .day =  1 },
+		.mjd =  52091 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2002 , .month =  7 , .day =  1 },
+		.mjd =  52456 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2003 , .month =  7 , .day =  1 },
+		.mjd =  52821 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2004 , .month =  7 , .day =  1 },
+		.mjd =  53187 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2005 , .month =  7 , .day =  1 },
+		.mjd =  53552 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2006 , .month =  7 , .day =  1 },
+		.mjd =  53917 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2007 , .month =  7 , .day =  1 },
+		.mjd =  54282 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2008 , .month =  7 , .day =  1 },
+		.mjd =  54648 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2009 , .month =  7 , .day =  1 },
+		.mjd =  55013 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2000 , .month =  8 , .day =  1 },
+		.mjd =  51757 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2001 , .month =  8 , .day =  1 },
+		.mjd =  52122 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2002 , .month =  8 , .day =  1 },
+		.mjd =  52487 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2003 , .month =  8 , .day =  1 },
+		.mjd =  52852 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2004 , .month =  8 , .day =  1 },
+		.mjd =  53218 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2005 , .month =  8 , .day =  1 },
+		.mjd =  53583 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2006 , .month =  8 , .day =  1 },
+		.mjd =  53948 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2007 , .month =  8 , .day =  1 },
+		.mjd =  54313 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2008 , .month =  8 , .day =  1 },
+		.mjd =  54679 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2009 , .month =  8 , .day =  1 },
+		.mjd =  55044 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2000 , .month =  9 , .day =  1 },
+		.mjd =  51788 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2001 , .month =  9 , .day =  1 },
+		.mjd =  52153 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2002 , .month =  9 , .day =  1 },
+		.mjd =  52518 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2003 , .month =  9 , .day =  1 },
+		.mjd =  52883 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2004 , .month =  9 , .day =  1 },
+		.mjd =  53249 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2005 , .month =  9 , .day =  1 },
+		.mjd =  53614 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2006 , .month =  9 , .day =  1 },
+		.mjd =  53979 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2007 , .month =  9 , .day =  1 },
+		.mjd =  54344 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2008 , .month =  9 , .day =  1 },
+		.mjd =  54710 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2009 , .month =  9 , .day =  1 },
+		.mjd =  55075 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2000 , .month =  10 , .day =  1 },
+		.mjd =  51818 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2001 , .month =  10 , .day =  1 },
+		.mjd =  52183 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2002 , .month =  10 , .day =  1 },
+		.mjd =  52548 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2003 , .month =  10 , .day =  1 },
+		.mjd =  52913 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2004 , .month =  10 , .day =  1 },
+		.mjd =  53279 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2005 , .month =  10 , .day =  1 },
+		.mjd =  53644 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2006 , .month =  10 , .day =  1 },
+		.mjd =  54009 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2007 , .month =  10 , .day =  1 },
+		.mjd =  54374 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2008 , .month =  10 , .day =  1 },
+		.mjd =  54740 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2009 , .month =  10 , .day =  1 },
+		.mjd =  55105 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2000 , .month =  11 , .day =  1 },
+		.mjd =  51849 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2001 , .month =  11 , .day =  1 },
+		.mjd =  52214 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2002 , .month =  11 , .day =  1 },
+		.mjd =  52579 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2003 , .month =  11 , .day =  1 },
+		.mjd =  52944 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2004 , .month =  11 , .day =  1 },
+		.mjd =  53310 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2005 , .month =  11 , .day =  1 },
+		.mjd =  53675 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2006 , .month =  11 , .day =  1 },
+		.mjd =  54040 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2007 , .month =  11 , .day =  1 },
+		.mjd =  54405 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2008 , .month =  11 , .day =  1 },
+		.mjd =  54771 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2009 , .month =  11 , .day =  1 },
+		.mjd =  55136 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2000 , .month =  12 , .day =  1 },
+		.mjd =  51879 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2001 , .month =  12 , .day =  1 },
+		.mjd =  52244 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2002 , .month =  12 , .day =  1 },
+		.mjd =  52609 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2003 , .month =  12 , .day =  1 },
+		.mjd =  52974 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2004 , .month =  12 , .day =  1 },
+		.mjd =  53340 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2005 , .month =  12 , .day =  1 },
+		.mjd =  53705 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2006 , .month =  12 , .day =  1 },
+		.mjd =  54070 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2007 , .month =  12 , .day =  1 },
+		.mjd =  54435 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2008 , .month =  12 , .day =  1 },
+		.mjd =  54801 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  2009 , .month =  12 , .day =  1 },
+		.mjd =  55166 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1990 , .month =  1 , .day =  1 },
+		.mjd =  47892 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1991 , .month =  1 , .day =  1 },
+		.mjd =  48257 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1992 , .month =  1 , .day =  1 },
+		.mjd =  48622 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1993 , .month =  1 , .day =  1 },
+		.mjd =  48988 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1994 , .month =  1 , .day =  1 },
+		.mjd =  49353 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1995 , .month =  1 , .day =  1 },
+		.mjd =  49718 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1996 , .month =  1 , .day =  1 },
+		.mjd =  50083 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1997 , .month =  1 , .day =  1 },
+		.mjd =  50449 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1998 , .month =  1 , .day =  1 },
+		.mjd =  50814 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1999 , .month =  1 , .day =  1 },
+		.mjd =  51179 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1990 , .month =  2 , .day =  1 },
+		.mjd =  47923 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1991 , .month =  2 , .day =  1 },
+		.mjd =  48288 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1992 , .month =  2 , .day =  1 },
+		.mjd =  48653 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1993 , .month =  2 , .day =  1 },
+		.mjd =  49019 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1994 , .month =  2 , .day =  1 },
+		.mjd =  49384 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1995 , .month =  2 , .day =  1 },
+		.mjd =  49749 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1996 , .month =  2 , .day =  1 },
+		.mjd =  50114 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1997 , .month =  2 , .day =  1 },
+		.mjd =  50480 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1998 , .month =  2 , .day =  1 },
+		.mjd =  50845 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1999 , .month =  2 , .day =  1 },
+		.mjd =  51210 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1990 , .month =  3 , .day =  1 },
+		.mjd =  47951 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1991 , .month =  3 , .day =  1 },
+		.mjd =  48316 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1992 , .month =  3 , .day =  1 },
+		.mjd =  48682 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1993 , .month =  3 , .day =  1 },
+		.mjd =  49047 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1994 , .month =  3 , .day =  1 },
+		.mjd =  49412 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1995 , .month =  3 , .day =  1 },
+		.mjd =  49777 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1996 , .month =  3 , .day =  1 },
+		.mjd =  50143 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1997 , .month =  3 , .day =  1 },
+		.mjd =  50508 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1998 , .month =  3 , .day =  1 },
+		.mjd =  50873 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1999 , .month =  3 , .day =  1 },
+		.mjd =  51238 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1990 , .month =  4 , .day =  1 },
+		.mjd =  47982 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1991 , .month =  4 , .day =  1 },
+		.mjd =  48347 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1992 , .month =  4 , .day =  1 },
+		.mjd =  48713 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1993 , .month =  4 , .day =  1 },
+		.mjd =  49078 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1994 , .month =  4 , .day =  1 },
+		.mjd =  49443 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1995 , .month =  4 , .day =  1 },
+		.mjd =  49808 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1996 , .month =  4 , .day =  1 },
+		.mjd =  50174 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1997 , .month =  4 , .day =  1 },
+		.mjd =  50539 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1998 , .month =  4 , .day =  1 },
+		.mjd =  50904 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1999 , .month =  4 , .day =  1 },
+		.mjd =  51269 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1990 , .month =  5 , .day =  1 },
+		.mjd =  48012 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1991 , .month =  5 , .day =  1 },
+		.mjd =  48377 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1992 , .month =  5 , .day =  1 },
+		.mjd =  48743 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1993 , .month =  5 , .day =  1 },
+		.mjd =  49108 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1994 , .month =  5 , .day =  1 },
+		.mjd =  49473 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1995 , .month =  5 , .day =  1 },
+		.mjd =  49838 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1996 , .month =  5 , .day =  1 },
+		.mjd =  50204 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1997 , .month =  5 , .day =  1 },
+		.mjd =  50569 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1998 , .month =  5 , .day =  1 },
+		.mjd =  50934 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1999 , .month =  5 , .day =  1 },
+		.mjd =  51299 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1990 , .month =  6 , .day =  1 },
+		.mjd =  48043 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1991 , .month =  6 , .day =  1 },
+		.mjd =  48408 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1992 , .month =  6 , .day =  1 },
+		.mjd =  48774 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1993 , .month =  6 , .day =  1 },
+		.mjd =  49139 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1994 , .month =  6 , .day =  1 },
+		.mjd =  49504 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1995 , .month =  6 , .day =  1 },
+		.mjd =  49869 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1996 , .month =  6 , .day =  1 },
+		.mjd =  50235 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1997 , .month =  6 , .day =  1 },
+		.mjd =  50600 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1998 , .month =  6 , .day =  1 },
+		.mjd =  50965 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1999 , .month =  6 , .day =  1 },
+		.mjd =  51330 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1990 , .month =  7 , .day =  1 },
+		.mjd =  48073 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1991 , .month =  7 , .day =  1 },
+		.mjd =  48438 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1992 , .month =  7 , .day =  1 },
+		.mjd =  48804 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1993 , .month =  7 , .day =  1 },
+		.mjd =  49169 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1994 , .month =  7 , .day =  1 },
+		.mjd =  49534 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1995 , .month =  7 , .day =  1 },
+		.mjd =  49899 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1996 , .month =  7 , .day =  1 },
+		.mjd =  50265 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1997 , .month =  7 , .day =  1 },
+		.mjd =  50630 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1998 , .month =  7 , .day =  1 },
+		.mjd =  50995 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1999 , .month =  7 , .day =  1 },
+		.mjd =  51360 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1990 , .month =  8 , .day =  1 },
+		.mjd =  48104 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1991 , .month =  8 , .day =  1 },
+		.mjd =  48469 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1992 , .month =  8 , .day =  1 },
+		.mjd =  48835 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1993 , .month =  8 , .day =  1 },
+		.mjd =  49200 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1994 , .month =  8 , .day =  1 },
+		.mjd =  49565 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1995 , .month =  8 , .day =  1 },
+		.mjd =  49930 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1996 , .month =  8 , .day =  1 },
+		.mjd =  50296 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1997 , .month =  8 , .day =  1 },
+		.mjd =  50661 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1998 , .month =  8 , .day =  1 },
+		.mjd =  51026 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1999 , .month =  8 , .day =  1 },
+		.mjd =  51391 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1990 , .month =  9 , .day =  1 },
+		.mjd =  48135 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1991 , .month =  9 , .day =  1 },
+		.mjd =  48500 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1992 , .month =  9 , .day =  1 },
+		.mjd =  48866 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1993 , .month =  9 , .day =  1 },
+		.mjd =  49231 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1994 , .month =  9 , .day =  1 },
+		.mjd =  49596 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1995 , .month =  9 , .day =  1 },
+		.mjd =  49961 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1996 , .month =  9 , .day =  1 },
+		.mjd =  50327 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1997 , .month =  9 , .day =  1 },
+		.mjd =  50692 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1998 , .month =  9 , .day =  1 },
+		.mjd =  51057 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1999 , .month =  9 , .day =  1 },
+		.mjd =  51422 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1990 , .month =  10 , .day =  1 },
+		.mjd =  48165 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1991 , .month =  10 , .day =  1 },
+		.mjd =  48530 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1992 , .month =  10 , .day =  1 },
+		.mjd =  48896 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1993 , .month =  10 , .day =  1 },
+		.mjd =  49261 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1994 , .month =  10 , .day =  1 },
+		.mjd =  49626 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1995 , .month =  10 , .day =  1 },
+		.mjd =  49991 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1996 , .month =  10 , .day =  1 },
+		.mjd =  50357 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1997 , .month =  10 , .day =  1 },
+		.mjd =  50722 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1998 , .month =  10 , .day =  1 },
+		.mjd =  51087 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1999 , .month =  10 , .day =  1 },
+		.mjd =  51452 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1990 , .month =  11 , .day =  1 },
+		.mjd =  48196 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1991 , .month =  11 , .day =  1 },
+		.mjd =  48561 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1992 , .month =  11 , .day =  1 },
+		.mjd =  48927 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1993 , .month =  11 , .day =  1 },
+		.mjd =  49292 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1994 , .month =  11 , .day =  1 },
+		.mjd =  49657 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1995 , .month =  11 , .day =  1 },
+		.mjd =  50022 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1996 , .month =  11 , .day =  1 },
+		.mjd =  50388 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1997 , .month =  11 , .day =  1 },
+		.mjd =  50753 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1998 , .month =  11 , .day =  1 },
+		.mjd =  51118 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1999 , .month =  11 , .day =  1 },
+		.mjd =  51483 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1990 , .month =  12 , .day =  1 },
+		.mjd =  48226 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1991 , .month =  12 , .day =  1 },
+		.mjd =  48591 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1992 , .month =  12 , .day =  1 },
+		.mjd =  48957 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1993 , .month =  12 , .day =  1 },
+		.mjd =  49322 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1994 , .month =  12 , .day =  1 },
+		.mjd =  49687 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1995 , .month =  12 , .day =  1 },
+		.mjd =  50052 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1996 , .month =  12 , .day =  1 },
+		.mjd =  50418 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1997 , .month =  12 , .day =  1 },
+		.mjd =  50783 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1998 , .month =  12 , .day =  1 },
+		.mjd =  51148 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1999 , .month =  12 , .day =  1 },
+		.mjd =  51513 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1980 , .month =  1 , .day =  1 },
+		.mjd =  44239 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1981 , .month =  1 , .day =  1 },
+		.mjd =  44605 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1982 , .month =  1 , .day =  1 },
+		.mjd =  44970 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1983 , .month =  1 , .day =  1 },
+		.mjd =  45335 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1984 , .month =  1 , .day =  1 },
+		.mjd =  45700 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1985 , .month =  1 , .day =  1 },
+		.mjd =  46066 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1986 , .month =  1 , .day =  1 },
+		.mjd =  46431 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1987 , .month =  1 , .day =  1 },
+		.mjd =  46796 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1988 , .month =  1 , .day =  1 },
+		.mjd =  47161 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1989 , .month =  1 , .day =  1 },
+		.mjd =  47527 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1980 , .month =  2 , .day =  1 },
+		.mjd =  44270 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1981 , .month =  2 , .day =  1 },
+		.mjd =  44636 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1982 , .month =  2 , .day =  1 },
+		.mjd =  45001 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1983 , .month =  2 , .day =  1 },
+		.mjd =  45366 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1984 , .month =  2 , .day =  1 },
+		.mjd =  45731 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1985 , .month =  2 , .day =  1 },
+		.mjd =  46097 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1986 , .month =  2 , .day =  1 },
+		.mjd =  46462 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1987 , .month =  2 , .day =  1 },
+		.mjd =  46827 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1988 , .month =  2 , .day =  1 },
+		.mjd =  47192 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1989 , .month =  2 , .day =  1 },
+		.mjd =  47558 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1980 , .month =  3 , .day =  1 },
+		.mjd =  44299 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1981 , .month =  3 , .day =  1 },
+		.mjd =  44664 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1982 , .month =  3 , .day =  1 },
+		.mjd =  45029 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1983 , .month =  3 , .day =  1 },
+		.mjd =  45394 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1984 , .month =  3 , .day =  1 },
+		.mjd =  45760 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1985 , .month =  3 , .day =  1 },
+		.mjd =  46125 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1986 , .month =  3 , .day =  1 },
+		.mjd =  46490 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1987 , .month =  3 , .day =  1 },
+		.mjd =  46855 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1988 , .month =  3 , .day =  1 },
+		.mjd =  47221 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1989 , .month =  3 , .day =  1 },
+		.mjd =  47586 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1980 , .month =  4 , .day =  1 },
+		.mjd =  44330 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1981 , .month =  4 , .day =  1 },
+		.mjd =  44695 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1982 , .month =  4 , .day =  1 },
+		.mjd =  45060 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1983 , .month =  4 , .day =  1 },
+		.mjd =  45425 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1984 , .month =  4 , .day =  1 },
+		.mjd =  45791 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1985 , .month =  4 , .day =  1 },
+		.mjd =  46156 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1986 , .month =  4 , .day =  1 },
+		.mjd =  46521 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1987 , .month =  4 , .day =  1 },
+		.mjd =  46886 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1988 , .month =  4 , .day =  1 },
+		.mjd =  47252 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1989 , .month =  4 , .day =  1 },
+		.mjd =  47617 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1980 , .month =  5 , .day =  1 },
+		.mjd =  44360 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1981 , .month =  5 , .day =  1 },
+		.mjd =  44725 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1982 , .month =  5 , .day =  1 },
+		.mjd =  45090 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1983 , .month =  5 , .day =  1 },
+		.mjd =  45455 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1984 , .month =  5 , .day =  1 },
+		.mjd =  45821 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1985 , .month =  5 , .day =  1 },
+		.mjd =  46186 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1986 , .month =  5 , .day =  1 },
+		.mjd =  46551 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1987 , .month =  5 , .day =  1 },
+		.mjd =  46916 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1988 , .month =  5 , .day =  1 },
+		.mjd =  47282 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1989 , .month =  5 , .day =  1 },
+		.mjd =  47647 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1980 , .month =  6 , .day =  1 },
+		.mjd =  44391 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1981 , .month =  6 , .day =  1 },
+		.mjd =  44756 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1982 , .month =  6 , .day =  1 },
+		.mjd =  45121 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1983 , .month =  6 , .day =  1 },
+		.mjd =  45486 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1984 , .month =  6 , .day =  1 },
+		.mjd =  45852 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1985 , .month =  6 , .day =  1 },
+		.mjd =  46217 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1986 , .month =  6 , .day =  1 },
+		.mjd =  46582 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1987 , .month =  6 , .day =  1 },
+		.mjd =  46947 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1988 , .month =  6 , .day =  1 },
+		.mjd =  47313 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1989 , .month =  6 , .day =  1 },
+		.mjd =  47678 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1980 , .month =  7 , .day =  1 },
+		.mjd =  44421 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1981 , .month =  7 , .day =  1 },
+		.mjd =  44786 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1982 , .month =  7 , .day =  1 },
+		.mjd =  45151 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1983 , .month =  7 , .day =  1 },
+		.mjd =  45516 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1984 , .month =  7 , .day =  1 },
+		.mjd =  45882 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1985 , .month =  7 , .day =  1 },
+		.mjd =  46247 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1986 , .month =  7 , .day =  1 },
+		.mjd =  46612 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1987 , .month =  7 , .day =  1 },
+		.mjd =  46977 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1988 , .month =  7 , .day =  1 },
+		.mjd =  47343 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1989 , .month =  7 , .day =  1 },
+		.mjd =  47708 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1980 , .month =  8 , .day =  1 },
+		.mjd =  44452 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1981 , .month =  8 , .day =  1 },
+		.mjd =  44817 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1982 , .month =  8 , .day =  1 },
+		.mjd =  45182 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1983 , .month =  8 , .day =  1 },
+		.mjd =  45547 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1984 , .month =  8 , .day =  1 },
+		.mjd =  45913 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1985 , .month =  8 , .day =  1 },
+		.mjd =  46278 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1986 , .month =  8 , .day =  1 },
+		.mjd =  46643 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1987 , .month =  8 , .day =  1 },
+		.mjd =  47008 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1988 , .month =  8 , .day =  1 },
+		.mjd =  47374 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1989 , .month =  8 , .day =  1 },
+		.mjd =  47739 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1980 , .month =  9 , .day =  1 },
+		.mjd =  44483 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1981 , .month =  9 , .day =  1 },
+		.mjd =  44848 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1982 , .month =  9 , .day =  1 },
+		.mjd =  45213 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1983 , .month =  9 , .day =  1 },
+		.mjd =  45578 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1984 , .month =  9 , .day =  1 },
+		.mjd =  45944 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1985 , .month =  9 , .day =  1 },
+		.mjd =  46309 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1986 , .month =  9 , .day =  1 },
+		.mjd =  46674 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1987 , .month =  9 , .day =  1 },
+		.mjd =  47039 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1988 , .month =  9 , .day =  1 },
+		.mjd =  47405 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1989 , .month =  9 , .day =  1 },
+		.mjd =  47770 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1980 , .month =  10 , .day =  1 },
+		.mjd =  44513 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1981 , .month =  10 , .day =  1 },
+		.mjd =  44878 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1982 , .month =  10 , .day =  1 },
+		.mjd =  45243 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1983 , .month =  10 , .day =  1 },
+		.mjd =  45608 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1984 , .month =  10 , .day =  1 },
+		.mjd =  45974 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1985 , .month =  10 , .day =  1 },
+		.mjd =  46339 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1986 , .month =  10 , .day =  1 },
+		.mjd =  46704 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1987 , .month =  10 , .day =  1 },
+		.mjd =  47069 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1988 , .month =  10 , .day =  1 },
+		.mjd =  47435 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1989 , .month =  10 , .day =  1 },
+		.mjd =  47800 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1980 , .month =  11 , .day =  1 },
+		.mjd =  44544 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1981 , .month =  11 , .day =  1 },
+		.mjd =  44909 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1982 , .month =  11 , .day =  1 },
+		.mjd =  45274 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1983 , .month =  11 , .day =  1 },
+		.mjd =  45639 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1984 , .month =  11 , .day =  1 },
+		.mjd =  46005 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1985 , .month =  11 , .day =  1 },
+		.mjd =  46370 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1986 , .month =  11 , .day =  1 },
+		.mjd =  46735 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1987 , .month =  11 , .day =  1 },
+		.mjd =  47100 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1988 , .month =  11 , .day =  1 },
+		.mjd =  47466 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1989 , .month =  11 , .day =  1 },
+		.mjd =  47831 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1980 , .month =  12 , .day =  1 },
+		.mjd =  44574 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1981 , .month =  12 , .day =  1 },
+		.mjd =  44939 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1982 , .month =  12 , .day =  1 },
+		.mjd =  45304 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1983 , .month =  12 , .day =  1 },
+		.mjd =  45669 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1984 , .month =  12 , .day =  1 },
+		.mjd =  46035 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1985 , .month =  12 , .day =  1 },
+		.mjd =  46400 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1986 , .month =  12 , .day =  1 },
+		.mjd =  46765 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1987 , .month =  12 , .day =  1 },
+		.mjd =  47130 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1988 , .month =  12 , .day =  1 },
+		.mjd =  47496 ,
+	},
+	{
+		.c = &mon13_gregorian_year_zero,
+		.d = {.year =  1989 , .month =  12 , .day =  1 },
+		.mjd =  47861 ,
+	},
+};
+
 #endif //MON13_KNOWN_H
