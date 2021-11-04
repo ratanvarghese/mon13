@@ -33,9 +33,7 @@ pub const Intercalary = packed struct {
     day_of_leap_year: u16,
     month: u8,
     day: u8,
-    IC_YEAR: bool,
     IC_ERA_START_ALT_NAME: bool,
-    IC_LEAP: bool,
 };
 
 pub const Segment = packed struct {

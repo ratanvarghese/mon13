@@ -40,18 +40,14 @@ var cotsworth_ic = [_:null]?base.Intercalary{
         .day = 29,
         .day_of_year = 28 * 13 + 1,
         .day_of_leap_year = 28 * 13 + 2,
-        .IC_YEAR = true,
         .IC_ERA_START_ALT_NAME = false,
-        .IC_LEAP = false,
     },
     .{
         .month = 6,
         .day = 29,
         .day_of_year = 28 * 6 + 1,
         .day_of_leap_year = 28 * 6 + 1,
-        .IC_YEAR = false,
         .IC_ERA_START_ALT_NAME = false,
-        .IC_LEAP = true,
     },
 };
 
