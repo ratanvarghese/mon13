@@ -13,6 +13,7 @@ pub const julian = base.Cal{
         .leap_days = cal_gr.gregorian.leap_cycle.leap_days,
         .offset_days = cal_gr.gregorian.leap_cycle.offset_days,
         .LEAP_GREGORIAN_SKIP = false,
+        .LEAP_SYMMETRY = false,
     },
     .epoch_mjd = -678577, //1 Jan, 1 AD
     .start_weekday = cal_gr.gregorian.start_weekday,

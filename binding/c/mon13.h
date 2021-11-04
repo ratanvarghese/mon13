@@ -156,6 +156,7 @@ extern const struct mon13_NameList mon13_holocene_names_en_US;
 extern const struct mon13_NameList mon13_cotsworth_names_en_US;
 extern const struct mon13_NameList mon13_julian_names_en_US;
 extern const struct mon13_NameList mon13_positivist_names_en_US;
+extern const struct mon13_NameList mon13_symmetry454_names_en_US;
 
 extern const struct mon13_NameList mon13_gregorian_names_fr_FR;
 extern const struct mon13_NameList mon13_julian_names_fr_FR;
@@ -170,5 +171,6 @@ extern const struct mon13_Cal mon13_holocene;
 extern const struct mon13_Cal mon13_cotsworth;
 extern const struct mon13_Cal mon13_julian;
 extern const struct mon13_Cal mon13_positivist;
+extern const struct mon13_Cal mon13_symmetry454;
 
 #endif //MON13_H

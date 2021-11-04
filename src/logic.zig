@@ -237,8 +237,69 @@ fn diffModifier(bigDiff: i32, smallDiff: i32) i32 {
     return 0;
 }
 
+fn daysInCycle(cal: *const base.Cal) i32 {
+    const lc = cal.*.leap_cycle;
+    const common_cycle: i32 = @intCast(i32, yearLen(false, cal)) * lc.year_count;
+    const leap_cycle = lc.leap_year_count * lc.leap_days;
+    return common_cycle + leap_cycle;
+}
+
 //MJD conversions
-fn mjdToDoy(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
+fn mjdToDoySymmetric(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
+    //Based on http://individual.utoronto.ca/kalendis/Symmetry454-Arithmetic.pdf
+    //FixedToSymYear
+    //Most differences are caused by trying to convert to integer math.
+    const lc = cal.*.leap_cycle;
+    const day_shifted: i64 = @intCast(i64, mjd) - @intCast(i64, cal.*.epoch_mjd);
+    const num: i64 = @intCast(i64, lc.year_count) * day_shifted;
+    const total_cycle = daysInCycle(cal);
+
+    var estimate_y: i64 = @divFloor(num, total_cycle);
+    if (@mod(num, total_cycle) != 0) {
+        estimate_y += 1;
+    }
+
+    if (estimate_y > std.math.maxInt(i32) or estimate_y < std.math.minInt(i32)) {
+        return base.Err.Overflow;
+    }
+    const estimate_start_doy = DoyDate{ .year = @intCast(i32, estimate_y), .doy = 1 };
+    const estimate_start_mjd = try doyToMjd(estimate_start_doy, cal);
+
+    var sym_year = estimate_start_doy.year;
+    var start_mjd = estimate_start_mjd;
+    if (estimate_start_mjd < mjd) {
+        if ((mjd - estimate_start_mjd) >= yearLen(false, cal)) {
+            const next_year = estimate_start_doy.year + 1;
+            const next_start_doy = DoyDate{ .year = next_year, .doy = 1 };
+            const next_start_mjd = try doyToMjd(next_start_doy, cal);
+            if (next_start_mjd <= mjd) {
+                sym_year = next_year;
+                start_mjd = next_start_mjd;
+            }
+        }
+    } else if (estimate_start_mjd > mjd) {
+        const prev_year = estimate_start_doy.year - 1;
+        const prev_start_doy = DoyDate{ .year = prev_year, .doy = 1 };
+        const prev_start_mjd = try doyToMjd(prev_start_doy, cal);
+        sym_year = prev_year;
+        start_mjd = prev_start_mjd;
+    }
+
+    const final_doy = mjd - start_mjd + 1;
+    if (final_doy < 1) {
+        return base.Err.BadCalendar;
+    }
+    if (final_doy > yearLen(isLeap(sym_year, cal), cal)) {
+        return base.Err.BadCalendar;
+    }
+
+    return DoyDate{ .year = sym_year, .doy = @intCast(u16, final_doy) };
+}
+
+fn mjdToDoyCommon(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
+    //Based on "Calendrical Calculations: The Ultimate Edition"
+    //Chapters 1 and 2
+    //Most differences are caused by generalizing across calendars.
     const lc = cal.*.leap_cycle;
 
     var day_shifted: i32 = 0;
@@ -269,32 +330,39 @@ fn mjdToDoy(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
         f_100_rem = @mod(f_400_rem, total_100);
     }
 
-    const common_cycle: i32 = @intCast(i32, yearLen(false, cal)) * lc.year_count;
-    const leap_cycle = lc.leap_year_count * lc.leap_days;
-    const total_cycle = common_cycle + leap_cycle;
+    const total_cycle = daysInCycle(cal);
     const f_cycle_quot = @divFloor(f_100_rem, total_cycle);
     const f_cycle_rem = @mod(f_100_rem, total_cycle);
-    if (lc.leap_year_count > 1) {
-        unreachable;
+    const f_common_quot = @divFloor(f_cycle_rem, yearLen(false, cal));
+    const f_common_rem = @mod(f_cycle_rem, yearLen(false, cal));
+
+    var res: DoyDate = .{ .year = 0, .doy = 0 };
+    res.year = 400 * f_400_quot + 100 * f_100_quot + lc.year_count * f_cycle_quot + f_common_quot;
+    res.year += lc.offset_years;
+
+    if (f_100_quot == lc.year_count or f_common_quot == lc.year_count) {
+        res.doy = yearLen(true, cal);
     } else {
-        const f_common_quot = @divFloor(f_cycle_rem, yearLen(false, cal));
-        const f_common_rem = @mod(f_cycle_rem, yearLen(false, cal));
+        res.year += 1;
+        res.doy = @intCast(u16, f_common_rem + 1);
+    }
+    return res;
+}
 
-        var res: DoyDate = .{ .year = 0, .doy = 0 };
-        res.year = 400 * f_400_quot + 100 * f_100_quot + lc.year_count * f_cycle_quot + f_common_quot;
-        res.year += lc.offset_years;
-
-        if (f_100_quot == lc.year_count or f_common_quot == lc.year_count) {
-            res.doy = yearLen(true, cal);
+fn mjdToDoy(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
+    const lc = cal.*.leap_cycle;
+    if (lc.leap_year_count > 1) {
+        if (lc.LEAP_SYMMETRY) {
+            return mjdToDoySymmetric(mjd, cal);
         } else {
-            res.year += 1;
-            res.doy = @intCast(u16, f_common_rem + 1);
+            return base.Err.BadCalendar;
         }
-        return res;
+    } else {
+        return mjdToDoyCommon(mjd, cal);
     }
 }
 
-fn doyToMjd(doy: DoyDate, cal: *const base.Cal) base.Err!i32 {
+fn yearStartMjdCommon(year: i32, cal: *const base.Cal) base.Err!i32 {
     const lc = cal.*.leap_cycle;
     //Let's make some assumptions about good calendars.
     if (lc.year_count <= lc.leap_year_count) {
@@ -305,7 +373,7 @@ fn doyToMjd(doy: DoyDate, cal: *const base.Cal) base.Err!i32 {
     }
 
     var off_year: i32 = 0;
-    if (@subWithOverflow(i32, doy.year, 1 + lc.offset_years, &off_year)) {
+    if (@subWithOverflow(i32, year, 1 + lc.offset_years, &off_year)) {
         return base.Err.Overflow;
     }
     var common_days: i32 = 0;
@@ -339,6 +407,46 @@ fn doyToMjd(doy: DoyDate, cal: *const base.Cal) base.Err!i32 {
     if (@addWithOverflow(i32, total_days, cal.*.epoch_mjd - 1, &year_start_mjd)) {
         return base.Err.Overflow;
     }
+    return year_start_mjd;
+}
+
+fn yearStartMjdSymmetric(year: i32, cal: *const base.Cal) base.Err!i32 {
+    const lc = cal.*.leap_cycle;
+    const E = year - 1;
+    var common_days: i32 = 0;
+    if (@mulWithOverflow(i32, E, lc.common_days, &common_days)) {
+        return base.Err.Overflow;
+    }
+
+    const leap_num = @intCast(i32, lc.leap_year_count) * E - @intCast(i32, lc.offset_years);
+    const leap_quot = @divFloor(leap_num, lc.year_count);
+    const leap_days = lc.leap_days * leap_quot;
+
+    var total_days: i32 = 0;
+    if (@addWithOverflow(i32, common_days, leap_days, &total_days)) {
+        return base.Err.Overflow;
+    }
+
+    var year_start_mjd: i32 = 0;
+    if (@addWithOverflow(i32, total_days, cal.*.epoch_mjd - 1, &year_start_mjd)) {
+        return base.Err.Overflow;
+    }
+    return year_start_mjd;
+}
+
+fn doyToMjd(doy: DoyDate, cal: *const base.Cal) base.Err!i32 {
+    var year_start_mjd: i32 = 0;
+    const lc = cal.*.leap_cycle;
+    if (lc.leap_year_count > 1) {
+        if (lc.LEAP_SYMMETRY) {
+            year_start_mjd = try yearStartMjdSymmetric(doy.year, cal);
+        } else {
+            return base.Err.BadCalendar;
+        }
+    } else {
+        year_start_mjd = try yearStartMjdCommon(doy.year, cal);
+    }
+
     var res: i32 = 0;
     if (@addWithOverflow(i32, year_start_mjd, doy.doy, &res)) {
         return base.Err.Overflow;
@@ -625,14 +733,15 @@ pub fn addYears(mjd: i32, cal: *const base.Cal, offset: i32) base.Err!i32 {
     if (@addWithOverflow(i32, d_yz.year, offset, &y)) {
         return base.Err.Overflow;
     }
-    const res = base.Date{ .year = y, .month = d_yz.month, .day = d_yz.day };
-    const res_doy = try monthDayToDoy(res, cal);
-    if (valid_assume_yz(res, cal)) {
+    const rolled_d = base.Date{ .year = y, .month = d_yz.month, .day = d_yz.day };
+    if (valid_assume_yz(rolled_d, cal)) {
+        const res_doy = try monthDayToDoy(rolled_d, cal);
         return try doyToMjd(res_doy, cal);
     } else {
-        const sum_doy = DoyDate{ .year = y, .doy = res_doy.doy };
-        const sum_norm_doy = normDoy(sum_doy, cal);
-        return try doyToMjd(sum_norm_doy, cal);
+        const skipped_d = try skipIntercalary(rolled_d, cal);
+        const norm_day = try normDay(skipped_d, cal);
+        const res_doy = try monthDayToDoy(norm_day, cal);
+        return try doyToMjd(res_doy, cal);
     }
 }
 

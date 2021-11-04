@@ -118,3 +118,39 @@ test "Day of Year" {
     const mjd = 383540235;
     try expect((try mon13.mjdToDayOfYear(mjd, c)) < 366);
 }
+
+test "Add Year Error 1" {
+    const mjd0 = -1956022137;
+    const offset = 257;
+    const c = &mon13.tranquility_year_zero;
+    const res = try mon13.addYears(mjd0, c, offset);
+    try expect(res != 0);
+}
+
+test "Day not found? But why?" {
+    const mjd0 = 1890882699;
+    const c = &mon13.symmetry454;
+    var y: i32 = 0;
+    var m: u8 = 0;
+    var d: u8 = 0;
+    try mon13.mjdToYmd(mjd0, c, &y, &m, &d);
+    try expect(m < 13);
+}
+
+test "Bad Calendar? But why?" {
+    const mjd0 = -1347826664;
+    const c = &mon13.symmetry454;
+    var y: i32 = 0;
+    var m: u8 = 0;
+    var d: u8 = 0;
+    try mon13.mjdToYmd(mjd0, c, &y, &m, &d);
+    try expect(m < 13);
+}
+
+test "Date not found? But why?" {
+    const mjd0 = -1786122197;
+    const offset = -305900;
+    const c = &mon13.symmetry454;
+    const res = try mon13.addYears(mjd0, c, offset);
+    try expect(res != 0);
+}

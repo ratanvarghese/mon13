@@ -130,6 +130,9 @@ void print_cal(FILE* f, const void* instance, void* env) {
     else if(c == &mon13_positivist) {
         fprintf(f, "%s", mon13_positivist_names_en_US.calendar_name);
     }
+    else if(c == &mon13_symmetry454) {
+        fprintf(f, "%s", mon13_symmetry454_names_en_US.calendar_name);
+    }
     else {
         fprintf(f, "UNKNOWN");
     }
@@ -192,6 +195,12 @@ enum theft_alloc_res select_gr2ps_positivists_org(struct theft* t, void* env, vo
 enum theft_alloc_res select_gr2mjd_nasa(struct theft* t, void* env, void** instance) {
     uint64_t i = theft_random_choice(t, SIZEOF_ARR(gr2mjd_nasa));
     *instance = (void*)&gr2mjd_nasa[i];
+    return THEFT_ALLOC_OK;
+}
+
+enum theft_alloc_res select_gr2sym454_irv(struct theft* t, void* env, void** instance) {
+    uint64_t i = theft_random_choice(t, SIZEOF_ARR(gr2sym454_irv));
+    *instance = (void*)&gr2sym454_irv[i];
     return THEFT_ALLOC_OK;
 }
 
@@ -502,8 +511,9 @@ enum theft_trial_res ymd_roundtrip(struct theft* t, void* a1, void* a2) {
     int32_t y;
     uint8_t m, d;
 
-    if(mon13_mjdToYmd(*mjd, c, &y, &m, &d)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToYmd(*mjd, c, &y, &m, &d);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     int32_t mjd_res;
@@ -525,7 +535,12 @@ enum theft_trial_res ymd_gr_hl(struct theft* t, void* a1) {
     int status1 = mon13_mjdToYmd(*mjd, cal_hl, &y_hl, &m_hl, &d_hl);
 
     if(status0 || status1) {
-        return THEFT_TRIAL_SKIP;
+        if(status0 == MON13_ERROR_OVERFLOW || status1 == MON13_ERROR_OVERFLOW) {
+            return THEFT_TRIAL_SKIP;
+        }
+        else {
+            return THEFT_TRIAL_FAIL;
+        }
     }
 
     bool md_check = (m_hl == m_gr) && (d_hl == d_gr);
@@ -565,8 +580,9 @@ enum theft_trial_res ymd_null(struct theft* t, void* a1, void* a2) {
         return THEFT_TRIAL_FAIL;
     }
 
-    if(mon13_mjdToYmd(*mjd, c, &y0, &m0, &d0)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToYmd(*mjd, c, &y0, &m0, &d0);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     if(mon13_mjdToYmd(*mjd, c, &y1, NULL, NULL)) {
         return THEFT_TRIAL_FAIL; //If above works, this should work.
@@ -588,8 +604,9 @@ enum theft_trial_res ymd_yz(struct theft* t, void* a1, void* a2, void* a3) {
 
     int32_t y_yz, y_no_yz;
     uint8_t m_yz, m_no_yz, d_yz, d_no_yz;
-    if(mon13_mjdToYmd(*mjd, c_yz, &y_yz, &m_yz, &d_yz)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToYmd(*mjd, c_yz, &y_yz, &m_yz, &d_yz);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     if(mon13_mjdToYmd(*mjd, c_no_yz, &y_no_yz, &m_no_yz, &d_no_yz)) {
         return THEFT_TRIAL_FAIL; //If above works, this should work.
@@ -615,11 +632,13 @@ enum theft_trial_res ymd_same_year(struct theft* t, void* a1, void* a2, void* a3
     const struct mon13_Cal* c1 = a3;
 
     int32_t y0, y1;
-    if(mon13_mjdToYmd(*mjd, c0, &y0, NULL, NULL)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToYmd(*mjd, c0, &y0, NULL, NULL);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToYmd(*mjd, c1, &y1, NULL, NULL)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_mjdToYmd(*mjd, c1, &y1, NULL, NULL);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     return (y1 == y0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
@@ -633,11 +652,13 @@ enum theft_trial_res ymd_add_1day_gr(struct theft* t, void* a1, void* a2) {
 
     int32_t y0, y1;
     uint8_t m0, m1, d0, d1;
-    if(mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     int leap;
@@ -672,11 +693,13 @@ enum theft_trial_res ymd_add_1day_tq(struct theft* t, void* a1, void* a2) {
 
     int32_t y0, y1;
     uint8_t m0, m1, d0, d1;
-    if(mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     int leap;
@@ -718,11 +741,13 @@ enum theft_trial_res ymd_add_1day_ct(struct theft* t, void* a1, void* a2) {
 
     int32_t y0, y1;
     uint8_t m0, m1, d0, d1;
-    if(mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     int leap;
@@ -754,11 +779,13 @@ enum theft_trial_res ymd_add_1day_ps(struct theft* t, void* a1, void* a2) {
 
     int32_t y0, y1;
     uint8_t m0, m1, d0, d1;
-    if(mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     int leap;
@@ -784,20 +811,63 @@ enum theft_trial_res ymd_add_1day_ps(struct theft* t, void* a1, void* a2) {
     return good ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res ymd_add_1day_sym454(struct theft* t, void* a1, void* a2) {
+    const int32_t* mjd0 = a1;
+    const struct mon13_Cal* c = a2;
+
+    int32_t mjd1 = *mjd0 + 1;
+
+    int32_t y0, y1;
+    uint8_t m0, m1, d0, d1;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    int status1 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+
+    int leap;
+    if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    bool good = false;
+    if((m0 == 12 && d0 == 28 && !leap) || (m0 == 12 && d0 == 35 && leap)) {
+        good = add_1day_yearend(y0, y1, m0, m1, d0, d1, false);
+    }
+    else if(m0 != 12 && (((m0 % 3) != 2 && d0 == 28) || ((m0 % 3) == 2 && d0 == 35))) {
+        bool good_d = (d1 == 1);
+        bool good_m = (m1 == (m0 + 1));
+        bool good_y = (y1 == y0);
+        good = good_d && good_m && good_y;
+    }
+    else {
+        bool good_d = (d1 == (d0 + 1));
+        bool good_ym = (y1 == y0 && m1 == m0);
+        good = good_d && good_ym;
+    }
+    return good ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
 enum theft_trial_res add_1month_gr(struct theft* t, void* a1, void* a2) {
     const int32_t* mjd0 = a1;
     const struct mon13_Cal* c = a2;
 
     int32_t y0, y1, mjd1;
     uint8_t m0, m1, d0, d1;
-    if(mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_addMonths(*mjd0, c, 1, &mjd1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_addMonths(*mjd0, c, 1, &mjd1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1)) {
-        return THEFT_TRIAL_SKIP;
+    int status2 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status2) {
+        return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     bool correct_res = false;
@@ -847,14 +917,17 @@ enum theft_trial_res add_1month_tq(struct theft* t, void* a1, void* a2) {
 
     int32_t y0, y1, mjd1;
     uint8_t m0, m1, d0, d1;
-    if(mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_addMonths(*mjd0, c, 1, &mjd1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_addMonths(*mjd0, c, 1, &mjd1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1)) {
-        return THEFT_TRIAL_SKIP;
+    int status2 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status2) {
+        return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     bool correct_res = false;
@@ -898,14 +971,17 @@ enum theft_trial_res add_1month_ct(struct theft* t, void* a1, void* a2) {
 
     int32_t y0, y1, mjd1;
     uint8_t m0, m1, d0, d1;
-    if(mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_addMonths(*mjd0, c, 1, &mjd1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_addMonths(*mjd0, c, 1, &mjd1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1)) {
-        return THEFT_TRIAL_SKIP;
+    int status2 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status2) {
+        return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     bool correct_res = false;
@@ -942,14 +1018,17 @@ enum theft_trial_res add_1month_ps(struct theft* t, void* a1, void* a2) {
 
     int32_t y0, y1, mjd1;
     uint8_t m0, m1, d0, d1;
-    if(mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_addMonths(*mjd0, c, 1, &mjd1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_addMonths(*mjd0, c, 1, &mjd1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1)) {
-        return THEFT_TRIAL_SKIP;
+    int status2 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status2) {
+        return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     bool correct_res = false;
@@ -974,6 +1053,54 @@ enum theft_trial_res add_1month_ps(struct theft* t, void* a1, void* a2) {
     return correct_res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res add_1month_sym454(struct theft* t, void* a1, void* a2) {
+    const int32_t* mjd0 = a1;
+    const struct mon13_Cal* c = a2;
+
+    int32_t y0, y1, mjd1;
+    uint8_t m0, m1, d0, d1;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    int status1 = mon13_addMonths(*mjd0, c, 1, &mjd1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    int status2 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status2) {
+        return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+
+    bool correct_res = false;
+    if(m0 == 13) {
+        if(d0 > 28) {
+            bool correct_year = (y1 == (y0 + 1));
+            bool correct_month = (m1 == 2);
+            bool correct_day = (d1 == (d0 - 28));
+            correct_res = correct_year && correct_month && correct_day;
+        }
+        else {
+            bool correct_year = (y1 == (y0 + 1));
+            bool correct_month = (m1 == 1);
+            bool correct_day = (d1 == d0);
+            correct_res = correct_year && correct_month && correct_day;
+        }
+    }
+    else if(d0 > 28) {
+        bool correct_year = (y1 == y0);
+        bool correct_month = (m1 == (m0 + 2));
+        bool correct_day = (d1 == (d0 - 28));
+        correct_res = correct_year && correct_month && correct_day;
+    }
+    else {
+        bool correct_year = (y1 == y0);
+        bool correct_month = (m1 == (m0 + 1));
+        bool correct_day = (d1 == d0);
+        correct_res = correct_year && correct_month && correct_day;
+    }
+}
+
 enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
     const int32_t* mjd0 = a1;
     const int32_t* offset = a2;
@@ -981,14 +1108,17 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
 
     int32_t y0, y1, mjd1;
     uint8_t m0, m1, d0, d1;
-    if(mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_addYears(*mjd0, c, *offset, &mjd1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_addYears(*mjd0, c, *offset, &mjd1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1)) {
-        return THEFT_TRIAL_SKIP;
+    int status2 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status2) {
+        return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     int leap;
@@ -1001,6 +1131,14 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
             return THEFT_TRIAL_FAIL;
         }
         if(!(m1 == 1 || d1 == 1) && !(m1 == 0 || d1 == 2)) {
+            return THEFT_TRIAL_FAIL;
+        }
+    }
+    else if(c == &mon13_symmetry454 && m0 == 12 && d0 > 28) {
+        if(y1 != ((y0 + *offset) + 1) && y1 != (y0 + *offset)) {
+            return THEFT_TRIAL_FAIL;
+        }
+        if(!(m1 == 1 || d1 == (d0 - 28)) && !(m1 == m0 || d1 == d0)) {
             return THEFT_TRIAL_FAIL;
         }
     }
@@ -1055,11 +1193,13 @@ enum theft_trial_res doy_same(struct theft* t, void* a1, void* a2, void* a3) {
     const struct mon13_Cal* c1 = a3;
 
     int doy0, doy1;
-    if(mon13_mjdToDayOfYear(*mjd, c0, &doy0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToDayOfYear(*mjd, c0, &doy0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToDayOfYear(*mjd, c1, &doy1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_mjdToDayOfYear(*mjd, c1, &doy1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     return (doy1 == doy0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
@@ -1071,11 +1211,13 @@ enum theft_trial_res leap_same(struct theft* t, void* a1, void* a2, void* a3) {
     const struct mon13_Cal* c1 = a3;
 
     int leap0, leap1;
-    if(mon13_mjdToIsLeapYear(*mjd, c0, &leap0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToIsLeapYear(*mjd, c0, &leap0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToIsLeapYear(*mjd, c1, &leap1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_mjdToIsLeapYear(*mjd, c1, &leap1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     return (leap1 == leap0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
@@ -1088,13 +1230,38 @@ enum theft_trial_res leap9(struct theft* t, void* a1, void* a2) {
     int leap_count = 0;
     for(int i = 1; i < 9; i++) {
         int32_t sum;
-        int status = mon13_addYears(*mjd, c, i, &sum);
-        if(status) {
-            return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+        int status0 = mon13_addYears(*mjd, c, i, &sum);
+        if(status0) {
+            return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
         }
         int is_leap;
-        if(mon13_mjdToIsLeapYear(sum, c, &is_leap)) {
-            return THEFT_TRIAL_SKIP;
+        int status1 = mon13_mjdToIsLeapYear(sum, c, &is_leap);
+        if(status1) {
+            return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+        }
+        if(is_leap) {
+            leap_count++;
+        }
+    }
+    bool res = (leap_count == 1) || (leap_count == 2);
+    return res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res leap7(struct theft* t, void* a1, void* a2) {
+    const int32_t* mjd = a1;
+    const struct mon13_Cal* c = a2;
+
+    int leap_count = 0;
+    for(int i = 1; i < 7; i++) {
+        int32_t sum;
+        int status0 = mon13_addYears(*mjd, c, i, &sum);
+        if(status0) {
+            return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+        }
+        int is_leap;
+        int status1 = mon13_mjdToIsLeapYear(sum, c, &is_leap);
+        if(status1) {
+            return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
         }
         if(is_leap) {
             leap_count++;
@@ -1115,12 +1282,14 @@ enum theft_trial_res day_of_week_continuous(struct theft* t, void* a1, void* a2)
     int32_t sum1 = sum0 + 1;
 
     int dow0;
-    if(mon13_mjdToDayOfWeek(sum0, c, &dow0)) {
-        return THEFT_TRIAL_FAIL;
+    int status0 = mon13_mjdToDayOfWeek(sum0, c, &dow0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     int dow1;
-    if(mon13_mjdToDayOfWeek(sum1, c, &dow1)) {
-        return THEFT_TRIAL_FAIL;
+    int status1 = mon13_mjdToDayOfWeek(sum1, c, &dow1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     if(dow0 == MON13_SUNDAY) {
         return dow1 == MON13_MONDAY ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
@@ -1140,8 +1309,9 @@ enum theft_trial_res day_of_week_tq(struct theft* t, void* a1, void* a2) {
     }
 
     int dow;
-    if(mon13_mjdToDayOfWeek(*mjd, c, &dow)) {
-        return THEFT_TRIAL_FAIL;
+    int status = mon13_mjdToDayOfWeek(*mjd, c, &dow);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     int expected;
     if(m == 0) {
@@ -1167,13 +1337,14 @@ enum theft_trial_res day_of_week_same(struct theft* t, void* a1, void* a2, void*
     const struct mon13_Cal* c0 = a2;
     const struct mon13_Cal* c1 = a2;
 
-    int dow0;
-    if(mon13_mjdToDayOfWeek(*mjd, c0, &dow0)) {
-        return THEFT_TRIAL_SKIP;
+    int dow0, dow1;
+    int status0 = mon13_mjdToDayOfWeek(*mjd, c0, &dow0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    int dow1;
-    if(mon13_mjdToDayOfWeek(*mjd, c1, &dow1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_mjdToDayOfWeek(*mjd, c1, &dow1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     return (dow0 == dow1) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
@@ -1184,13 +1355,14 @@ enum theft_trial_res day_of_year_add_one(struct theft* t, void* a1, void* a2) {
 
     int32_t sum = *mjd + 1;
 
-    int doy0;
-    if(mon13_mjdToDayOfYear(*mjd, c, &doy0)) {
-        return THEFT_TRIAL_SKIP;
+    int doy0, doy1;
+    int status0 = mon13_mjdToDayOfYear(*mjd, c, &doy0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    int doy1;
-    if(mon13_mjdToDayOfYear(sum, c, &doy1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_mjdToDayOfYear(sum, c, &doy1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     int leap;
     if(mon13_mjdToIsLeapYear(*mjd, c, &leap)) {
@@ -1209,6 +1381,35 @@ enum theft_trial_res day_of_year_add_one(struct theft* t, void* a1, void* a2) {
     return res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res day_of_year_add_one_sym454(struct theft* t, void* a1, void* a2) {
+    const int32_t* mjd = a1;
+    const struct mon13_Cal* c = a2;
+
+    int32_t sum = *mjd + 1;
+
+    int doy0, doy1;
+    int status0 = mon13_mjdToDayOfYear(*mjd, c, &doy0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    int status1 = mon13_mjdToDayOfYear(sum, c, &doy1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    int leap;
+    if(mon13_mjdToIsLeapYear(*mjd, c, &leap)) {
+        return THEFT_TRIAL_FAIL;
+    }
+    bool res = false;
+    if(doy0 < 364 || (leap && doy0 < 371)) {
+        res = (doy1 == (doy0 + 1));
+    }
+    else if((doy0 == 364 && !leap) || (doy0 == 371 && leap)) {
+        res = (doy1 == 1);
+    }
+    return res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
 enum theft_trial_res diff_months_roundtrip(struct theft* t, void* a1, void* a2, void* a3) {
     const int32_t* mjd_raw0 = a1;
     const int32_t* mjd_raw1 = a2;
@@ -1216,11 +1417,13 @@ enum theft_trial_res diff_months_roundtrip(struct theft* t, void* a1, void* a2, 
 
     int32_t raw_y0, raw_y1;
     uint8_t raw_m0, raw_m1, raw_d0, raw_d1;
-    if(mon13_mjdToYmd(*mjd_raw0, cal, &raw_y0, &raw_m0, &raw_d0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToYmd(*mjd_raw0, cal, &raw_y0, &raw_m0, &raw_d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToYmd(*mjd_raw1, cal, &raw_y1, &raw_m1, &raw_d1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_mjdToYmd(*mjd_raw1, cal, &raw_y1, &raw_m1, &raw_d1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     if(raw_m0 == 0 || raw_d0 > 28 || raw_m1 == 0 || raw_d1 > 28) {
         return THEFT_TRIAL_SKIP;
@@ -1228,20 +1431,20 @@ enum theft_trial_res diff_months_roundtrip(struct theft* t, void* a1, void* a2, 
 
     int32_t mjd0 = *mjd_raw0;
     int32_t mjd1;
-    if(mon13_mjdFromYmd(cal, raw_y1, raw_m1, raw_d0, &mjd1)) {
-        return THEFT_TRIAL_SKIP;
+    int status2 = mon13_mjdFromYmd(cal, raw_y1, raw_m1, raw_d0, &mjd1);
+    if(status2) {
+        return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     int status;
     int32_t diff;
-    status = mon13_diffMonths(mjd0, mjd1, cal, &diff);
-    if(status) {
-        return THEFT_TRIAL_SKIP;
+    int status3 = mon13_diffMonths(mjd0, mjd1, cal, &diff);
+    if(status3) {
+        return (status3 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     int32_t mjd2;
-    status = mon13_addMonths(mjd1, cal, diff, &mjd2);
-    if(status) {
+    if(mon13_addMonths(mjd1, cal, diff, &mjd2)) {
         return THEFT_TRIAL_FAIL;
     }
 
@@ -1265,11 +1468,13 @@ enum theft_trial_res diff_months_small_day(struct theft* t, void* a1, void* a2, 
     int32_t sum0 = *mjd + *offset;
     int32_t sum1 = *mjd - *offset;
     int32_t diff0, diff1;
-    if(mon13_diffMonths(*mjd, sum0, c, &diff0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_diffMonths(*mjd, sum0, c, &diff0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_diffMonths(*mjd, sum1, c, &diff1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_diffMonths(*mjd, sum1, c, &diff1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     return (diff0 == 0 && diff1 == 0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
@@ -1281,11 +1486,13 @@ enum theft_trial_res diff_years_roundtrip(struct theft* t, void* a1, void* a2, v
 
     int32_t raw_y0, raw_y1;
     uint8_t raw_m0, raw_m1, raw_d0, raw_d1;
-    if(mon13_mjdToYmd(*mjd_raw0, cal, &raw_y0, &raw_m0, &raw_d0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_mjdToYmd(*mjd_raw0, cal, &raw_y0, &raw_m0, &raw_d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_mjdToYmd(*mjd_raw1, cal, &raw_y1, &raw_m1, &raw_d1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_mjdToYmd(*mjd_raw1, cal, &raw_y1, &raw_m1, &raw_d1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     if(raw_m0 == 0 || raw_d0 > 28 || raw_m1 == 0 || raw_d1 > 28) {
         return THEFT_TRIAL_SKIP;
@@ -1330,11 +1537,13 @@ enum theft_trial_res diff_years_small_day(struct theft* t, void* a1, void* a2, v
     int32_t sum0 = *mjd + *offset;
     int32_t sum1 = *mjd - *offset;
     int32_t diff0, diff1;
-    if(mon13_diffYears(*mjd, sum0, c, &diff0)) {
-        return THEFT_TRIAL_SKIP;
+    int status0 = mon13_diffYears(*mjd, sum0, c, &diff0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    if(mon13_diffYears(*mjd, sum1, c, &diff1)) {
-        return THEFT_TRIAL_SKIP;
+    int status1 = mon13_diffYears(*mjd, sum1, c, &diff1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     return (diff0 == 0 && diff1 == 0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
@@ -1373,8 +1582,9 @@ enum theft_trial_res format_weekday(struct theft* t, void* a1, void* a2, void* a
     const char* placeholder = a3;
 
     int day;
-    if(mon13_mjdToDayOfWeek(*mjd, nc->c, &day)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToDayOfWeek(*mjd, nc->c, &day);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     char buf[100];
@@ -1382,7 +1592,7 @@ enum theft_trial_res format_weekday(struct theft* t, void* a1, void* a2, void* a
 
     int res = mon13_format(*mjd, nc->c, nc->n, "%A", buf, 100);
     if(res < 0) {
-        return THEFT_TRIAL_SKIP;
+        return THEFT_TRIAL_FAIL;
     }
     if(day == MON13_NO_WEEKDAY) {
         const char* expected_ic = contained_ic(buf, nc->n, 100, *placeholder);
@@ -1400,8 +1610,9 @@ enum theft_trial_res format_month(struct theft* t, void* a1, void* a2, void* a3)
     const char* placeholder = a3;
 
     uint8_t m;
-    if(mon13_mjdToYmd(*mjd, nc->c, NULL, &m, NULL)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToYmd(*mjd, nc->c, NULL, &m, NULL);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     char buf[100];
@@ -1409,7 +1620,7 @@ enum theft_trial_res format_month(struct theft* t, void* a1, void* a2, void* a3)
 
     int res = mon13_format(*mjd, nc->c, nc->n, "%B", buf, 100);
     if(res < 0) {
-        return THEFT_TRIAL_SKIP;
+        return THEFT_TRIAL_FAIL;
     }
     if(m == 0) {
         const char* expected_ic = contained_ic(buf, nc->n, 100, *placeholder);
@@ -1427,8 +1638,9 @@ enum theft_trial_res format_day_of_month(struct theft* t, void* a1, void* a2, vo
     const char* placeholder = a3;
 
     uint8_t d;
-    if(mon13_mjdToYmd(*mjd, nc->c, NULL, NULL, &d)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToYmd(*mjd, nc->c, NULL, NULL, &d);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     char buf[4];
@@ -1436,7 +1648,7 @@ enum theft_trial_res format_day_of_month(struct theft* t, void* a1, void* a2, vo
 
     int res = mon13_format(*mjd, nc->c, nc->n, "%d", buf, 4);
     if(res < 0) {
-        return THEFT_TRIAL_SKIP;
+        return THEFT_TRIAL_FAIL;
     }
     char* endptr = buf;
     long parsed = strtol(buf, &endptr, 10);
@@ -1479,8 +1691,9 @@ enum theft_trial_res format_doy(struct theft* t, void* a1, void* a2, void* a3) {
     const char* placeholder = a3;
 
     int doy;
-    if(mon13_mjdToDayOfYear(*mjd, nc->c, &doy)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToDayOfYear(*mjd, nc->c, &doy);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     
     char buf[5];
@@ -1488,7 +1701,7 @@ enum theft_trial_res format_doy(struct theft* t, void* a1, void* a2, void* a3) {
 
     int res = mon13_format(*mjd, nc->c, nc->n, "%j", buf, 5);
     if(res < 0) {
-        return THEFT_TRIAL_SKIP;
+        return THEFT_TRIAL_FAIL;
     }
     char* endptr = buf;
     long parsed = strtol(buf, &endptr, 10);
@@ -1507,8 +1720,9 @@ enum theft_trial_res format_month_number(struct theft* t, void* a1, void* a2, vo
     const char* placeholder = a3;
 
     uint8_t m;
-    if(mon13_mjdToYmd(*mjd, nc->c, NULL, &m, NULL)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToYmd(*mjd, nc->c, NULL, &m, NULL);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     char buf[5];
@@ -1516,7 +1730,7 @@ enum theft_trial_res format_month_number(struct theft* t, void* a1, void* a2, vo
 
     int res = mon13_format(*mjd, nc->c, nc->n, "%m", buf, 5);
     if(res < 0) {
-        return THEFT_TRIAL_SKIP;
+        return THEFT_TRIAL_FAIL;
     }
     char* endptr = buf;
     long parsed = strtol(buf, &endptr, 10);
@@ -1564,8 +1778,9 @@ enum theft_trial_res format_era(struct theft* t, void* a1, void* a2, void* a3) {
 
     int32_t y;
     uint8_t m;
-    if(mon13_mjdToYmd(*mjd, nc->c, &y, &m, NULL)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToYmd(*mjd, nc->c, &y, &m, NULL);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     if(m == 0) {
@@ -1624,8 +1839,9 @@ enum theft_trial_res format_weekday_number(struct theft* t, void* a1, void* a2, 
     const char* placeholder = a3;
 
     int weekday;
-    if(mon13_mjdToDayOfWeek(*mjd, nc->c, &weekday)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToDayOfWeek(*mjd, nc->c, &weekday);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     char buf[3];
@@ -1649,8 +1865,9 @@ enum theft_trial_res format_year(struct theft* t, void* a1, void* a2, void* a3) 
     const char* placeholder = a3;
 
     int32_t y;
-    if(mon13_mjdToYmd(*mjd, nc->c, &y, NULL, NULL)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToYmd(*mjd, nc->c, &y, NULL, NULL);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     char buf[100];
@@ -1680,8 +1897,9 @@ enum theft_trial_res format_strftime(struct theft* t, void* a1, void* a2, void* 
     const struct mon13_NameList* n = &mon13_gregorian_names_en_US;
 
     int64_t u0;
-    if(mon13_mjdToUnix(*mjd, &u0)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToUnix(*mjd, &u0);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     time_t unix0 = u0;
     const struct tm* gmt_u = gmtime(&unix0);
@@ -1711,8 +1929,9 @@ enum theft_trial_res format_numeric_padding(struct theft* t, void* a1, void* a2,
 
     int32_t y;
     uint8_t m, d;
-    if(mon13_mjdToYmd(*mjd, nc->c, &y, &m, &d)) {
-        return THEFT_TRIAL_SKIP;
+    int status = mon13_mjdToYmd(*mjd, nc->c, &y, &m, &d);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
     char flag = fmt[1];
@@ -1930,6 +2149,10 @@ struct theft_type_info gr2ps_positivists_org_info = {
 
 struct theft_type_info gr2mjd_nasa_info = {
     .alloc = select_gr2mjd_nasa, //nothing to free
+};
+
+struct theft_type_info gr2sym454_irv_info = {
+    .alloc = select_gr2sym454_irv, //nothing to free
     .print = print_known
 };
 
@@ -1978,6 +2201,12 @@ struct theft_type_info jl_cal_info = {
 struct theft_type_info ps_cal_info = {
     .alloc = select_env, //nothing to free
     .env = (void*)&mon13_positivist,
+    .print = print_cal
+};
+
+struct theft_type_info sym454_cal_info = {
+    .alloc = select_env, //nothing to free
+    .env = (void*)&mon13_symmetry454,
     .print = print_cal
 };
 
@@ -2143,6 +2372,13 @@ int main(int argc, char** argv) {
             .trials = SIZEOF_ARR(gr2mjd_nasa)
         },
         {
+            .name = "mon13_mjdFromYmd: Gregorian Year 0<->Symmetry454",
+            .prop1 = fromYmd_known,
+            .type_info = {&gr2sym454_irv_info},
+            .seed = seed,
+            .trials = SIZEOF_ARR(gr2sym454_irv)
+        },
+        {
             .name = "mon13_mjd*Ymd: Roundtrip",
             .prop2 = ymd_roundtrip,
             .type_info = {
@@ -2281,12 +2517,31 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_mjdToYmd: Add 1 Day, Symmetry454",
+            .prop2 = ymd_add_1day_sym454,
+            .type_info = {
+                &mjd_info,
+                &sym454_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_mjdToDayOfYear: Gregorian Year 0<->Positivist same doy",
             .prop3 = doy_same,
             .type_info = {
                 &mjd_info,
                 &gr_year0_cal_info,
                 &ps_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToDayOfYear: Gregorian Year 0<->Cotsworth same doy",
+            .prop3 = doy_same,
+            .type_info = {
+                &mjd_info,
+                &gr_year0_cal_info,
+                &ct_cal_info
             },
             .seed = seed
         },
@@ -2356,6 +2611,15 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_mjdToIsLeapYear: Symmetry454 leap count",
+            .prop2 = leap7,
+            .type_info = {
+                &mjd_info,
+                &sym454_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_mjdToDayOfWeek: Gregorian Year 0",
             .prop2 = day_of_week_continuous,
             .type_info = {
@@ -2404,6 +2668,16 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_mjdToDayOfWeek: Gregorian Year 0<->Symmetry454 same",
+            .prop3 = day_of_week_same,
+            .type_info = {
+                &mjd_info,
+                &gr_year0_cal_info,
+                &sym454_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_mjdToDayOfYear: Gregorian Year 0",
             .prop2 = day_of_year_add_one,
             .type_info = {
@@ -2418,6 +2692,15 @@ int main(int argc, char** argv) {
             .type_info = {
                 &mjd_info,
                 &gr_year0_cal_info,
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToDayOfYear: Symmetry454",
+            .prop2 = day_of_year_add_one_sym454,
+            .type_info = {
+                &mjd_info,
+                &sym454_cal_info,
             },
             .seed = seed
         },
@@ -2490,6 +2773,15 @@ int main(int argc, char** argv) {
             .type_info = {
                 &mjd_info,
                 &ps_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_addMonths: Add 1 Month, Symmetry454",
+            .prop2 = add_1month_sym454,
+            .type_info = {
+                &mjd_info,
+                &sym454_cal_info
             },
             .seed = seed
         },

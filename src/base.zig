@@ -53,6 +53,7 @@ pub const LeapCycleInfo = packed struct {
     common_days: u16,
     leap_days: u16,
     LEAP_GREGORIAN_SKIP: bool,
+    LEAP_SYMMETRY: bool,
 };
 
 pub const Cal = extern struct {

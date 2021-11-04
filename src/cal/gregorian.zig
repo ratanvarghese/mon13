@@ -46,6 +46,7 @@ pub const gregorian = base.Cal{
         .leap_days = gen.leapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
         .offset_days = 0,
         .LEAP_GREGORIAN_SKIP = true,
+        .LEAP_SYMMETRY = false,
     },
     .start_weekday = base.Weekday.MON13_NO_WEEKDAY,
     .epoch_mjd = -678575, //1 Jan, 1 CE

@@ -74,6 +74,7 @@ pub const tranquility = base.Cal{
         .leap_days = gen.leapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
         .offset_days = 11323,
         .LEAP_GREGORIAN_SKIP = true,
+        .LEAP_SYMMETRY = false,
     },
     .epoch_mjd = 40423, //1 day after Moon Landing Day
     .start_weekday = base.Weekday.MON13_FRIDAY,
