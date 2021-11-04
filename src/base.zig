@@ -11,15 +11,15 @@ pub const Err = error{
     InvalidDate,
 };
 
-pub const Weekday = extern enum {
-    MON13_NO_WEEKDAY = 0,
-    MON13_MONDAY = 1,
-    MON13_TUESDAY = 2,
-    MON13_WEDNESDAY = 3,
-    MON13_THURSDAY = 4,
-    MON13_FRIDAY = 5,
-    MON13_SATURDAY = 6,
-    MON13_SUNDAY = 7,
+pub const Weekday = enum(u4) {
+    NoWeekday = 0,
+    Monday = 1,
+    Tuesday = 2,
+    Wednesday = 3,
+    Thursday = 4,
+    Friday = 5,
+    Saturday = 6,
+    Sunday = 7,
 };
 
 pub const Date = struct {
@@ -54,18 +54,22 @@ pub const LeapCycleInfo = packed struct {
     symmetric: bool,
 };
 
+pub const WeekInfo = packed struct {
+    length: u4,
+    start: Weekday,
+    continuous: bool,
+};
+
 pub const Cal = extern struct {
     intercalary_list: ?[*:null]const ?Intercalary,
     common_lookup_list: [*:null]const ?Segment,
     leap_lookup_list: [*:null]const ?Segment,
     leap_cycle: LeapCycleInfo,
+    week: WeekInfo,
     epoch_mjd: i32,
-    start_weekday: Weekday,
-    week_length: u8,
     common_month_max: u8,
     leap_month_max: u8,
     year0: bool,
-    CAL_PERENNIAL: bool,
 };
 
 pub const NameList = extern struct {

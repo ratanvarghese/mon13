@@ -49,11 +49,13 @@ pub const symmetry454 = base.Cal{
         .skip100 = false,
         .symmetric = true,
     },
+    .week = .{
+        .start = base.Weekday.Monday,
+        .length = cal_gr.gregorian.week.length,
+        .continuous = true,
+    },
     .epoch_mjd = cal_gr.gregorian.epoch_mjd,
-    .start_weekday = base.Weekday.MON13_MONDAY,
-    .week_length = cal_gr.gregorian.week_length,
     .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
     .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
     .year0 = true,
-    .CAL_PERENNIAL = true,
 };

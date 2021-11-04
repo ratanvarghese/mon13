@@ -70,11 +70,13 @@ pub const positivist = base.Cal{
         .skip100 = true,
         .symmetric = false,
     },
+    .week = .{
+        .start = base.Weekday.Monday,
+        .length = cal_gr.gregorian.week.length,
+        .continuous = false,
+    },
     .epoch_mjd = -25520, //1 Jan, 1789 CE
-    .start_weekday = base.Weekday.MON13_MONDAY,
-    .week_length = cal_gr.gregorian.week_length,
     .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
     .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
     .year0 = true,
-    .CAL_PERENNIAL = true,
 };

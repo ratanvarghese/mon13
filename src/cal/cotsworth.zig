@@ -59,11 +59,13 @@ pub const cotsworth = base.Cal{
     .common_lookup_list = @as([*:null]?base.Segment, &common_var),
     .leap_lookup_list = @as([*:null]?base.Segment, &leap_var),
     .leap_cycle = cal_gr.gregorian.leap_cycle,
+    .week = .{
+        .start = base.Weekday.Sunday,
+        .length = cal_gr.gregorian.week.length,
+        .continuous = false,
+    },
     .epoch_mjd = cal_gr.gregorian.epoch_mjd,
-    .start_weekday = base.Weekday.MON13_SUNDAY,
-    .week_length = cal_gr.gregorian.week_length,
     .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
     .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
     .year0 = true,
-    .CAL_PERENNIAL = true,
 };

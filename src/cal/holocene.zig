@@ -6,11 +6,9 @@ pub const holocene = base.Cal{
     .common_lookup_list = cal_gr.gregorian.common_lookup_list,
     .leap_lookup_list = cal_gr.gregorian.leap_lookup_list,
     .leap_cycle = cal_gr.gregorian.leap_cycle,
+    .week = cal_gr.gregorian.week,
     .epoch_mjd = -4331000, //1 Jan, 1 HE
-    .start_weekday = cal_gr.gregorian.start_weekday,
-    .week_length = cal_gr.gregorian.week_length,
     .common_month_max = cal_gr.gregorian.common_month_max,
     .leap_month_max = cal_gr.gregorian.leap_month_max,
     .year0 = true,
-    .CAL_PERENNIAL = cal_gr.gregorian.CAL_PERENNIAL,
 };

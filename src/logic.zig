@@ -498,22 +498,23 @@ fn noYzToValidYz(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
 
 //Day of Week
 fn getDayOfWeek(d: base.Date, cal: *const base.Cal) base.Err!base.Weekday {
-    if (cal.*.CAL_PERENNIAL) {
-        if (seekIc(d, cal)) |ic| {
-            return base.Weekday.MON13_NO_WEEKDAY;
-        }
-
-        const f_week_rem = @mod(d.day, cal.*.week_length);
-        const shifted_f_week_rem = f_week_rem + @enumToInt(cal.*.start_weekday) - 1;
-        const res = clockModulo(@intCast(i32, shifted_f_week_rem), cal.*.week_length);
-        return @intToEnum(base.Weekday, @intCast(u8, res));
-    } else {
+    const w = cal.*.week;
+    if (cal.week.continuous) {
         const d_doy = try monthDayToDoy(d, cal);
         const d_mjd = try doyToMjd(d_doy, cal);
-        const f_week_rem = @mod(d_mjd, cal.*.week_length);
-        const shifted_f_week_rem = f_week_rem + @enumToInt(base.Weekday.MON13_WEDNESDAY);
-        const res = clockModulo(@intCast(i32, shifted_f_week_rem), cal.*.week_length);
-        return @intToEnum(base.Weekday, @intCast(u8, res));
+        const f_week_rem = @mod(d_mjd, w.length);
+        const shifted_f_week_rem = f_week_rem + @enumToInt(base.Weekday.Wednesday);
+        const res = clockModulo(@intCast(i32, shifted_f_week_rem), w.length);
+        return @intToEnum(base.Weekday, @intCast(u4, res));
+    } else {
+        if (seekIc(d, cal)) |ic| {
+            return base.Weekday.NoWeekday;
+        }
+
+        const f_week_rem = @mod(d.day, w.length);
+        const shifted_f_week_rem = f_week_rem + @enumToInt(w.start) - 1;
+        const res = clockModulo(@intCast(i32, shifted_f_week_rem), w.length);
+        return @intToEnum(base.Weekday, @intCast(u4, res));
     }
 }
 

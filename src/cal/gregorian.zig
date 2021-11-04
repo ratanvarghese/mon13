@@ -48,13 +48,15 @@ pub const gregorian = base.Cal{
         .skip100 = true,
         .symmetric = false,
     },
-    .start_weekday = base.Weekday.MON13_NO_WEEKDAY,
+    .week = .{
+        .start = base.Weekday.NoWeekday,
+        .length = 7,
+        .continuous = true,
+    },
     .epoch_mjd = -678575, //1 Jan, 1 CE
-    .week_length = 7,
     .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
     .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
     .year0 = false,
-    .CAL_PERENNIAL = false,
 };
 
 pub const gregorian_year_zero = base.Cal{
@@ -62,11 +64,9 @@ pub const gregorian_year_zero = base.Cal{
     .common_lookup_list = gregorian.common_lookup_list,
     .leap_lookup_list = gregorian.leap_lookup_list,
     .leap_cycle = gregorian.leap_cycle,
+    .week = gregorian.week,
     .epoch_mjd = gregorian.epoch_mjd,
-    .start_weekday = gregorian.start_weekday,
-    .week_length = gregorian.week_length,
     .common_month_max = gregorian.common_month_max,
     .leap_month_max = gregorian.leap_month_max,
     .year0 = true,
-    .CAL_PERENNIAL = gregorian.CAL_PERENNIAL,
 };
