@@ -87,6 +87,10 @@ const struct name_cal name_cal_list[] = {
 		.c = &mon13_symmetry454,
 		.n = &mon13_symmetry454_names_en_US,
 	},
+	{
+		.c = &mon13_symmetry010,
+		.n = &mon13_symmetry010_names_en_US,
+	},
 };
 
 const struct mon13_Cal* cal_list[] = {
@@ -98,7 +102,8 @@ const struct mon13_Cal* cal_list[] = {
     &mon13_cotsworth,
     &mon13_julian,
     &mon13_positivist,
-    &mon13_symmetry454
+    &mon13_symmetry454,
+    &mon13_symmetry010
 };
 
 //Tranquility & Gregorian conversions

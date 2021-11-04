@@ -9,6 +9,7 @@ pub export const mon13_cotsworth = mon13.cotsworth;
 pub export const mon13_julian = mon13.julian;
 pub export const mon13_positivist = mon13.positivist;
 pub export const mon13_symmetry454 = mon13.symmetry454;
+pub export const mon13_symmetry010 = mon13.symmetry010;
 
 pub export const mon13_gregorian_names_en_US = mon13.gregorian_names_en_US;
 pub export const mon13_tranquility_names_en_US = mon13.tranquility_names_en_US;
@@ -17,6 +18,7 @@ pub export const mon13_cotsworth_names_en_US = mon13.cotsworth_names_en_US;
 pub export const mon13_julian_names_en_US = mon13.julian_names_en_US;
 pub export const mon13_positivist_names_en_US = mon13.positivist_names_en_US;
 pub export const mon13_symmetry454_names_en_US = mon13.symmetry454_names_en_US;
+pub export const mon13_symmetry010_names_en_US = mon13.symmetry010_names_en_US;
 
 pub export const mon13_gregorian_names_fr_FR = mon13.gregorian_names_fr_FR;
 pub export const mon13_julian_names_fr_FR = mon13.julian_names_fr_FR;

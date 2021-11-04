@@ -133,6 +133,9 @@ void print_cal(FILE* f, const void* instance, void* env) {
     else if(c == &mon13_symmetry454) {
         fprintf(f, "%s", mon13_symmetry454_names_en_US.calendar_name);
     }
+    else if(c == &mon13_symmetry010) {
+        fprintf(f, "%s", mon13_symmetry010_names_en_US.calendar_name);
+    }
     else {
         fprintf(f, "UNKNOWN");
     }
@@ -851,6 +854,46 @@ enum theft_trial_res ymd_add_1day_sym454(struct theft* t, void* a1, void* a2) {
     return good ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res ymd_add_1day_sym010(struct theft* t, void* a1, void* a2) {
+    const int32_t* mjd0 = a1;
+    const struct mon13_Cal* c = a2;
+
+    int32_t mjd1 = *mjd0 + 1;
+
+    int32_t y0, y1;
+    uint8_t m0, m1, d0, d1;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    int status1 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+
+    int leap;
+    if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    bool good = false;
+    if((m0 == 12 && d0 == 30 && !leap) || (m0 == 12 && d0 == 37 && leap)) {
+        good = add_1day_yearend(y0, y1, m0, m1, d0, d1, false);
+    }
+    else if(m0 != 12 && (((m0 % 3) != 2 && d0 == 30) || ((m0 % 3) == 2 && d0 == 31))) {
+        bool good_d = (d1 == 1);
+        bool good_m = (m1 == (m0 + 1));
+        bool good_y = (y1 == y0);
+        good = good_d && good_m && good_y;
+    }
+    else {
+        bool good_d = (d1 == (d0 + 1));
+        bool good_ym = (y1 == y0 && m1 == m0);
+        good = good_d && good_ym;
+    }
+    return good ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
 enum theft_trial_res add_1month_gr(struct theft* t, void* a1, void* a2) {
     const int32_t* mjd0 = a1;
     const struct mon13_Cal* c = a2;
@@ -1101,6 +1144,54 @@ enum theft_trial_res add_1month_sym454(struct theft* t, void* a1, void* a2) {
     }
 }
 
+enum theft_trial_res add_1month_sym010(struct theft* t, void* a1, void* a2) {
+    const int32_t* mjd0 = a1;
+    const struct mon13_Cal* c = a2;
+
+    int32_t y0, y1, mjd1;
+    uint8_t m0, m1, d0, d1;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    int status1 = mon13_addMonths(*mjd0, c, 1, &mjd1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    int status2 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status2) {
+        return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+
+    bool correct_res = false;
+    if(m0 == 13) {
+        if(d0 > 30) {
+            bool correct_year = (y1 == (y0 + 1));
+            bool correct_month = (m1 == 2);
+            bool correct_day = (d1 == (d0 - 30));
+            correct_res = correct_year && correct_month && correct_day;
+        }
+        else {
+            bool correct_year = (y1 == (y0 + 1));
+            bool correct_month = (m1 == 1);
+            bool correct_day = (d1 == d0);
+            correct_res = correct_year && correct_month && correct_day;
+        }
+    }
+    else if(d0 > 30) {
+        bool correct_year = (y1 == y0);
+        bool correct_month = (m1 == (m0 + 2));
+        bool correct_day = (d1 == (d0 - 30));
+        correct_res = correct_year && correct_month && correct_day;
+    }
+    else {
+        bool correct_year = (y1 == y0);
+        bool correct_month = (m1 == (m0 + 1));
+        bool correct_day = (d1 == d0);
+        correct_res = correct_year && correct_month && correct_day;
+    }
+}
+
 enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
     const int32_t* mjd0 = a1;
     const int32_t* offset = a2;
@@ -1139,6 +1230,14 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
             return THEFT_TRIAL_FAIL;
         }
         if(!(m1 == 1 || d1 == (d0 - 28)) && !(m1 == m0 || d1 == d0)) {
+            return THEFT_TRIAL_FAIL;
+        }
+    }
+    else if(c == &mon13_symmetry010 && m0 == 12 && d0 > 30) {
+        if(y1 != ((y0 + *offset) + 1) && y1 != (y0 + *offset)) {
+            return THEFT_TRIAL_FAIL;
+        }
+        if(!(m1 == 1 || d1 == (d0 - 30)) && !(m1 == m0 || d1 == d0)) {
             return THEFT_TRIAL_FAIL;
         }
     }
@@ -2210,6 +2309,12 @@ struct theft_type_info sym454_cal_info = {
     .print = print_cal
 };
 
+struct theft_type_info sym010_cal_info = {
+    .alloc = select_env, //nothing to free
+    .env = (void*)&mon13_symmetry010,
+    .print = print_cal
+};
+
 struct theft_type_info random_cal_info = {
     .alloc = select_random_cal, //nothing to free
     .print = print_cal
@@ -2445,6 +2550,16 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_mjdToYmd: Symmetry454<->Symmetry010",
+            .prop3 = ymd_same_year,
+            .type_info = {
+                &mjd_info,
+                &sym454_cal_info,
+                &sym010_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_mjdToYmd: Add 1 Day, Gregorian Year 0",
             .prop2 = ymd_add_1day_gr,
             .type_info = {
@@ -2526,6 +2641,15 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_mjdToYmd: Add 1 Day, Symmetry010",
+            .prop2 = ymd_add_1day_sym010,
+            .type_info = {
+                &mjd_info,
+                &sym010_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_mjdToDayOfYear: Gregorian Year 0<->Positivist same doy",
             .prop3 = doy_same,
             .type_info = {
@@ -2546,6 +2670,16 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_mjdToDayOfYear: Symmetry454<->Symmetry010 same doy",
+            .prop3 = doy_same,
+            .type_info = {
+                &mjd_info,
+                &sym454_cal_info,
+                &sym010_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_mjdToIsLeapYear: Gregorian Year 0<->Cotsworth same leap",
             .prop3 = leap_same,
             .type_info = {
@@ -2562,6 +2696,16 @@ int main(int argc, char** argv) {
                 &mjd_info,
                 &gr_year0_cal_info,
                 &ps_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToIsLeapYear: Symmetry454<->Symmetry010",
+            .prop3 = leap_same,
+            .type_info = {
+                &mjd_info,
+                &sym454_cal_info,
+                &sym010_cal_info
             },
             .seed = seed
         },
@@ -2678,6 +2822,16 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_mjdToDayOfWeek: Gregorian Year 0<->Symmetry010 same",
+            .prop3 = day_of_week_same,
+            .type_info = {
+                &mjd_info,
+                &gr_year0_cal_info,
+                &sym010_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_mjdToDayOfYear: Gregorian Year 0",
             .prop2 = day_of_year_add_one,
             .type_info = {
@@ -2782,6 +2936,15 @@ int main(int argc, char** argv) {
             .type_info = {
                 &mjd_info,
                 &sym454_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_addMonths: Add 1 Month, Symmetry010",
+            .prop2 = add_1month_sym010,
+            .type_info = {
+                &mjd_info,
+                &sym010_cal_info
             },
             .seed = seed
         },

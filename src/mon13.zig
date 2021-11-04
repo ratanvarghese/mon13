@@ -9,6 +9,7 @@ pub usingnamespace @import("cal/holocene.zig");
 pub usingnamespace @import("cal/julian.zig");
 pub usingnamespace @import("cal/positivist.zig");
 pub usingnamespace @import("cal/symmetry454.zig");
+pub usingnamespace @import("cal/symmetry010.zig");
 
 pub usingnamespace @import("names/en_US/gregorian.zig");
 pub usingnamespace @import("names/en_US/tranquility.zig");
@@ -17,6 +18,7 @@ pub usingnamespace @import("names/en_US/holocene.zig");
 pub usingnamespace @import("names/en_US/julian.zig");
 pub usingnamespace @import("names/en_US/positivist.zig");
 pub usingnamespace @import("names/en_US/symmetry454.zig");
+pub usingnamespace @import("names/en_US/symmetry010.zig");
 
 pub usingnamespace @import("names/fr_FR/gregorian.zig");
 pub usingnamespace @import("names/fr_FR/julian.zig");
