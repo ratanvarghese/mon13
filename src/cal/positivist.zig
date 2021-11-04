@@ -8,14 +8,14 @@ var positivist_ic = [_:null]?base.Intercalary{
         .day = 1,
         .day_of_year = 28 * 13 + 1,
         .day_of_leap_year = 28 * 13 + 1,
-        .IC_ERA_START_ALT_NAME = false,
+        .era_start_alt_name = false,
     },
     .{
         .month = 0,
         .day = 2,
         .day_of_year = 28 * 13 + 2,
         .day_of_leap_year = 28 * 13 + 2,
-        .IC_ERA_START_ALT_NAME = false,
+        .era_start_alt_name = false,
     },
 };
 
@@ -67,14 +67,14 @@ pub const positivist = base.Cal{
         .common_days = gen.dayCount(COMMON[0..COMMON.len]),
         .leap_days = gen.leapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
         .offset_days = 77430, //77064
-        .LEAP_GREGORIAN_SKIP = true,
-        .LEAP_SYMMETRY = false,
+        .skip100 = true,
+        .symmetric = false,
     },
     .epoch_mjd = -25520, //1 Jan, 1789 CE
     .start_weekday = base.Weekday.MON13_MONDAY,
     .week_length = cal_gr.gregorian.week_length,
     .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
     .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
-    .CAL_YEAR_ZERO = true,
+    .year0 = true,
     .CAL_PERENNIAL = true,
 };

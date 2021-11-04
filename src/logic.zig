@@ -42,7 +42,7 @@ fn isLeap(year: i32, cal: *const base.Cal) bool {
     const adjusted: i64 = (l * y) - A;
     const m_simple = @mod(adjusted, c);
     const res_simple = m_simple < l;
-    if (cal.*.leap_cycle.LEAP_GREGORIAN_SKIP) {
+    if (cal.*.leap_cycle.skip100) {
         return res_simple and (@mod(adjusted, 100) != 0 or @mod(adjusted, 400) == 0);
     } else {
         return res_simple;
@@ -316,7 +316,7 @@ fn mjdToDoyCommon(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
     var f_400_rem: i32 = 0;
     var f_100_quot: i32 = 0;
     var f_100_rem: i32 = day_total;
-    if (lc.LEAP_GREGORIAN_SKIP) {
+    if (lc.skip100) {
         const common_400: i32 = @intCast(i32, yearLen(false, cal)) * 400;
         const leap_400: i32 = (100 - 3) * @intCast(i32, lc.leap_days);
         const total_400 = common_400 + leap_400;
@@ -352,7 +352,7 @@ fn mjdToDoyCommon(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
 fn mjdToDoy(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
     const lc = cal.*.leap_cycle;
     if (lc.leap_year_count > 1) {
-        if (lc.LEAP_SYMMETRY) {
+        if (lc.symmetric) {
             return mjdToDoySymmetric(mjd, cal);
         } else {
             return base.Err.BadCalendar;
@@ -389,7 +389,7 @@ fn yearStartMjdCommon(year: i32, cal: *const base.Cal) base.Err!i32 {
     //we can assume calculating the leap days shouldn't overflow.
 
     var leap_days: i32 = @intCast(i32, lc.leap_year_count) * @intCast(i32, f_leap_quot) * @intCast(i32, lc.leap_days);
-    if (lc.LEAP_GREGORIAN_SKIP) {
+    if (lc.skip100) {
         const f_400_quot = @divFloor(off_year, 400);
         const f_100_quot = @divFloor(off_year, 100);
         leap_days += ((f_400_quot - f_100_quot) * @intCast(i32, lc.leap_days));
@@ -438,7 +438,7 @@ fn doyToMjd(doy: DoyDate, cal: *const base.Cal) base.Err!i32 {
     var year_start_mjd: i32 = 0;
     const lc = cal.*.leap_cycle;
     if (lc.leap_year_count > 1) {
-        if (lc.LEAP_SYMMETRY) {
+        if (lc.symmetric) {
             year_start_mjd = try yearStartMjdSymmetric(doy.year, cal);
         } else {
             return base.Err.BadCalendar;
@@ -456,7 +456,7 @@ fn doyToMjd(doy: DoyDate, cal: *const base.Cal) base.Err!i32 {
 
 //Validation
 fn valid_year(d: base.Date, cal: *const base.Cal) bool {
-    return (cal.*.CAL_YEAR_ZERO or d.year != 0);
+    return (cal.*.year0 or d.year != 0);
 }
 
 fn valid_assume_yz(d_yz: base.Date, cal: *const base.Cal) bool {
@@ -473,7 +473,7 @@ fn valid_assume_yz(d_yz: base.Date, cal: *const base.Cal) bool {
 
 //Year Zero adjustment
 fn yzNeedsAdjustment(y: i32, cal: *const base.Cal) bool {
-    return (!cal.*.CAL_YEAR_ZERO) and (y < 1);
+    return (!cal.*.year0) and (y < 1);
 }
 
 fn yzToNoYz(d: base.Date, cal: *const base.Cal) base.Date {

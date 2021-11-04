@@ -76,7 +76,7 @@ const Sequence = enum(u8) {
         var d = base.Date{ .year = 0, .month = 0, .day = 0 };
         try logic.mjdToYmd(mjd, cal, &d.year, &d.month, &d.day);
         const icr = logic.seekIcRes(d, cal) orelse return null;
-        if (icr.ic.IC_ERA_START_ALT_NAME and d.year == 0 and icr.ic.day_of_year == logic.yearLen(false, cal)) {
+        if (icr.ic.era_start_alt_name and d.year == 0 and icr.ic.day_of_year == logic.yearLen(false, cal)) {
             const alt_ic_list = nlist.*.alt_intercalary_list orelse return null;
             return alt_ic_list[icr.ici];
         } else {

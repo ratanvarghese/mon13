@@ -8,14 +8,14 @@ var tranquility_ic = [_:null]?base.Intercalary{
         .day = 1,
         .day_of_year = 28 * 13 + 1,
         .day_of_leap_year = 28 * 13 + 2,
-        .IC_ERA_START_ALT_NAME = true,
+        .era_start_alt_name = true,
     },
     .{
         .month = 0,
         .day = 2,
         .day_of_year = 28 * 8,
         .day_of_leap_year = 28 * 8,
-        .IC_ERA_START_ALT_NAME = false,
+        .era_start_alt_name = false,
     },
 };
 
@@ -69,15 +69,15 @@ pub const tranquility = base.Cal{
         .common_days = gen.dayCount(COMMON[0..COMMON.len]),
         .leap_days = gen.leapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
         .offset_days = 11323,
-        .LEAP_GREGORIAN_SKIP = true,
-        .LEAP_SYMMETRY = false,
+        .skip100 = true,
+        .symmetric = false,
     },
     .epoch_mjd = 40423, //1 day after Moon Landing Day
     .start_weekday = base.Weekday.MON13_FRIDAY,
     .week_length = cal_gr.gregorian.week_length,
     .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
     .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
-    .CAL_YEAR_ZERO = false,
+    .year0 = false,
     .CAL_PERENNIAL = true,
 };
 
@@ -91,6 +91,6 @@ pub const tranquility_year_zero = base.Cal{
     .week_length = cal_gr.gregorian.week_length,
     .common_month_max = tranquility.common_month_max,
     .leap_month_max = tranquility.leap_month_max,
-    .CAL_YEAR_ZERO = true,
+    .year0 = true,
     .CAL_PERENNIAL = tranquility.CAL_PERENNIAL,
 };

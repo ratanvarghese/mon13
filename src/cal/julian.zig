@@ -12,14 +12,14 @@ pub const julian = base.Cal{
         .common_days = cal_gr.gregorian.leap_cycle.common_days,
         .leap_days = cal_gr.gregorian.leap_cycle.leap_days,
         .offset_days = cal_gr.gregorian.leap_cycle.offset_days,
-        .LEAP_GREGORIAN_SKIP = false,
-        .LEAP_SYMMETRY = false,
+        .skip100 = false,
+        .symmetric = false,
     },
     .epoch_mjd = -678577, //1 Jan, 1 AD
     .start_weekday = cal_gr.gregorian.start_weekday,
     .week_length = cal_gr.gregorian.week_length,
     .common_month_max = cal_gr.gregorian.common_month_max,
     .leap_month_max = cal_gr.gregorian.leap_month_max,
-    .CAL_YEAR_ZERO = false,
+    .year0 = false,
     .CAL_PERENNIAL = cal_gr.gregorian.CAL_PERENNIAL,
 };

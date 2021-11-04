@@ -40,14 +40,14 @@ var cotsworth_ic = [_:null]?base.Intercalary{
         .day = 29,
         .day_of_year = 28 * 13 + 1,
         .day_of_leap_year = 28 * 13 + 2,
-        .IC_ERA_START_ALT_NAME = false,
+        .era_start_alt_name = false,
     },
     .{
         .month = 6,
         .day = 29,
         .day_of_year = 28 * 6 + 1,
         .day_of_leap_year = 28 * 6 + 1,
-        .IC_ERA_START_ALT_NAME = false,
+        .era_start_alt_name = false,
     },
 };
 
@@ -64,6 +64,6 @@ pub const cotsworth = base.Cal{
     .week_length = cal_gr.gregorian.week_length,
     .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
     .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
-    .CAL_YEAR_ZERO = true,
+    .year0 = true,
     .CAL_PERENNIAL = true,
 };

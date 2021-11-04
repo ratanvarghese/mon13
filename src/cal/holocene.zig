@@ -11,6 +11,6 @@ pub const holocene = base.Cal{
     .week_length = cal_gr.gregorian.week_length,
     .common_month_max = cal_gr.gregorian.common_month_max,
     .leap_month_max = cal_gr.gregorian.leap_month_max,
-    .CAL_YEAR_ZERO = true,
+    .year0 = true,
     .CAL_PERENNIAL = cal_gr.gregorian.CAL_PERENNIAL,
 };

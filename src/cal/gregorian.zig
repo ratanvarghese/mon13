@@ -45,15 +45,15 @@ pub const gregorian = base.Cal{
         .common_days = gen.dayCount(COMMON[0..COMMON.len]),
         .leap_days = gen.leapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
         .offset_days = 0,
-        .LEAP_GREGORIAN_SKIP = true,
-        .LEAP_SYMMETRY = false,
+        .skip100 = true,
+        .symmetric = false,
     },
     .start_weekday = base.Weekday.MON13_NO_WEEKDAY,
     .epoch_mjd = -678575, //1 Jan, 1 CE
     .week_length = 7,
     .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
     .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
-    .CAL_YEAR_ZERO = false,
+    .year0 = false,
     .CAL_PERENNIAL = false,
 };
 
@@ -67,6 +67,6 @@ pub const gregorian_year_zero = base.Cal{
     .week_length = gregorian.week_length,
     .common_month_max = gregorian.common_month_max,
     .leap_month_max = gregorian.leap_month_max,
-    .CAL_YEAR_ZERO = true,
+    .year0 = true,
     .CAL_PERENNIAL = gregorian.CAL_PERENNIAL,
 };

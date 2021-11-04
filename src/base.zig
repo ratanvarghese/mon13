@@ -33,7 +33,7 @@ pub const Intercalary = packed struct {
     day_of_leap_year: u16,
     month: u8,
     day: u8,
-    IC_ERA_START_ALT_NAME: bool,
+    era_start_alt_name: bool,
 };
 
 pub const Segment = packed struct {
@@ -50,8 +50,8 @@ pub const LeapCycleInfo = packed struct {
     offset_years: i16,
     common_days: u16,
     leap_days: u16,
-    LEAP_GREGORIAN_SKIP: bool,
-    LEAP_SYMMETRY: bool,
+    skip100: bool,
+    symmetric: bool,
 };
 
 pub const Cal = extern struct {
@@ -64,7 +64,7 @@ pub const Cal = extern struct {
     week_length: u8,
     common_month_max: u8,
     leap_month_max: u8,
-    CAL_YEAR_ZERO: bool,
+    year0: bool,
     CAL_PERENNIAL: bool,
 };
 
