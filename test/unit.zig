@@ -154,3 +154,21 @@ test "Date not found? But why?" {
     const res = try mon13.addYears(mjd0, c, offset);
     try expect(res != 0);
 }
+
+test "Moon Landing Day" {
+    const mjd = 40422;
+    const c = &mon13.tranquility_year_zero;
+    const n = &mon13.tranquility_names_en_US;
+    const expected = "Moon Landing Day";
+
+    var buf = [_]u8{0} ** 100;
+    const res = try mon13.format(mjd, c, n, "%B", buf[0..buf.len]);
+    try expect(res == expected.len);
+    try expect(
+        mem.eql(
+            u8,
+            expected[0..@intCast(usize, res)],
+            buf[0..@intCast(usize, res)],
+        ),
+    );
+}
