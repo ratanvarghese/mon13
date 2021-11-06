@@ -1128,6 +1128,10 @@ enum theft_trial_res add_1month_sym454(struct theft* t, void* a1, void* a2) {
         return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
+    int leap;
+    mon13_mjdToIsLeapYear(*mjd0, c, &leap);
+
+
     bool correct_res = false;
     if(m0 == 12) {
         if(d0 > 28) {
@@ -1143,13 +1147,13 @@ enum theft_trial_res add_1month_sym454(struct theft* t, void* a1, void* a2) {
             correct_res = correct_year && correct_month && correct_day;
         }
     }
-    else if(m0 == 11 && d0 > 28) {
+    else if(m0 == 11 && d0 > 28 && !leap) {
         bool correct_year = (y1 == (y0 + 1));
         bool correct_month = (m1 == 1);
         bool correct_day = (d1 == (d0 - 28));
         correct_res = correct_year && correct_month && correct_day;
     }
-    else if(d0 > 28) {
+    else if(m0 != 11 && d0 > 28) {
         bool correct_year = (y1 == y0);
         bool correct_month = (m1 == (m0 + 2));
         bool correct_day = (d1 == (d0 - 28));
@@ -1184,6 +1188,9 @@ enum theft_trial_res add_1month_sym010(struct theft* t, void* a1, void* a2) {
         return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
+    int leap;
+    mon13_mjdToIsLeapYear(*mjd0, c, &leap);
+
     bool correct_res = false;
     if(m0 == 12) {
         if(d0 > 30) {
@@ -1199,13 +1206,13 @@ enum theft_trial_res add_1month_sym010(struct theft* t, void* a1, void* a2) {
             correct_res = correct_year && correct_month && correct_day;
         }
     }
-    else if(m0 == 11 && d0 > 30) {
+    else if(m0 == 11 && d0 > 30 && !leap) {
         bool correct_year = (y1 == (y0 + 1));
         bool correct_month = (m1 == 1);
         bool correct_day = (d1 == (d0 - 30));
         correct_res = correct_year && correct_month && correct_day;
     }
-    else if(d0 > 30) {
+    else if(m0 != 11 && d0 > 30) {
         bool correct_year = (y1 == y0);
         bool correct_month = (m1 == (m0 + 2));
         bool correct_day = (d1 == (d0 - 30));
