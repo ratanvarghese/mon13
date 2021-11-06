@@ -68,6 +68,7 @@ pub const positivist = base.Cal{
         .leap_days = gen.leapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
         .offset_days = 77430, //77064
         .skip100 = true,
+        .skip4000 = false,
         .symmetric = false,
     },
     .week = .{

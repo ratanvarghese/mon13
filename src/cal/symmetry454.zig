@@ -47,6 +47,7 @@ pub const symmetry454 = base.Cal{
         .leap_days = gen.leapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
         .offset_days = -53326,
         .skip100 = false,
+        .skip4000 = false,
         .symmetric = true,
     },
     .week = .{

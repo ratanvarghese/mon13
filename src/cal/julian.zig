@@ -13,6 +13,7 @@ pub const julian = base.Cal{
         .leap_days = cal_gr.gregorian.leap_cycle.leap_days,
         .offset_days = cal_gr.gregorian.leap_cycle.offset_days,
         .skip100 = false,
+        .skip4000 = false,
         .symmetric = false,
     },
     .week = cal_gr.gregorian.week,

@@ -65,6 +65,7 @@ pub const LeapCycleInfo = packed struct {
     common_days: u16,
     leap_days: u16,
     skip100: bool,
+    skip4000: bool,
     symmetric: bool,
 };
 

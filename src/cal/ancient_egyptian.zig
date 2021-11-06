@@ -69,6 +69,7 @@ pub const ancient_egyptian = base.Cal{
         .leap_days = 0,
         .offset_days = 0,
         .skip100 = false,
+        .skip4000 = false,
         .symmetric = false,
     },
     .week = .{

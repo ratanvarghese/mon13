@@ -33,18 +33,28 @@ fn clockModulo(a: i32, b: u31) u31 {
 }
 
 fn isLeap(year: i32, cal: *const base.Cal) bool {
+    const lc = cal.*.leap_cycle;
     //Prevent overflow by promoting all quantities to i64
     const y = @intCast(i64, year);
-    const c = @intCast(i64, cal.*.leap_cycle.year_count);
-    const l = @intCast(i64, cal.*.leap_cycle.leap_year_count);
-    const A = @intCast(i64, cal.*.leap_cycle.offset_years);
+    const c = @intCast(i64, lc.year_count);
+    const l = @intCast(i64, lc.leap_year_count);
+    const A = @intCast(i64, lc.offset_years);
 
     const adjusted: i64 = (l * y) - A;
     const m_simple = @mod(adjusted, c);
     const res_simple = m_simple < l;
-    if (cal.*.leap_cycle.skip100) {
-        return res_simple and (@mod(adjusted, 100) != 0 or @mod(adjusted, 400) == 0);
+    if (lc.skip100) {
+        const res100 = (@mod(adjusted, 100) != 0 or @mod(adjusted, 400) == 0);
+        if (lc.skip4000) {
+            const res4000 = (@mod(adjusted, 4000) != 0);
+            return res_simple and res100 and res4000;
+        } else {
+            return res_simple and res100;
+        }
     } else {
+        if (lc.skip4000) {
+            unreachable;
+        }
         return res_simple;
     }
 }
@@ -312,22 +322,36 @@ fn mjdToDoyCommon(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
         return base.Err.Overflow;
     }
 
+    var f_4000_quot: i32 = 0;
+    var f_4000_rem: i32 = 0;
     var f_400_quot: i32 = 0;
     var f_400_rem: i32 = 0;
     var f_100_quot: i32 = 0;
-    var f_100_rem: i32 = day_total;
+    var f_100_rem: i32 = 0;
+    if (lc.skip4000) {
+        const common_4000: i32 = @intCast(i32, yearLen(false, cal)) * 4000;
+        const leap_4000: i32 = (1000 - 31) * @intCast(i32, lc.leap_days);
+        const total_4000 = common_4000 + leap_4000;
+        f_4000_quot = @divFloor(day_total, total_4000);
+        f_4000_rem = @mod(day_total, total_4000);
+    } else {
+        f_4000_rem = day_total;
+    }
+
     if (lc.skip100) {
         const common_400: i32 = @intCast(i32, yearLen(false, cal)) * 400;
         const leap_400: i32 = (100 - 3) * @intCast(i32, lc.leap_days);
         const total_400 = common_400 + leap_400;
-        f_400_quot = @divFloor(day_total, total_400);
-        f_400_rem = @mod(day_total, total_400);
+        f_400_quot = @divFloor(f_4000_rem, total_400);
+        f_400_rem = @mod(f_4000_rem, total_400);
 
         const common_100: i32 = @intCast(i32, yearLen(false, cal)) * 100;
         const leap_100: i32 = ((100 / lc.year_count) - 1) * @intCast(i32, lc.leap_days);
         const total_100 = common_100 + leap_100;
         f_100_quot = @divFloor(f_400_rem, total_100);
         f_100_rem = @mod(f_400_rem, total_100);
+    } else {
+        f_100_rem = day_total;
     }
 
     const total_cycle = daysInCycle(cal);
@@ -337,7 +361,7 @@ fn mjdToDoyCommon(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
     const f_common_rem = @mod(f_cycle_rem, yearLen(false, cal));
 
     var res: DoyDate = .{ .year = 0, .doy = 0 };
-    res.year = 400 * f_400_quot + 100 * f_100_quot + lc.year_count * f_cycle_quot + f_common_quot;
+    res.year = 4000 * f_4000_quot + 400 * f_400_quot + 100 * f_100_quot + lc.year_count * f_cycle_quot + f_common_quot;
     res.year += lc.offset_years;
 
     if (f_100_quot == lc.year_count or f_common_quot == lc.year_count) {
@@ -389,10 +413,15 @@ fn yearStartMjdCommon(year: i32, cal: *const base.Cal) base.Err!i32 {
     //we can assume calculating the leap days shouldn't overflow.
 
     var leap_days: i32 = @intCast(i32, lc.leap_year_count) * @intCast(i32, f_leap_quot) * @intCast(i32, lc.leap_days);
+    if (lc.skip4000) {
+        const f_4000_quot = @divFloor(off_year, 4000);
+        leap_days -= (f_4000_quot * @intCast(i32, lc.leap_days));
+    }
     if (lc.skip100) {
         const f_400_quot = @divFloor(off_year, 400);
+        leap_days += (f_400_quot * @intCast(i32, lc.leap_days));
         const f_100_quot = @divFloor(off_year, 100);
-        leap_days += ((f_400_quot - f_100_quot) * @intCast(i32, lc.leap_days));
+        leap_days -= (f_100_quot * @intCast(i32, lc.leap_days));
     }
 
     var off_days: i32 = 0;
