@@ -1143,6 +1143,12 @@ enum theft_trial_res add_1month_sym454(struct theft* t, void* a1, void* a2) {
             correct_res = correct_year && correct_month && correct_day;
         }
     }
+    else if(m0 == 11 && d0 > 28) {
+        bool correct_year = (y1 == (y0 + 1));
+        bool correct_month = (m1 == 1);
+        bool correct_day = (d1 == (d0 - 28));
+        correct_res = correct_year && correct_month && correct_day;
+    }
     else if(d0 > 28) {
         bool correct_year = (y1 == y0);
         bool correct_month = (m1 == (m0 + 2));
@@ -1154,6 +1160,7 @@ enum theft_trial_res add_1month_sym454(struct theft* t, void* a1, void* a2) {
         bool correct_month = (m1 == (m0 + 1));
         bool correct_day = (d1 == d0);
         correct_res = correct_year && correct_month && correct_day;
+
     }
     return correct_res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
@@ -1191,6 +1198,12 @@ enum theft_trial_res add_1month_sym010(struct theft* t, void* a1, void* a2) {
             bool correct_day = (d1 == d0);
             correct_res = correct_year && correct_month && correct_day;
         }
+    }
+    else if(m0 == 11 && d0 > 30) {
+        bool correct_year = (y1 == (y0 + 1));
+        bool correct_month = (m1 == 1);
+        bool correct_day = (d1 == (d0 - 30));
+        correct_res = correct_year && correct_month && correct_day;
     }
     else if(d0 > 30) {
         bool correct_year = (y1 == y0);
