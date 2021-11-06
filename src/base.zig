@@ -11,7 +11,7 @@ pub const Err = error{
     InvalidDate,
 };
 
-pub const Weekday = enum(u8) {
+pub const Weekday7 = enum(u4) {
     NoWeekday = 0,
     Monday = 1,
     Tuesday = 2,
@@ -56,7 +56,7 @@ pub const LeapCycleInfo = packed struct {
 
 pub const WeekInfo = packed struct {
     length: u4,
-    start: Weekday,
+    start: u4,
     continuous: bool,
 };
 

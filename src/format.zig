@@ -87,7 +87,7 @@ const Sequence = enum(u8) {
 
     fn getWeekdayName(mjd: i32, cal: *const base.Cal, nlist: *const base.NameList) base.Err!?[*:0]const u8 {
         const weekday = try logic.mjdToDayOfWeek(mjd, cal);
-        if (weekday == @enumToInt(base.Weekday.NoWeekday)) {
+        if (weekday == @enumToInt(base.Weekday7.NoWeekday)) {
             return getIcName(mjd, cal, nlist);
         } else {
             const i = @intCast(usize, weekday - 1);

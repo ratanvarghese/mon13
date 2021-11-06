@@ -60,7 +60,7 @@ pub const cotsworth = base.Cal{
     .leap_lookup_list = @as([*:null]?base.Segment, &leap_var),
     .leap_cycle = cal_gr.gregorian.leap_cycle,
     .week = .{
-        .start = base.Weekday.Sunday,
+        .start = @enumToInt(base.Weekday7.Sunday),
         .length = cal_gr.gregorian.week.length,
         .continuous = false,
     },

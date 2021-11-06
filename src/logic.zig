@@ -503,16 +503,16 @@ fn getDayOfWeek(d: base.Date, cal: *const base.Cal) base.Err!u8 {
         const d_doy = try monthDayToDoy(d, cal);
         const d_mjd = try doyToMjd(d_doy, cal);
         const f_week_rem = @mod(d_mjd, w.length);
-        const shifted_f_week_rem = f_week_rem + @enumToInt(base.Weekday.Wednesday);
+        const shifted_f_week_rem = f_week_rem + @enumToInt(base.Weekday7.Wednesday);
         const res = clockModulo(@intCast(i32, shifted_f_week_rem), w.length);
         return @intCast(u8, res);
     } else {
         if (seekIc(d, cal)) |ic| {
-            return @enumToInt(base.Weekday.NoWeekday);
+            return @enumToInt(base.Weekday7.NoWeekday);
         }
 
         const f_week_rem = @mod(d.day, w.length);
-        const shifted_f_week_rem = f_week_rem + @enumToInt(w.start) - 1;
+        const shifted_f_week_rem = f_week_rem + w.start - 1;
         const res = clockModulo(@intCast(i32, shifted_f_week_rem), w.length);
         return @intCast(u4, res);
     }

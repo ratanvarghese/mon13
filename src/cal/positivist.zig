@@ -71,7 +71,7 @@ pub const positivist = base.Cal{
         .symmetric = false,
     },
     .week = .{
-        .start = base.Weekday.Monday,
+        .start = @enumToInt(base.Weekday7.Monday),
         .length = cal_gr.gregorian.week.length,
         .continuous = false,
     },

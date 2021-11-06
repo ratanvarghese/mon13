@@ -50,7 +50,7 @@ pub const symmetry454 = base.Cal{
         .symmetric = true,
     },
     .week = .{
-        .start = base.Weekday.Monday,
+        .start = @enumToInt(base.Weekday7.Monday),
         .length = cal_gr.gregorian.week.length,
         .continuous = true,
     },

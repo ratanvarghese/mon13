@@ -73,7 +73,7 @@ pub const tranquility = base.Cal{
         .symmetric = false,
     },
     .week = .{
-        .start = base.Weekday.Friday,
+        .start = @enumToInt(base.Weekday7.Friday),
         .length = cal_gr.gregorian.week.length,
         .continuous = false,
     },

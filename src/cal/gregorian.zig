@@ -49,7 +49,7 @@ pub const gregorian = base.Cal{
         .symmetric = false,
     },
     .week = .{
-        .start = base.Weekday.NoWeekday,
+        .start = @enumToInt(base.Weekday7.NoWeekday),
         .length = 7,
         .continuous = true,
     },
