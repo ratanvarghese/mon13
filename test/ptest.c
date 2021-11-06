@@ -136,6 +136,9 @@ void print_cal(FILE* f, const void* instance, void* env) {
     else if(c == &mon13_symmetry010) {
         fprintf(f, "%s", mon13_symmetry010_names_en_US.calendar_name);
     }
+    else if(c == &mon13_ancient_egyptian) {
+        fprintf(f, "%s", mon13_ancient_egyptian_names_en_US.calendar_name);
+    }
     else {
         fprintf(f, "UNKNOWN");
     }
@@ -198,6 +201,12 @@ enum theft_alloc_res select_gr2ps_positivists_org(struct theft* t, void* env, vo
 enum theft_alloc_res select_gr2mjd_nasa(struct theft* t, void* env, void** instance) {
     uint64_t i = theft_random_choice(t, SIZEOF_ARR(gr2mjd_nasa));
     *instance = (void*)&gr2mjd_nasa[i];
+    return THEFT_ALLOC_OK;
+}
+
+enum theft_alloc_res select_eg2mjd_cctue(struct theft* t, void* env, void** instance) {
+    uint64_t i = theft_random_choice(t, SIZEOF_ARR(eg2mjd_cctue));
+    *instance = (void*)&eg2mjd_cctue[i];
     return THEFT_ALLOC_OK;
 }
 
@@ -502,6 +511,10 @@ enum theft_trial_res fromYmd_known_mjd(struct theft* t, void* test_input) {
 
     if(status0) {
         return THEFT_TRIAL_FAIL;
+    }
+
+    if(mjd != kcm->mjd) {
+        printf("FINDME kcm->mjd: %d mjd: %d\n", kcm->mjd, mjd);
     }
 
     return (mjd == kcm->mjd) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
@@ -1116,7 +1129,7 @@ enum theft_trial_res add_1month_sym454(struct theft* t, void* a1, void* a2) {
     }
 
     bool correct_res = false;
-    if(m0 == 13) {
+    if(m0 == 12) {
         if(d0 > 28) {
             bool correct_year = (y1 == (y0 + 1));
             bool correct_month = (m1 == 2);
@@ -1142,6 +1155,7 @@ enum theft_trial_res add_1month_sym454(struct theft* t, void* a1, void* a2) {
         bool correct_day = (d1 == d0);
         correct_res = correct_year && correct_month && correct_day;
     }
+    return correct_res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res add_1month_sym010(struct theft* t, void* a1, void* a2) {
@@ -1164,7 +1178,7 @@ enum theft_trial_res add_1month_sym010(struct theft* t, void* a1, void* a2) {
     }
 
     bool correct_res = false;
-    if(m0 == 13) {
+    if(m0 == 12) {
         if(d0 > 30) {
             bool correct_year = (y1 == (y0 + 1));
             bool correct_month = (m1 == 2);
@@ -1190,6 +1204,7 @@ enum theft_trial_res add_1month_sym010(struct theft* t, void* a1, void* a2) {
         bool correct_day = (d1 == d0);
         correct_res = correct_year && correct_month && correct_day;
     }
+    return correct_res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
@@ -1368,6 +1383,18 @@ enum theft_trial_res leap7(struct theft* t, void* a1, void* a2) {
     }
     bool res = (leap_count == 1) || (leap_count == 2);
     return res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res leap0(struct theft* t, void* a1, void* a2) {
+    const int32_t* mjd = a1;
+    const struct mon13_Cal* c = a2;
+
+    int is_leap;
+    int status = mon13_mjdToIsLeapYear(*mjd, c, &is_leap);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    return is_leap ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS;
 }
 
 enum theft_trial_res day_of_week_continuous(struct theft* t, void* a1, void* a2) {
@@ -1754,7 +1781,7 @@ enum theft_trial_res format_day_of_month(struct theft* t, void* a1, void* a2, vo
     if(parsed != d || res < 1 || res > 2) {
         return THEFT_TRIAL_FAIL;
     }
-    if(endptr[0] != '\0' && endptr[1] != *placeholder && &(endptr[0]) != &(buf[res])) {
+    if(endptr[0] != '\0' || endptr[1] != *placeholder || &(endptr[0]) != &(buf[res])) {
         return THEFT_TRIAL_FAIL;
     }
     return THEFT_TRIAL_PASS;
@@ -1778,7 +1805,7 @@ enum theft_trial_res format_cal(struct theft* t, void* a1, void* a2, void* a3) {
     if(strncmp(buf, nc->n->calendar_name, 50)) {
         return THEFT_TRIAL_FAIL;
     }
-    if(buf[res] != '\0' && buf[res + 1] != *placeholder) {
+    if(buf[res] != '\0' || buf[res + 1] != *placeholder) {
         return THEFT_TRIAL_FAIL;
     }
     return THEFT_TRIAL_PASS;
@@ -1807,7 +1834,7 @@ enum theft_trial_res format_doy(struct theft* t, void* a1, void* a2, void* a3) {
     if(parsed != doy || res < 1 || res > 3) {
         return THEFT_TRIAL_FAIL;
     }
-    if(endptr[0] != '\0' && endptr[1] != *placeholder && &(endptr[0]) != &(buf[res])) {
+    if(endptr[0] != '\0' || endptr[1] != *placeholder || &(endptr[0]) != &(buf[res])) {
         return THEFT_TRIAL_FAIL;
     }
     return THEFT_TRIAL_PASS;
@@ -1836,7 +1863,7 @@ enum theft_trial_res format_month_number(struct theft* t, void* a1, void* a2, vo
     if(parsed != m || res < 1 || res > 2) {
         return THEFT_TRIAL_FAIL;
     }
-    if(endptr[0] != '\0' && endptr[1] != *placeholder && &(endptr[0]) != &(buf[res])) {
+    if(endptr[0] != '\0' || endptr[1] != *placeholder || &(endptr[0]) != &(buf[res])) {
         return THEFT_TRIAL_FAIL;
     }
     return THEFT_TRIAL_PASS;
@@ -1898,7 +1925,7 @@ enum theft_trial_res format_era(struct theft* t, void* a1, void* a2, void* a3) {
     if(strncmp(buf, expected, 50)) {
         return THEFT_TRIAL_FAIL;
     }
-    if(buf[res] != '\0' && buf[res + 1] != *placeholder) {
+    if(buf[res] != '\0' || buf[res + 1] != *placeholder) {
         return THEFT_TRIAL_FAIL;
     }
     return THEFT_TRIAL_PASS;
@@ -1943,18 +1970,20 @@ enum theft_trial_res format_weekday_number(struct theft* t, void* a1, void* a2, 
         return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    char buf[3];
-    memset(buf, *placeholder, 3);
+    char buf[5];
+    memset(buf, *placeholder, 5);
 
     int res = mon13_format(*mjd, nc->c, nc->n, "%u", buf, 5);
     char* endptr = buf;
     long parsed = strtol(buf, &endptr, 10);
-    if(parsed != weekday || res != 1) {
+    if(parsed != weekday || (res != 1 && weekday < 10) || (res != 2 && weekday > 10)) {
         return THEFT_TRIAL_FAIL;
     }
-    if(endptr[0] != '\0' && endptr[1] != *placeholder && &(endptr[0]) != &(buf[1])) {
+
+    if(endptr[0] != '\0' || endptr[1] != *placeholder || &(endptr[0]) != &(buf[res])) {
         return THEFT_TRIAL_FAIL;
     }
+
     return THEFT_TRIAL_PASS;
 }
 
@@ -1981,7 +2010,7 @@ enum theft_trial_res format_year(struct theft* t, void* a1, void* a2, void* a3) 
     if(parsed != y || res < 1) {
         return THEFT_TRIAL_FAIL;
     }
-    if(endptr[0] != '\0' && endptr[1] != *placeholder) {
+    if(endptr[0] != '\0' || endptr[1] != *placeholder) {
         return THEFT_TRIAL_FAIL;
     }
     return THEFT_TRIAL_PASS;
@@ -2250,6 +2279,10 @@ struct theft_type_info gr2mjd_nasa_info = {
     .alloc = select_gr2mjd_nasa, //nothing to free
 };
 
+struct theft_type_info eg2mjd_cctue_info = {
+    .alloc = select_eg2mjd_cctue, //nothing to free
+};
+
 struct theft_type_info gr2sym454_irv_info = {
     .alloc = select_gr2sym454_irv, //nothing to free
     .print = print_known
@@ -2312,6 +2345,12 @@ struct theft_type_info sym454_cal_info = {
 struct theft_type_info sym010_cal_info = {
     .alloc = select_env, //nothing to free
     .env = (void*)&mon13_symmetry010,
+    .print = print_cal
+};
+
+struct theft_type_info eg_cal_info = {
+    .alloc = select_env, //nothing to free
+    .env = (void*)&mon13_ancient_egyptian,
     .print = print_cal
 };
 
@@ -2475,6 +2514,13 @@ int main(int argc, char** argv) {
             .type_info = {&gr2mjd_nasa_info},
             .seed = seed,
             .trials = SIZEOF_ARR(gr2mjd_nasa)
+        },
+        {
+            .name = "mon13_mjdFromYmd: Ancient Egyptian<->MJD",
+            .prop1 = fromYmd_known_mjd,
+            .type_info = {&eg2mjd_cctue_info},
+            .seed = seed,
+            .trials = SIZEOF_ARR(eg2mjd_cctue)
         },
         {
             .name = "mon13_mjdFromYmd: Gregorian Year 0<->Symmetry454",
@@ -2760,6 +2806,15 @@ int main(int argc, char** argv) {
             .type_info = {
                 &mjd_info,
                 &sym454_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToIsLeapYear: Ancient Egyptian never leaps",
+            .prop2 = leap0,
+            .type_info = {
+                &mjd_info,
+                &eg_cal_info
             },
             .seed = seed
         },

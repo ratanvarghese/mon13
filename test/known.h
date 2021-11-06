@@ -91,6 +91,10 @@ const struct name_cal name_cal_list[] = {
 		.c = &mon13_symmetry010,
 		.n = &mon13_symmetry010_names_en_US,
 	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.n = &mon13_ancient_egyptian_names_en_US,
+	},
 };
 
 const struct mon13_Cal* cal_list[] = {
@@ -103,7 +107,8 @@ const struct mon13_Cal* cal_list[] = {
     &mon13_julian,
     &mon13_positivist,
     &mon13_symmetry454,
-    &mon13_symmetry010
+    &mon13_symmetry010,
+    &mon13_ancient_egyptian
 };
 
 //Tranquility & Gregorian conversions
@@ -1028,6 +1033,7 @@ const struct known_convert_date gr2ps_positivists_org[] = {
 	},
 };
 
+//From https://core2.gsfc.nasa.gov/time/
 const struct known_convert_mjd gr2mjd_nasa[] = {
 	{
 		.c = &mon13_gregorian_year_zero,
@@ -4136,6 +4142,176 @@ const struct known_convert_date gr2sym454_irv[] = {
 		.c1 = &mon13_symmetry454,
 		.d0 = {.year =  2027 , .month =  1 , .day =  4 },
 		.d1 = {.year =  2027 , .month =  1 , .day =  1 },
+	},
+};
+
+//From Calendrical Calculations: The Ultimate Edition
+//Appendix C: Sample Date
+const struct known_convert_mjd eg2mjd_cctue[] = {
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  161 , .month =  7 , .day =  15 },
+		.mjd = -892769,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  580 , .month =  3 , .day =  6 },
+		.mjd = -739963,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  818 , .month =  2 , .day =  22 },
+		.mjd = -653107,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  883 , .month =  3 , .day =  15 },
+		.mjd = -629359,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  1217 , .month =  9 , .day =  15 },
+		.mjd = -507269,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  1324 , .month =  2 , .day =  18 },
+		.mjd = -468421,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  1442 , .month =  9 , .day =  10 },
+		.mjd = -425149,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  1761 , .month =  5 , .day =  8 },
+		.mjd = -308836,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  1844 , .month =  6 , .day =  28 },
+		.mjd = -278491,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  1938 , .month =  5 , .day =  18 },
+		.mjd = -244221,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  1988 , .month =  5 , .day =  18 },
+		.mjd = -225971,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2036 , .month =  6 , .day =  23 },
+		.mjd = -208416,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2046 , .month =  7 , .day =  20 },
+		.mjd = -204739,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2139 , .month =  9 , .day =  28 },
+		.mjd = -170726,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2184 , .month =  5 , .day =  29 },
+		.mjd = -154420,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2240 , .month =  8 , .day =  19 },
+		.mjd = -133900,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2302 , .month =  2 , .day =  11 },
+		.mjd = -111458,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2308 , .month =  7 , .day =  30 },
+		.mjd = -109099,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2396 , .month =  11 , .day =  29 },
+		.mjd = -76860,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2428 , .month =  12 , .day =  27 },
+		.mjd = -65152,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2465 , .month =  1 , .day =  24 },
+		.mjd = -51980,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2517 , .month =  1 , .day =  2 },
+		.mjd = -33022,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2568 , .month =  2 , .day =  27 },
+		.mjd = -14352,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2587 , .month =  10 , .day =  29 },
+		.mjd = -7175,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2651 , .month =  12 , .day =  7 },
+		.mjd = 16223,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2678 , .month =  4 , .day =  17 },
+		.mjd = 25848,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2690 , .month =  5 , .day =  25 },
+		.mjd = 30266,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2691 , .month =  12 , .day =  17 },
+		.mjd = 30833,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2692 , .month =  6 , .day =  3 },
+		.mjd = 31004,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2740 , .month =  11 , .day =  27 },
+		.mjd = 48698,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2744 , .month =  11 , .day =  7 },
+		.mjd = 50138,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2787 , .month =  8 , .day =  1 },
+		.mjd = 65737,
+	},
+	{
+		.c = &mon13_ancient_egyptian,
+		.d = {.year =  2843 , .month =  4 , .day =  20 },
+		.mjd = 86076,
 	},
 };
 #endif //MON13_KNOWN_H

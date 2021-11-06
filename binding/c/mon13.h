@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 //Enumerations
-enum mon13_Weekday {
+enum mon13_Weekday7 {
     MON13_NO_WEEKDAY = 0,
     MON13_MONDAY = 1,
     MON13_TUESDAY = 2,
@@ -158,6 +158,7 @@ extern const struct mon13_NameList mon13_julian_names_en_US;
 extern const struct mon13_NameList mon13_positivist_names_en_US;
 extern const struct mon13_NameList mon13_symmetry454_names_en_US;
 extern const struct mon13_NameList mon13_symmetry010_names_en_US;
+extern const struct mon13_NameList mon13_ancient_egyptian_names_en_US;
 
 extern const struct mon13_NameList mon13_gregorian_names_fr_FR;
 extern const struct mon13_NameList mon13_julian_names_fr_FR;
@@ -174,5 +175,6 @@ extern const struct mon13_Cal mon13_julian;
 extern const struct mon13_Cal mon13_positivist;
 extern const struct mon13_Cal mon13_symmetry454;
 extern const struct mon13_Cal mon13_symmetry010;
+extern const struct mon13_Cal mon13_ancient_egyptian;
 
 #endif //MON13_H

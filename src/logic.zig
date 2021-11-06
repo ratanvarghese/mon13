@@ -499,7 +499,7 @@ fn noYzToValidYz(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
 //Day of Week
 fn getDayOfWeek(d: base.Date, cal: *const base.Cal) base.Err!u8 {
     const w = cal.*.week;
-    if (cal.week.continuous) {
+    if (w.continuous) {
         const d_doy = try monthDayToDoy(d, cal);
         const d_mjd = try doyToMjd(d_doy, cal);
         const f_week_rem = @mod(d_mjd, w.length);

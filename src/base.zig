@@ -22,6 +22,20 @@ pub const Weekday7 = enum(u4) {
     Sunday = 7,
 };
 
+pub const Weekday10 = enum(u4) {
+    NoWeekday = 0,
+    Primidi = 1,
+    Duodi = 2,
+    Tridi = 3,
+    Quartidi = 4,
+    Quintidi = 5,
+    Sextidi = 6,
+    Septidi = 7,
+    Octidi = 8,
+    Nonidi = 9,
+    Decadi = 10,
+};
+
 pub const Date = struct {
     year: i32,
     month: u8,
