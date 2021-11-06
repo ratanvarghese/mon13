@@ -50,7 +50,7 @@ const Sequence = enum(u8) {
             },
             .weekday_number => weekday: {
                 const res = try logic.mjdToDayOfWeek(mjd, cal);
-                break :weekday @intCast(i32, @enumToInt(res));
+                break :weekday @intCast(i32, res);
             },
             .year => year: {
                 var res: i32 = 0;
@@ -87,10 +87,10 @@ const Sequence = enum(u8) {
 
     fn getWeekdayName(mjd: i32, cal: *const base.Cal, nlist: *const base.NameList) base.Err!?[*:0]const u8 {
         const weekday = try logic.mjdToDayOfWeek(mjd, cal);
-        if (weekday == base.Weekday.NoWeekday) {
+        if (weekday == @enumToInt(base.Weekday.NoWeekday)) {
             return getIcName(mjd, cal, nlist);
         } else {
-            const i = @intCast(usize, @enumToInt(weekday) - 1);
+            const i = @intCast(usize, weekday - 1);
             return nlist.*.weekday_list[i];
         }
     }

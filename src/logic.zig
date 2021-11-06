@@ -497,7 +497,7 @@ fn noYzToValidYz(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
 }
 
 //Day of Week
-fn getDayOfWeek(d: base.Date, cal: *const base.Cal) base.Err!base.Weekday {
+fn getDayOfWeek(d: base.Date, cal: *const base.Cal) base.Err!u8 {
     const w = cal.*.week;
     if (cal.week.continuous) {
         const d_doy = try monthDayToDoy(d, cal);
@@ -505,16 +505,16 @@ fn getDayOfWeek(d: base.Date, cal: *const base.Cal) base.Err!base.Weekday {
         const f_week_rem = @mod(d_mjd, w.length);
         const shifted_f_week_rem = f_week_rem + @enumToInt(base.Weekday.Wednesday);
         const res = clockModulo(@intCast(i32, shifted_f_week_rem), w.length);
-        return @intToEnum(base.Weekday, @intCast(u4, res));
+        return @intCast(u8, res);
     } else {
         if (seekIc(d, cal)) |ic| {
-            return base.Weekday.NoWeekday;
+            return @enumToInt(base.Weekday.NoWeekday);
         }
 
         const f_week_rem = @mod(d.day, w.length);
         const shifted_f_week_rem = f_week_rem + @enumToInt(w.start) - 1;
         const res = clockModulo(@intCast(i32, shifted_f_week_rem), w.length);
-        return @intToEnum(base.Weekday, @intCast(u4, res));
+        return @intCast(u4, res);
     }
 }
 
@@ -669,7 +669,7 @@ pub fn mjdToC99Tm(mjd: i32, cal: *const base.Cal, tm: *c_void) base.Err!void {
     output_c99_tm.*.tm_mday = @intCast(c_int, d.day);
     output_c99_tm.*.tm_mon = @intCast(c_int, d.month - 1);
     output_c99_tm.*.tm_year = @intCast(c_int, d.year - 1900);
-    output_c99_tm.*.tm_wday = @intCast(c_int, @mod(@enumToInt(weekday), 7));
+    output_c99_tm.*.tm_wday = @intCast(c_int, @mod(weekday, 7));
     output_c99_tm.*.tm_yday = doy.doy - 1;
     output_c99_tm.*.tm_isdst = 0;
 }
@@ -698,7 +698,7 @@ pub fn mjdToIsLeapYear(mjd: i32, cal: *const base.Cal) base.Err!bool {
     return isLeap(d_yz.year, cal);
 }
 
-pub fn mjdToDayOfWeek(mjd: i32, cal: *const base.Cal) base.Err!base.Weekday {
+pub fn mjdToDayOfWeek(mjd: i32, cal: *const base.Cal) base.Err!u8 {
     const doy = try mjdToDoy(mjd, cal);
     const d_yz = try doyToMonthDay(doy, cal);
     const weekday = try getDayOfWeek(d_yz, cal);

@@ -216,7 +216,7 @@ pub export fn mon13_mjdToDayOfWeek(
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     var res_weekday = raw_weekday orelse return @enumToInt(PublicError.NULL_RESULT);
     if (mon13.mjdToDayOfWeek(mjd, cal)) |weekday| {
-        res_weekday.* = @enumToInt(weekday);
+        res_weekday.* = weekday;
         return @enumToInt(PublicError.NONE);
     } else |err| {
         return @enumToInt(PublicError.make(err));

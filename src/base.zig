@@ -11,7 +11,7 @@ pub const Err = error{
     InvalidDate,
 };
 
-pub const Weekday = enum(u4) {
+pub const Weekday = enum(u8) {
     NoWeekday = 0,
     Monday = 1,
     Tuesday = 2,
