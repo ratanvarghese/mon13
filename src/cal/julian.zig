@@ -17,7 +17,7 @@ pub const julian = base.Cal{
         .symmetric = false,
     },
     .week = cal_gr.gregorian.week,
-    .epoch_mjd = -678577, //1 Jan, 1 AD
+    .epoch_mjd = cal_gr.gregorian.epoch_mjd - 2, //2 days before 1 Jan, 1 CE
     .common_month_max = cal_gr.gregorian.common_month_max,
     .leap_month_max = cal_gr.gregorian.leap_month_max,
     .year0 = false,

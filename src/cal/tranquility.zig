@@ -78,7 +78,7 @@ pub const tranquility = base.Cal{
         .length = cal_gr.gregorian.week.length,
         .continuous = false,
     },
-    .epoch_mjd = 40423, //1 day after Moon Landing Day
+    .epoch_mjd = gen.mjdFromVcalc(40423.5), //1 day after Moon Landing Day
     .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
     .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
     .year0 = false,

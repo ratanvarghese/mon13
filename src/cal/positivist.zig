@@ -66,7 +66,7 @@ pub const positivist = base.Cal{
         .offset_years = 212, //211
         .common_days = gen.dayCount(COMMON[0..COMMON.len]),
         .leap_days = gen.leapDayCount(COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
-        .offset_days = 77430, //77064
+        .offset_days = 77431, //77064
         .skip100 = true,
         .skip4000 = false,
         .symmetric = false,
@@ -76,7 +76,7 @@ pub const positivist = base.Cal{
         .length = cal_gr.gregorian.week.length,
         .continuous = false,
     },
-    .epoch_mjd = -25520, //1 Jan, 1789 CE
+    .epoch_mjd = gen.mjdFromVcalc(-25520.5), //1 Jan, 1789 CE
     .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
     .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
     .year0 = true,

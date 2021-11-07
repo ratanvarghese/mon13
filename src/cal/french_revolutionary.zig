@@ -101,7 +101,7 @@ pub const french_revolutionary_romme = base.Cal{
         .length = 10,
         .continuous = false,
     },
-    .epoch_mjd = -24161, //1 day before 22 Sept, 1792 CE
+    .epoch_mjd = gen.mjdFromVcalc(-24160.5), //22 Sept, 1792 CE
     .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
     .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
     .year0 = true,

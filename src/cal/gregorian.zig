@@ -54,7 +54,7 @@ pub const gregorian = base.Cal{
         .length = 7,
         .continuous = true,
     },
-    .epoch_mjd = -678575, //1 Jan, 1 CE
+    .epoch_mjd = gen.mjdFromVcalc(-678574.5), //1 Jan, 1 CE
     .common_month_max = gen.monthMax(COMMON[0..COMMON.len]),
     .leap_month_max = gen.monthMax(LEAP[0..LEAP.len]),
     .year0 = false,

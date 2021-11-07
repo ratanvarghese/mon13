@@ -1,4 +1,5 @@
 const base = @import("base.zig");
+const std = @import("std");
 
 pub fn monthMax(segments: []const ?base.Segment) u8 {
     //Assumes same months for leap and non-leap years.
@@ -23,4 +24,10 @@ pub fn dayCount(segments: []const ?base.Segment) u16 {
 
 pub fn leapDayCount(common: []const ?base.Segment, leap: []const ?base.Segment) u16 {
     return dayCount(leap) - dayCount(common);
+}
+
+//For MJD converted by
+//https://www.vcalc.com/equation/?uuid=e900a382-77a1-11e5-a3bb-bc764e2038f2
+pub fn mjdFromVcalc(vcalc: f32) i32 {
+    return @floatToInt(i32, std.math.floor(vcalc));
 }
