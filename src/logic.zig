@@ -59,10 +59,6 @@ fn isLeap(year: i32, cal: *const base.Cal) bool {
     }
 }
 
-fn segmentLen(s: base.Segment) u8 {
-    return (s.day_end - s.day_start) + 1;
-}
-
 pub fn yearLen(leap: bool, cal: *const base.Cal) u16 {
     const lc = cal.*.leap_cycle;
     if (leap) {
@@ -105,7 +101,8 @@ fn doyToMonthDay(d: DoyDate, cal: *const base.Cal) base.Err!base.Date {
 
     var si: u8 = 0;
     while (segments[si]) |s| : (si += 1) {
-        const s_end = s.offset + segmentLen(s);
+        const s_len = (s.day_end - s.day_start) + 1;
+        const s_end = s.offset + s_len;
         if (d.doy > s.offset and d.doy <= s_end) {
             const day = @intCast(u8, d.doy - s.offset + s.day_start - 1);
             const res: base.Date = .{
@@ -553,57 +550,6 @@ fn getDayOfWeek(d: base.Date, cal: *const base.Cal) base.Err!u8 {
     }
 }
 
-//Unix Time
-fn dateToUnix(d: base.Date, cal: *const base.Cal) base.Err!i64 {
-    const d_doy = try monthDayToDoy(d, cal);
-    const d_mjd = try doyToMjd(d_doy, cal);
-    var unix_days: i64 = 0;
-    if (@subWithOverflow(i64, @intCast(i64, d_mjd), @intCast(i64, UNIX_EPOCH_IN_MJD), &unix_days)) {
-        return base.Err.Overflow;
-    }
-    return 24 * 60 * 60 * unix_days;
-}
-
-fn unixToDate(u: i64, cal: *const base.Cal) base.Err!base.Date {
-    const unix_days = @divFloor(u, 24 * 60 * 60);
-    if (unix_days > maxInt(i32) or unix_days < minInt(i32)) {
-        return base.Err.Overflow;
-    }
-    const unix_days_32 = @intCast(i32, unix_days);
-    var res_mjd: i32 = 0;
-    if (@addWithOverflow(i32, unix_days_32, UNIX_EPOCH_IN_MJD, &res_mjd)) {
-        return base.Err.Overflow;
-    }
-    const res_doy = try mjdToDoy(res_mjd, cal);
-    const res = try doyToMonthDay(res_doy, cal);
-    return res;
-}
-
-//Rata Die
-fn dateToRd(d: base.Date, cal: *const base.Cal) base.Err!i64 {
-    const d_doy = try monthDayToDoy(d, cal);
-    const d_mjd = try doyToMjd(d_doy, cal);
-    var rata_die: i64 = 0;
-    if (@subWithOverflow(i64, @intCast(i64, d_mjd), @intCast(i64, RD_EPOCH_IN_MJD), &rata_die)) {
-        return base.Err.Overflow;
-    }
-    return rata_die;
-}
-
-fn rdToDate(rd: i64, cal: *const base.Cal) base.Err!base.Date {
-    if (rd > maxInt(i32) or rd < minInt(i32)) {
-        return base.Err.Overflow;
-    }
-    const rd_32 = @intCast(i32, rd);
-    var res_mjd: i32 = 0;
-    if (@addWithOverflow(i32, rd_32, RD_EPOCH_IN_MJD, &res_mjd)) {
-        return base.Err.Overflow;
-    }
-    const res_doy = try mjdToDoy(res_mjd, cal);
-    const res = try doyToMonthDay(res_doy, cal);
-    return res;
-}
-
 //C99 struct tm
 fn C99TmToDate(tm: *const C99Tm) base.Err!base.Date {
     if (tm.*.tm_mday < 1 or tm.*.tm_mday > maxInt(u8)) {
@@ -623,7 +569,7 @@ fn C99TmToDate(tm: *const C99Tm) base.Err!base.Date {
     };
 }
 
-//New Public functions
+//Public functions
 pub fn validYmd(cal: *const base.Cal, year: i32, month: u8, day: u8) bool {
     const d = base.Date{ .year = year, .month = month, .day = day };
     if (valid_year(d, cal)) {
