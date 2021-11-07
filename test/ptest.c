@@ -2060,6 +2060,10 @@ enum theft_trial_res format_strftime(struct theft* t, void* a1, void* a2, void* 
     int res0 = strftime(buf0, STRFTIME_BUF, fmt, gmt_u);
     int res1 = mon13_format(*mjd, c, n, fmt, buf1, STRFTIME_BUF);
 
+    if(res1 < 0) {
+        return (res1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+
     if(res0 != res1) {
         return THEFT_TRIAL_FAIL;
     }
