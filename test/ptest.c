@@ -936,6 +936,51 @@ enum theft_trial_res ymd_add_1day_sym010(struct theft* t, void* a1, void* a2) {
     return good ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res ymd_add_1day_fr(struct theft* t, void* a1, void* a2) {
+    const int32_t* mjd0 = a1;
+    const struct mon13_Cal* c = a2;
+
+    int32_t mjd1 = *mjd0 + 1;
+
+    int32_t y0, y1;
+    uint8_t m0, m1, d0, d1;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    int status1 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+
+    int leap;
+    if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    bool good = false;
+    if((m0 == 0 && d0 == 5 && !leap) || (m0 == 0 && d0 == 6 && leap)) {
+        good = add_1day_yearend(y0, y1, m0, m1, d0, d1, false);
+    }
+    else if(m0 == 12 && d0 == 30) {
+        bool good_md = (d1 == 1 && m1 == 0);
+        bool good_y = (y1 == y0);
+        good = good_md && good_y;
+    }
+    else if(d0 == 30) {
+        bool good_d = (d1 == 1);
+        bool good_m = (m1 == (m0 + 1));
+        bool good_y = (y1 == y0);
+        good = good_d && good_m && good_y;
+    }
+    else {
+        bool good_ym = (y1 == y0 && m1 == m0);
+        bool good_d = (d1 == (d0 + 1));
+        good = good_d && good_ym;
+    }
+    return good ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
 enum theft_trial_res add_1month_gr(struct theft* t, void* a1, void* a2) {
     const int32_t* mjd0 = a1;
     const struct mon13_Cal* c = a2;
@@ -1256,6 +1301,50 @@ enum theft_trial_res add_1month_sym010(struct theft* t, void* a1, void* a2) {
     return correct_res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res add_1month_fr(struct theft* t, void* a1, void* a2) {
+    const int32_t* mjd0 = a1;
+    const struct mon13_Cal* c = a2;
+
+    int32_t y0, y1, mjd1;
+    uint8_t m0, m1, d0, d1;
+    int status0 = mon13_mjdToYmd(*mjd0, c, &y0, &m0, &d0);
+    if(status0) {
+        return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    int status1 = mon13_addMonths(*mjd0, c, 1, &mjd1);
+    if(status1) {
+        return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    int status2 = mon13_mjdToYmd(mjd1, c, &y1, &m1, &d1);
+    if(status2) {
+        return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+
+    int leap;
+    mon13_mjdToIsLeapYear(*mjd0, c, &leap);
+
+    bool correct_res = false;
+    if(m0 == 0) {
+        bool correct_year = (y1 == (y0 + 1));
+        bool correct_month = (m1 == 2);
+        bool correct_day = (d1 == 1);
+        correct_res = correct_year && correct_month && correct_day;
+    }
+    else if(m0 == 12) {
+        bool correct_year = (y1 == (y0 + 1));
+        bool correct_month = (m1 == 1);
+        bool correct_day = (d1 == d0);
+        correct_res = correct_year && correct_month && correct_day;
+    }
+    else {
+        bool correct_year = (y1 == y0);
+        bool correct_month = (m1 == (m0 + 1));
+        bool correct_day = (d1 == d0);
+        correct_res = correct_year && correct_month && correct_day;
+    }
+    return correct_res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
 enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
     const int32_t* mjd0 = a1;
     const int32_t* offset = a2;
@@ -1517,6 +1606,41 @@ enum theft_trial_res day_of_week_tq(struct theft* t, void* a1, void* a2) {
             case 4: expected = MON13_MONDAY; break;
             case 5: expected = MON13_TUESDAY; break;
             case 6: expected = MON13_WEDNESDAY; break;
+            default: expected = -1;
+        }
+    }
+    return dow == expected ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res day_of_week_fr(struct theft* t, void* a1, void* a2) {
+    const int32_t* mjd = a1;
+    const struct mon13_Cal* c = a2;
+    uint8_t m, d;
+    if(mon13_mjdToYmd(*mjd, c, NULL, &m, &d)) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    int dow;
+    int status = mon13_mjdToDayOfWeek(*mjd, c, &dow);
+    if(status) {
+        return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
+    }
+    int expected;
+    if(m == 0) {
+        expected = MON13_NO_WEEKDAY;
+    }
+    else {
+        switch(d % 10) {
+            case 1: expected = MON13_PRIMIDI; break;
+            case 2: expected = MON13_DUODI; break;
+            case 3: expected = MON13_TRIDI; break;
+            case 4: expected = MON13_QUARTIDI; break;
+            case 5: expected = MON13_QUINTIDI; break;
+            case 6: expected = MON13_SEXTIDI; break;
+            case 7: expected = MON13_SEPTIDI; break;
+            case 8: expected = MON13_OCTIDI; break;
+            case 9: expected = MON13_NONIDI; break;
+            case 0: expected = MON13_DECADI; break;
             default: expected = -1;
         }
     }
@@ -2433,6 +2557,18 @@ struct theft_type_info eg_cal_info = {
     .print = print_cal
 };
 
+struct theft_type_info fr0_cal_info = {
+    .alloc = select_env, //nothing to free
+    .env = (void*)&mon13_french_revolutionary_romme,
+    .print = print_cal
+};
+
+struct theft_type_info fr1_cal_info = {
+    .alloc = select_env, //nothing to free
+    .env = (void*)&mon13_french_revolutionary_romme_sub1,
+    .print = print_cal
+};
+
 struct theft_type_info random_cal_info = {
     .alloc = select_random_cal, //nothing to free
     .print = print_cal
@@ -2789,6 +2925,33 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_mjdToYmd: Add 1 Day, Ancient Egyptian",
+            .prop2 = ymd_add_1day_fr,
+            .type_info = {
+                &mjd_info,
+                &eg_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToYmd: Add 1 Day, French Revolutionary Romme",
+            .prop2 = ymd_add_1day_fr,
+            .type_info = {
+                &mjd_info,
+                &fr0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToYmd: Add 1 Day, French Revolutionary Romme-1",
+            .prop2 = ymd_add_1day_fr,
+            .type_info = {
+                &mjd_info,
+                &fr1_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_mjdToDayOfYear: Gregorian Year 0<->Positivist same doy",
             .prop3 = doy_same,
             .type_info = {
@@ -2912,6 +3075,24 @@ int main(int argc, char** argv) {
             .seed = seed
         },
         {
+            .name = "mon13_mjdToIsLeapYear: French Revolutionary Romme leap count",
+            .prop2 = leap9,
+            .type_info = {
+                &mjd_info,
+                &fr0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToIsLeapYear: French Revolutionary Romme-1 leap count",
+            .prop2 = leap9,
+            .type_info = {
+                &mjd_info,
+                &fr0_cal_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_mjdToDayOfWeek: Gregorian Year 0",
             .prop2 = day_of_week_continuous,
             .type_info = {
@@ -2926,6 +3107,33 @@ int main(int argc, char** argv) {
             .type_info = {
                 &mjd_info,
                 &tq_year0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToDayOfWeek: Ancient Egyptian",
+            .prop2 = day_of_week_fr,
+            .type_info = {
+                &mjd_info,
+                &eg_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToDayOfWeek: French Revolutionary Romme",
+            .prop2 = day_of_week_fr,
+            .type_info = {
+                &mjd_info,
+                &fr0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToDayOfWeek: French Revolutionary Romme-1",
+            .prop2 = day_of_week_fr,
+            .type_info = {
+                &mjd_info,
+                &fr1_cal_info
             },
             .seed = seed
         },
@@ -2994,6 +3202,33 @@ int main(int argc, char** argv) {
             .type_info = {
                 &mjd_info,
                 &gr_year0_cal_info,
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToDayOfYear: Ancient Egyptian",
+            .prop2 = day_of_year_add_one,
+            .type_info = {
+                &mjd_info,
+                &eg_cal_info,
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToDayOfYear: French Revolutionary Romme",
+            .prop2 = day_of_year_add_one,
+            .type_info = {
+                &mjd_info,
+                &fr0_cal_info,
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_mjdToDayOfYear: French Revolutionary Romme-1",
+            .prop2 = day_of_year_add_one,
+            .type_info = {
+                &mjd_info,
+                &fr1_cal_info,
             },
             .seed = seed
         },
@@ -3093,6 +3328,33 @@ int main(int argc, char** argv) {
             .type_info = {
                 &mjd_info,
                 &sym010_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_addMonths: Add 1 Month, Ancient Egyptian",
+            .prop2 = add_1month_fr,
+            .type_info = {
+                &mjd_info,
+                &eg_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_addMonths: Add 1 Month, French Revolutionary Romme",
+            .prop2 = add_1month_fr,
+            .type_info = {
+                &mjd_info,
+                &fr0_cal_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_addMonths: Add 1 Month, French Revolutionary Romme-1",
+            .prop2 = add_1month_fr,
+            .type_info = {
+                &mjd_info,
+                &fr1_cal_info
             },
             .seed = seed
         },
