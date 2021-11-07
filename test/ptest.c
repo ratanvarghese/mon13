@@ -142,10 +142,10 @@ void print_cal(FILE* f, const void* instance, void* env) {
         fprintf(f, "%s", mon13_ancient_egyptian_names_en_US.calendar_name);
     }
     else if(c == &mon13_french_revolutionary_romme) {
-        fprintf(f, "%s", mon13_french_revolutionary_names_en_GB.calendar_name);
+        fprintf(f, "%s Romme", mon13_french_revolutionary_names_en_GB.calendar_name);
     }
     else if(c == &mon13_french_revolutionary_romme_sub1) {
-        fprintf(f, "%s", mon13_french_revolutionary_names_en_GB.calendar_name);
+        fprintf(f, "%s Romme-1", mon13_french_revolutionary_names_en_GB.calendar_name);
     }
     else {
         fprintf(f, "UNKNOWN");
@@ -1285,7 +1285,7 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
         if(y1 != ((y0 + *offset) + 1) && y1 != (y0 + *offset)) {
             return THEFT_TRIAL_FAIL;
         }
-        if(!(m1 == 1 || d1 == 1) && !(m1 == 0 || d1 == 2)) {
+        if(!(m1 == 1 && d1 == 1) && !(m1 == 0 && d1 == 2)) {
             return THEFT_TRIAL_FAIL;
         }
     }
@@ -1293,7 +1293,7 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
         if(y1 != ((y0 + *offset) + 1) && y1 != (y0 + *offset)) {
             return THEFT_TRIAL_FAIL;
         }
-        if(!(m1 == 1 || d1 == (d0 - 28)) && !(m1 == m0 || d1 == d0)) {
+        if(!(m1 == 1 && d1 == (d0 - 28)) && !(m1 == m0 && d1 == d0)) {
             return THEFT_TRIAL_FAIL;
         }
     }
@@ -1301,7 +1301,23 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
         if(y1 != ((y0 + *offset) + 1) && y1 != (y0 + *offset)) {
             return THEFT_TRIAL_FAIL;
         }
-        if(!(m1 == 1 || d1 == (d0 - 30)) && !(m1 == m0 || d1 == d0)) {
+        if(!(m1 == 1 && d1 == (d0 - 30)) && !(m1 == m0 && d1 == d0)) {
+            return THEFT_TRIAL_FAIL;
+        }
+    }
+    else if(c == &mon13_french_revolutionary_romme && m0 == 0 && d0 == 6) {
+        if(y1 != ((y0 + *offset) + 1) && y1 != (y0 + *offset)) {
+            return THEFT_TRIAL_FAIL;
+        }
+        if(!(m1 == 1 && d1 == 1) && !(m1 == m0 && d1 == d0)) {
+            return THEFT_TRIAL_FAIL;
+        }
+    }
+    else if(c == &mon13_french_revolutionary_romme_sub1 && m0 == 0 && d0 == 6) {
+        if(y1 != ((y0 + *offset) + 1) && y1 != (y0 + *offset)) {
+            return THEFT_TRIAL_FAIL;
+        }
+        if(!(m1 == 1 && d1 == 1) && !(m1 == m0 && d1 == d0)) {
             return THEFT_TRIAL_FAIL;
         }
     }

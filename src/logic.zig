@@ -188,14 +188,20 @@ fn normDoy(d: DoyDate, cal: *const base.Cal) DoyDate {
 fn skipIntercalary(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
     var prev_day = d;
     while (seekIc(prev_day, cal)) |ic| {
+        const prev_leap = isLeap(prev_day.year, cal);
         var dd_doy = ic.day_of_year;
-        if (isLeap(prev_day.year, cal)) {
+        if (prev_leap) {
             dd_doy = ic.day_of_leap_year;
+        }
+
+        var offset: u16 = 1;
+        if (yearLen(prev_leap, cal) < dd_doy) {
+            offset = 0;
         }
 
         const dd: DoyDate = .{
             .year = prev_day.year,
-            .doy = dd_doy + 1,
+            .doy = dd_doy + offset,
         };
         const norm_dd = normDoy(dd, cal);
         const next_day = try doyToMonthDay(norm_dd, cal);

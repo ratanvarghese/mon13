@@ -179,3 +179,34 @@ test "Rata Die Overflow" {
     const rd = mon13.mjdToRd(mjd) catch return;
     try expect(false);
 }
+
+test "Add Years on La Fête de la Révolution" {
+    const mjd0 = -1294533640;
+    const offset = 2568471;
+    const c = &mon13.french_revolutionary_romme_sub1;
+
+    const leap0 = try mon13.mjdToIsLeapYear(mjd0, c);
+    try expect(leap0);
+
+    var y0: i32 = 0;
+    var m0: u8 = 0;
+    var d0: u8 = 0;
+    try mon13.mjdToYmd(mjd0, c, &y0, &m0, &d0);
+
+    try expect(m0 == 0);
+    try expect(d0 == 6);
+
+    const mjd1 = try mon13.addYears(mjd0, c, offset);
+
+    var y1: i32 = 0;
+    var m1: u8 = 0;
+    var d1: u8 = 0;
+    try mon13.mjdToYmd(mjd1, c, &y1, &m1, &d1);
+
+    const leap1 = try mon13.mjdToIsLeapYear(mjd1 - 2, c);
+    try expect(!leap1);
+
+    try expect(y1 == (y0 + offset + 1));
+    try expect(m1 == 1);
+    try expect(d1 == 1);
+}
