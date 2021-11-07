@@ -143,22 +143,6 @@ fn seekIc(d: base.Date, cal: *const base.Cal) ?base.Intercalary {
     return null;
 }
 
-fn rollMonth(d: base.Date, offset: i32, cal: *const base.Cal) base.Err!base.Date {
-    if (cal.common_month_max != cal.leap_month_max) {
-        unreachable;
-    }
-    const month_max = cal.common_month_max;
-    const month_sum = try add(i32, d.month, offset);
-
-    const year_shift = @divFloor((month_sum - 1), month_max); //-1 in case month_sum == month_max
-    const res: base.Date = .{
-        .year = try add(i32, d.year, year_shift),
-        .month = @intCast(u8, clockModulo(month_sum, month_max)),
-        .day = d.day,
-    };
-    return res;
-}
-
 fn normDoy(d: DoyDate, cal: *const base.Cal) base.Err!DoyDate {
     var doy_done: u16 = 0;
     var year: i32 = d.year;
@@ -639,7 +623,20 @@ pub fn addMonths(mjd: i32, cal: *const base.Cal, offset: i32) base.Err!i32 {
     const doy = try mjdToDoy(mjd, cal);
     const d_yz = try doyToMonthDay(doy, cal);
     const skipped_d = try skipIntercalary(d_yz, cal);
-    const rolled_d = try rollMonth(skipped_d, offset, cal);
+
+    if (cal.common_month_max != cal.leap_month_max) {
+        return base.Err.BadCalendar;
+    }
+    const month_max = cal.common_month_max;
+    const month_sum = try add(i32, skipped_d.month, offset);
+
+    const year_shift = @divFloor((month_sum - 1), month_max); //-1 in case month_sum == month_max
+    const rolled_d: base.Date = .{
+        .year = try add(i32, skipped_d.year, year_shift),
+        .month = @intCast(u8, clockModulo(month_sum, month_max)),
+        .day = skipped_d.day,
+    };
+
     const res_yz = try normDay(rolled_d, cal);
     const res_doy = try monthDayToDoy(res_yz, cal);
     return try doyToMjd(res_doy, cal);
