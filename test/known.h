@@ -95,6 +95,30 @@ const struct name_cal name_cal_list[] = {
 		.c = &mon13_ancient_egyptian,
 		.n = &mon13_ancient_egyptian_names_en_US,
 	},
+	{
+		.c = &mon13_french_revolutionary_romme,
+		.n = &mon13_french_revolutionary_names_en_GB,
+	},
+	{
+		.c = &mon13_french_revolutionary_romme,
+		.n = &mon13_french_revolutionary_names_en_GB_joke,
+	},
+	{
+		.c = &mon13_french_revolutionary_romme,
+		.n = &mon13_french_revolutionary_names_fr_FR,
+	},
+	{
+		.c = &mon13_french_revolutionary_romme_sub1,
+		.n = &mon13_french_revolutionary_names_en_GB,
+	},
+	{
+		.c = &mon13_french_revolutionary_romme_sub1,
+		.n = &mon13_french_revolutionary_names_en_GB_joke,
+	},
+	{
+		.c = &mon13_french_revolutionary_romme_sub1,
+		.n = &mon13_french_revolutionary_names_fr_FR,
+	},
 };
 
 const struct mon13_Cal* cal_list[] = {
@@ -108,7 +132,9 @@ const struct mon13_Cal* cal_list[] = {
     &mon13_positivist,
     &mon13_symmetry454,
     &mon13_symmetry010,
-    &mon13_ancient_egyptian
+    &mon13_ancient_egyptian,
+    &mon13_french_revolutionary_romme,
+    &mon13_french_revolutionary_romme_sub1,
 };
 
 //Tranquility & Gregorian conversions
@@ -4314,4 +4340,258 @@ const struct known_convert_mjd eg2mjd_cctue[] = {
 		.mjd = 86076,
 	},
 };
+
+//Gregorian and French Revolutionary conversions
+//Most dates are from Encyclopedia Britannica
+//https://www.britannica.com/science/French-republican-calendar
+//https://www.britannica.com/place/France/The-Directory#ref465247
+//Some are from Wikipedia
+//https://en.wikipedia.org/wiki/Glossary_of_the_French_Revolution#Events_commonly_known_by_their_Revolutionary_dates
+const struct known_convert_date gr2fr_brit[] = {
+	//National Convention proclaims France a republic
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1792 , .month =  9 , .day =  22 },
+		.d1 = {.year =  1 , .month =  1 , .day =  1 },
+	},
+	//Consolidation of Revolutionary government
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  12 , .day =  4 },
+		.d1 = {.year =  2 , .month =  3 , .day =  14 },
+	},
+	//Law of 22 Prairial (accelerating Reign of Terror)
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1794 , .month =  6 , .day =  10 },
+		.d1 = {.year =  2 , .month =  9 , .day =  22 },
+	},
+	//Thermidor Reaction
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1794 , .month =  7 , .day =  27 },
+		.d1 = {.year =  2 , .month =  11 , .day =  9 },
+	},
+	//Insurrection of sanscullotes
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1795 , .month =  5 , .day =  20 },
+		.d1 = {.year =  3 , .month =  9 , .day =  1 },
+	},
+	//Napoleon's "Whiff of Grapeshot" (Wikipedia)
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1795 , .month =  10 , .day =  5 },
+		.d1 = {.year =  4 , .month =  1 , .day =  13 },
+	},
+	//Coup of 18 Fructidor, against royalists
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1797 , .month =  9 , .day =  4 },
+		.d1 = {.year =  5 , .month =  12 , .day =  18 },
+	},
+	//Law of 22 Floreal, depriving left-wing deputies of seats (Wikipedia)
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1798 , .month =  5 , .day =  11 },
+		.d1 = {.year =  6 , .month =  8 , .day =  22 },
+	},
+	//Coup of 30 Prairial, bringing Emmanuel-Joseph Sieyès to power
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1799 , .month =  6 , .day =  18 },
+		.d1 = {.year =  7 , .month =  9 , .day =  30 },
+	},
+	//Coup of 18 Brumaire, bringing Napoleon to power
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1799 , .month =  11 , .day =  9 },
+		.d1 = {.year =  8 , .month =  2 , .day =  18 },
+	},
+};
+
+//Gregorian and French Revolutionary conversions
+//Begin and end of months
+//https://en.wikipedia.org/wiki/French_Republican_calendar#Rural_calendar
+const struct known_convert_date gr2fr_wiki[] = {
+	//1 Vendémiaire <-> 22 September
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1792 , .month =  9 , .day =  22 },
+		.d1 = {.year =  1 , .month =  1 , .day =  1 },
+	},
+	//30 Vendémiaire <-> 21 October
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1792 , .month =  10 , .day =  21 },
+		.d1 = {.year =  1 , .month =  1 , .day =  30 },
+	},
+	//1 Brumaire <-> 22 October
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1792 , .month =  10 , .day =  22 },
+		.d1 = {.year =  1 , .month =  2 , .day =  1 },
+	},
+	//30 Brumaire <-> 20 November
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1792 , .month =  11 , .day =  20 },
+		.d1 = {.year =  1 , .month =  2 , .day =  30 },
+	},
+	//1 Frimaire <-> 21 November
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1792 , .month =  11 , .day =  21 },
+		.d1 = {.year =  1 , .month =  3 , .day =  1 },
+	},
+	//30 Frimaire <-> 20 December
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1792 , .month =  12 , .day =  20 },
+		.d1 = {.year =  1 , .month =  3 , .day =  30 },
+	},
+	//1 Nivôse <-> 22 December
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1792 , .month =  12 , .day =  21 },
+		.d1 = {.year =  1 , .month =  4 , .day =  1 },
+	},
+	//30 Nivôse <-> 20 January
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  1 , .day =  19 },
+		.d1 = {.year =  1 , .month =  4 , .day =  30 },
+	},
+	//1 Pluviôse <-> 21 January
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  1 , .day =  20 },
+		.d1 = {.year =  1 , .month =  5 , .day =  1 },
+	},
+	//30 Pluviôse <-> 18 February
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  2 , .day =  18 },
+		.d1 = {.year =  1 , .month =  5 , .day =  30 },
+	},
+	//1 Ventôse <-> 19 February
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  2 , .day =  19 },
+		.d1 = {.year =  1 , .month =  6 , .day =  1 },
+	},
+	//30 Ventôse <-> 20 March
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  3 , .day =  20 },
+		.d1 = {.year =  1 , .month =  6 , .day =  30 },
+	},
+	//1 Germinal <-> 21 March
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  3 , .day =  21 },
+		.d1 = {.year =  1 , .month =  7 , .day =  1 },
+	},
+	//30 Germinal <-> 19 April
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  4 , .day =  19 },
+		.d1 = {.year =  1 , .month =  7 , .day =  30 },
+	},
+	//1 Floréal <-> 20 April
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  4 , .day =  20 },
+		.d1 = {.year =  1 , .month =  8 , .day =  1 },
+	},
+	//30 Floréal <-> 19 May
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  5 , .day =  19 },
+		.d1 = {.year =  1 , .month =  8 , .day =  30 },
+	},
+	//1 Prairial <-> 20 May
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  5 , .day =  20 },
+		.d1 = {.year =  1 , .month =  9 , .day =  1 },
+	},
+	//30 Prairial <-> 18 June
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  6 , .day =  18 },
+		.d1 = {.year =  1 , .month =  9 , .day =  30 },
+	},
+	//1 Messidor <-> 19 June
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  6 , .day =  19 },
+		.d1 = {.year =  1 , .month =  10 , .day =  1 },
+	},
+	//30 Messidor <-> 18 July
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  7 , .day =  18 },
+		.d1 = {.year =  1 , .month =  10 , .day =  30 },
+	},
+	//1 Thermidor <-> 19 July
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  7 , .day =  19 },
+		.d1 = {.year =  1 , .month =  11 , .day =  1 },
+	},
+	//30 Prairial <-> 17 August
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  8 , .day =  17 },
+		.d1 = {.year =  1 , .month =  11 , .day =  30 },
+	},
+	//1 Fructidor <-> 18 August July
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  8 , .day =  18 },
+		.d1 = {.year =  1 , .month =  12 , .day =  1 },
+	},
+	//30 Fructidor <-> 16 September
+	{
+		.c0 = &mon13_gregorian_year_zero,
+		.c1 = &mon13_french_revolutionary_romme_sub1,
+		.d0 = {.year =  1793 , .month =  9 , .day =  16 },
+		.d1 = {.year =  1 , .month =  12 , .day =  30 },
+	},
+};
+
 #endif //MON13_KNOWN_H

@@ -139,6 +139,12 @@ void print_cal(FILE* f, const void* instance, void* env) {
     else if(c == &mon13_ancient_egyptian) {
         fprintf(f, "%s", mon13_ancient_egyptian_names_en_US.calendar_name);
     }
+    else if(c == &mon13_french_revolutionary_romme) {
+        fprintf(f, "%s", mon13_french_revolutionary_names_en_GB.calendar_name);
+    }
+    else if(c == &mon13_french_revolutionary_romme_sub1) {
+        fprintf(f, "%s", mon13_french_revolutionary_names_en_GB.calendar_name);
+    }
     else {
         fprintf(f, "UNKNOWN");
     }
@@ -156,6 +162,15 @@ void print_name_cal(FILE* f, const void* instance, void* env) {
     }
     else if(nc->n == &mon13_positivist_names_fr_FR) {
         fprintf(f, "fr_FR");
+    }
+    else if(nc->n == &mon13_french_revolutionary_names_fr_FR) {
+        fprintf(f, "fr_FR");
+    }
+    else if(nc->n == &mon13_french_revolutionary_names_en_GB) {
+        fprintf(f, "en_GB");
+    }
+    else if(nc->n == &mon13_french_revolutionary_names_en_GB_joke) {
+        fprintf(f, "en_GB (joke)");
     }
     else {
         fprintf(f, "en_US");
@@ -213,6 +228,18 @@ enum theft_alloc_res select_eg2mjd_cctue(struct theft* t, void* env, void** inst
 enum theft_alloc_res select_gr2sym454_irv(struct theft* t, void* env, void** instance) {
     uint64_t i = theft_random_choice(t, SIZEOF_ARR(gr2sym454_irv));
     *instance = (void*)&gr2sym454_irv[i];
+    return THEFT_ALLOC_OK;
+}
+
+enum theft_alloc_res select_gr2fr_brit(struct theft* t, void* env, void** instance) {
+    uint64_t i = theft_random_choice(t, SIZEOF_ARR(gr2fr_brit));
+    *instance = (void*)&gr2fr_brit[i];
+    return THEFT_ALLOC_OK;
+}
+
+enum theft_alloc_res select_gr2fr_wiki(struct theft* t, void* env, void** instance) {
+    uint64_t i = theft_random_choice(t, SIZEOF_ARR(gr2fr_wiki));
+    *instance = (void*)&gr2fr_wiki[i];
     return THEFT_ALLOC_OK;
 }
 
@@ -511,10 +538,6 @@ enum theft_trial_res fromYmd_known_mjd(struct theft* t, void* test_input) {
 
     if(status0) {
         return THEFT_TRIAL_FAIL;
-    }
-
-    if(mjd != kcm->mjd) {
-        printf("FINDME kcm->mjd: %d mjd: %d\n", kcm->mjd, mjd);
     }
 
     return (mjd == kcm->mjd) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
@@ -2312,6 +2335,16 @@ struct theft_type_info gr2sym454_irv_info = {
     .print = print_known
 };
 
+struct theft_type_info gr2fr_brit_info = {
+    .alloc = select_gr2fr_brit, //nothing to free
+    .print = print_known
+};
+
+struct theft_type_info gr2fr_wiki_info = {
+    .alloc = select_gr2fr_wiki, //nothing to free
+    .print = print_known
+};
+
 struct theft_type_info gr_cal_info = {
     .alloc = select_env, //nothing to free
     .env = (void*)&mon13_gregorian,
@@ -2552,6 +2585,20 @@ int main(int argc, char** argv) {
             .type_info = {&gr2sym454_irv_info},
             .seed = seed,
             .trials = SIZEOF_ARR(gr2sym454_irv)
+        },
+        {
+            .name = "mon13_mjdFromYmd: Gregorian Year 0<->French Revolutionary Romme-1 (Britannica)",
+            .prop1 = fromYmd_known,
+            .type_info = {&gr2fr_brit_info},
+            .seed = seed,
+            .trials = SIZEOF_ARR(gr2fr_brit)
+        },
+        {
+            .name = "mon13_mjdFromYmd: Gregorian Year 0<->French Revolutionary Romme-1 (Wikipedia)",
+            .prop1 = fromYmd_known,
+            .type_info = {&gr2fr_wiki_info},
+            .seed = seed,
+            .trials = SIZEOF_ARR(gr2fr_wiki)
         },
         {
             .name = "mon13_mjd*Ymd: Roundtrip",

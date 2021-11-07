@@ -160,9 +160,13 @@ extern const struct mon13_NameList mon13_symmetry454_names_en_US;
 extern const struct mon13_NameList mon13_symmetry010_names_en_US;
 extern const struct mon13_NameList mon13_ancient_egyptian_names_en_US;
 
+extern const struct mon13_NameList mon13_french_revolutionary_names_en_GB;
+extern const struct mon13_NameList mon13_french_revolutionary_names_en_GB_joke;
+
 extern const struct mon13_NameList mon13_gregorian_names_fr_FR;
 extern const struct mon13_NameList mon13_julian_names_fr_FR;
 extern const struct mon13_NameList mon13_positivist_names_fr_FR;
+extern const struct mon13_NameList mon13_french_revolutionary_names_fr_FR;
 
 //Predefined calendars
 extern const struct mon13_Cal mon13_gregorian;
@@ -176,5 +180,7 @@ extern const struct mon13_Cal mon13_positivist;
 extern const struct mon13_Cal mon13_symmetry454;
 extern const struct mon13_Cal mon13_symmetry010;
 extern const struct mon13_Cal mon13_ancient_egyptian;
+extern const struct mon13_Cal mon13_french_revolutionary_romme;
+extern const struct mon13_Cal mon13_french_revolutionary_romme_sub1;
 
 #endif //MON13_H

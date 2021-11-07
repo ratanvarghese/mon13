@@ -11,6 +11,8 @@ pub export const mon13_positivist = mon13.positivist;
 pub export const mon13_symmetry454 = mon13.symmetry454;
 pub export const mon13_symmetry010 = mon13.symmetry010;
 pub export const mon13_ancient_egyptian = mon13.ancient_egyptian;
+pub export const mon13_french_revolutionary_romme = mon13.french_revolutionary_romme;
+pub export const mon13_french_revolutionary_romme_sub1 = mon13.french_revolutionary_romme_sub1;
 
 pub export const mon13_gregorian_names_en_US = mon13.gregorian_names_en_US;
 pub export const mon13_tranquility_names_en_US = mon13.tranquility_names_en_US;
@@ -22,9 +24,13 @@ pub export const mon13_symmetry454_names_en_US = mon13.symmetry454_names_en_US;
 pub export const mon13_symmetry010_names_en_US = mon13.symmetry010_names_en_US;
 pub export const mon13_ancient_egyptian_names_en_US = mon13.ancient_egyptian_names_en_US;
 
+pub export const mon13_french_revolutionary_names_en_GB = mon13.french_revolutionary_names_en_GB;
+pub export const mon13_french_revolutionary_names_en_GB_joke = mon13.french_revolutionary_names_en_GB_joke;
+
 pub export const mon13_gregorian_names_fr_FR = mon13.gregorian_names_fr_FR;
 pub export const mon13_julian_names_fr_FR = mon13.julian_names_fr_FR;
 pub export const mon13_positivist_names_fr_FR = mon13.positivist_names_fr_FR;
+pub export const mon13_french_revolutionary_names_fr_FR = mon13.french_revolutionary_names_fr_FR;
 
 pub const PublicError = extern enum {
     NONE = 0,
