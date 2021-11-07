@@ -1,6 +1,9 @@
 const std = @import("std");
 const minInt = std.math.minInt;
 const maxInt = std.math.maxInt;
+const add = std.math.add;
+const sub = std.math.sub;
+const mul = std.math.mul;
 const base = @import("base.zig");
 
 const DoyDate = struct {
@@ -145,41 +148,34 @@ fn rollMonth(d: base.Date, offset: i32, cal: *const base.Cal) base.Err!base.Date
         unreachable;
     }
     const month_max = cal.common_month_max;
-    var month_sum: i32 = 0;
-    if (@addWithOverflow(i32, d.month, offset, &month_sum)) {
-        return base.Err.Overflow;
-    }
+    const month_sum = try add(i32, d.month, offset);
 
     const year_shift = @divFloor((month_sum - 1), month_max); //-1 in case month_sum == month_max
     const res: base.Date = .{
-        .year = d.year +% year_shift,
+        .year = try add(i32, d.year, year_shift),
         .month = @intCast(u8, clockModulo(month_sum, month_max)),
         .day = d.day,
     };
     return res;
 }
 
-fn normDoy(d: DoyDate, cal: *const base.Cal) DoyDate {
+fn normDoy(d: DoyDate, cal: *const base.Cal) base.Err!DoyDate {
     var doy_done: u16 = 0;
     var year: i32 = d.year;
     while (true) {
         const leap = isLeap(year, cal);
-        const doy_sum = doy_done +% yearLen(leap, cal);
+        const doy_sum = try add(u16, doy_done, yearLen(leap, cal));
         if (doy_sum >= d.doy) {
             //doy_done never exceeds d.doy.
             //That makes it slightly easier to determine the result.
             //Use >= for 1-based doy, > for 0-based doy.
             break;
         } else {
-            var year_sum: i32 = 0;
-            if (@addWithOverflow(i32, year, 1, &year_sum)) {
-                break;
-            }
-            year = year_sum;
+            year = try add(i32, year, 1);
             doy_done = doy_sum;
         }
     }
-    return .{ .year = year, .doy = d.doy - doy_done };
+    return DoyDate{ .year = year, .doy = d.doy - doy_done };
 }
 
 fn skipIntercalary(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
@@ -200,7 +196,7 @@ fn skipIntercalary(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
             .year = prev_day.year,
             .doy = dd_doy + offset,
         };
-        const norm_dd = normDoy(dd, cal);
+        const norm_dd = try normDoy(dd, cal);
         const next_day = try doyToMonthDay(norm_dd, cal);
         if (prev_day.year == next_day.year and prev_day.month == next_day.month and prev_day.day == next_day.day) {
             return base.Err.BadCalendar;
@@ -232,7 +228,7 @@ fn normDay(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
             .doy = matching_s.offset +% d.day,
         };
 
-        const norm_dd = normDoy(dd, cal);
+        const norm_dd = try normDoy(dd, cal);
         const res = try doyToMonthDay(norm_dd, cal);
         return res;
     } else {
@@ -315,15 +311,8 @@ fn mjdToDoyCommon(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
     //Most differences are caused by generalizing across calendars.
     const lc = cal.*.leap_cycle;
 
-    var day_shifted: i32 = 0;
-    if (@subWithOverflow(i32, mjd, cal.*.epoch_mjd, &day_shifted)) {
-        return base.Err.Overflow;
-    }
-
-    var day_total: i32 = 0;
-    if (@subWithOverflow(i32, day_shifted, lc.offset_days, &day_total)) {
-        return base.Err.Overflow;
-    }
+    const day_shifted = try sub(i32, mjd, cal.*.epoch_mjd);
+    const day_total = try sub(i32, day_shifted, lc.offset_days);
 
     var f_4000_quot: i32 = 0;
     var f_4000_rem: i32 = 0;
@@ -399,14 +388,8 @@ fn yearStartMjdCommon(year: i32, cal: *const base.Cal) base.Err!i32 {
         return base.Err.BadCalendar;
     }
 
-    var off_year: i32 = 0;
-    if (@subWithOverflow(i32, year, 1 + lc.offset_years, &off_year)) {
-        return base.Err.Overflow;
-    }
-    var common_days: i32 = 0;
-    if (@mulWithOverflow(i32, off_year, lc.common_days, &common_days)) {
-        return base.Err.Overflow;
-    }
+    const off_year = try sub(i32, year, 1 + lc.offset_years);
+    const common_days = try mul(i32, off_year, lc.common_days);
     const f_leap_quot = @divFloor(off_year, @intCast(i32, lc.year_count));
 
     //At this point, we know off_year * lc.common_days hasn't overflowed.
@@ -427,43 +410,22 @@ fn yearStartMjdCommon(year: i32, cal: *const base.Cal) base.Err!i32 {
         leap_days -= (f_100_quot * @intCast(i32, lc.leap_days));
     }
 
-    var off_days: i32 = 0;
-    if (@addWithOverflow(i32, common_days, leap_days, &off_days)) {
-        return base.Err.Overflow;
-    }
-    var total_days: i32 = 0;
-    if (@addWithOverflow(i32, off_days, lc.offset_days, &total_days)) {
-        return base.Err.Overflow;
-    }
-    var year_start_mjd: i32 = 0;
-    if (@addWithOverflow(i32, total_days, cal.*.epoch_mjd - 1, &year_start_mjd)) {
-        return base.Err.Overflow;
-    }
-    return year_start_mjd;
+    const off_days = try add(i32, common_days, leap_days);
+    const total_days = try add(i32, off_days, lc.offset_days);
+    return add(i32, total_days, cal.*.epoch_mjd - 1);
 }
 
 fn yearStartMjdSymmetric(year: i32, cal: *const base.Cal) base.Err!i32 {
     const lc = cal.*.leap_cycle;
     const E = year - 1;
-    var common_days: i32 = 0;
-    if (@mulWithOverflow(i32, E, lc.common_days, &common_days)) {
-        return base.Err.Overflow;
-    }
+    const common_days = try mul(i32, E, lc.common_days);
 
     const leap_num = @intCast(i32, lc.leap_year_count) * E - @intCast(i32, lc.offset_years);
     const leap_quot = @divFloor(leap_num, lc.year_count);
     const leap_days = lc.leap_days * leap_quot;
+    const total_days = try add(i32, common_days, leap_days);
 
-    var total_days: i32 = 0;
-    if (@addWithOverflow(i32, common_days, leap_days, &total_days)) {
-        return base.Err.Overflow;
-    }
-
-    var year_start_mjd: i32 = 0;
-    if (@addWithOverflow(i32, total_days, cal.*.epoch_mjd - 1, &year_start_mjd)) {
-        return base.Err.Overflow;
-    }
-    return year_start_mjd;
+    return add(i32, total_days, cal.*.epoch_mjd - 1);
 }
 
 fn doyToMjd(doy: DoyDate, cal: *const base.Cal) base.Err!i32 {
@@ -479,11 +441,7 @@ fn doyToMjd(doy: DoyDate, cal: *const base.Cal) base.Err!i32 {
         year_start_mjd = try yearStartMjdCommon(doy.year, cal);
     }
 
-    var res: i32 = 0;
-    if (@addWithOverflow(i32, year_start_mjd, doy.doy, &res)) {
-        return base.Err.Overflow;
-    }
-    return res;
+    return add(i32, year_start_mjd, doy.doy);
 }
 
 //Validation
@@ -601,19 +559,11 @@ pub fn mjdFromUnix(unix: i64) base.Err!i32 {
         return base.Err.Overflow;
     }
     const unix_days_32 = @intCast(i32, unix_days);
-    var res_mjd: i32 = 0;
-    if (@addWithOverflow(i32, unix_days_32, UNIX_EPOCH_IN_MJD, &res_mjd)) {
-        return base.Err.Overflow;
-    }
-    return res_mjd;
+    return add(i32, unix_days_32, UNIX_EPOCH_IN_MJD);
 }
 
 pub fn mjdFromRd(rd: i32) base.Err!i32 {
-    var res_mjd: i32 = 0;
-    if (@addWithOverflow(i32, rd, RD_EPOCH_IN_MJD, &res_mjd)) {
-        return base.Err.Overflow;
-    }
-    return res_mjd;
+    return add(i32, rd, RD_EPOCH_IN_MJD);
 }
 
 pub fn mjdToYmd(
@@ -656,21 +606,12 @@ pub fn mjdToC99Tm(mjd: i32, cal: *const base.Cal, tm: *c_void) base.Err!void {
 }
 
 pub fn mjdToUnix(mjd: i32) base.Err!i64 {
-    const mjd_64 = @intCast(i64, mjd);
-    const epoch = @intCast(i64, UNIX_EPOCH_IN_MJD);
-    var unix_days: i64 = 0;
-    if (@subWithOverflow(i64, mjd_64, epoch, &unix_days)) {
-        return base.Err.Overflow;
-    }
+    const unix_days = try sub(i64, mjd, UNIX_EPOCH_IN_MJD);
     return 24 * 60 * 60 * unix_days;
 }
 
 pub fn mjdToRd(mjd: i32) base.Err!i32 {
-    var rata_die: i32 = 0;
-    if (@subWithOverflow(i32, mjd, RD_EPOCH_IN_MJD, &rata_die)) {
-        return base.Err.Overflow;
-    }
-    return rata_die;
+    return sub(i32, mjd, RD_EPOCH_IN_MJD);
 }
 
 pub fn mjdToIsLeapYear(mjd: i32, cal: *const base.Cal) base.Err!bool {
@@ -711,10 +652,7 @@ pub fn addYears(mjd: i32, cal: *const base.Cal, offset: i32) base.Err!i32 {
 
     const doy = try mjdToDoy(mjd, cal);
     const d_yz = try doyToMonthDay(doy, cal);
-    var y: i32 = 0;
-    if (@addWithOverflow(i32, d_yz.year, offset, &y)) {
-        return base.Err.Overflow;
-    }
+    var y = try add(i32, d_yz.year, offset);
     const rolled_d = base.Date{ .year = y, .month = d_yz.month, .day = d_yz.day };
     if (valid_assume_yz(rolled_d, cal)) {
         const res_doy = try monthDayToDoy(rolled_d, cal);
@@ -736,33 +674,18 @@ pub fn diffMonths(mjd0: i32, mjd1: i32, cal: *const base.Cal) base.Err!i32 {
     const d1_skip = try skipIntercalary(d1_norm, cal);
 
     if (cal.common_month_max != cal.leap_month_max) {
-        unreachable;
+        return base.Err.BadCalendar;
     }
 
-    var y_diff: i32 = 0;
-    if (@subWithOverflow(i32, d0_skip.year, d1_skip.year, &y_diff)) {
-        return base.Err.Overflow;
-    }
-
+    const y_diff = try sub(i32, d0_skip.year, d1_skip.year);
     const m_diff = @intCast(i32, d0_skip.month) - @intCast(i32, d1_skip.month);
     const d_diff = @intCast(i32, d0_skip.day) - @intCast(i32, d1_skip.day);
     const month_max = @intCast(i32, cal.common_month_max);
 
-    var y_diff_to_m: i32 = 0;
-    if (@mulWithOverflow(i32, y_diff, month_max, &y_diff_to_m)) {
-        return base.Err.Overflow;
-    }
-    var ym_diff: i32 = 0;
-    if (@addWithOverflow(i32, y_diff_to_m, m_diff, &ym_diff)) {
-        return base.Err.Overflow;
-    }
-
+    const y_diff_to_m = try mul(i32, y_diff, month_max);
+    const ym_diff = try add(i32, y_diff_to_m, m_diff);
     const modifier = diffModifier(ym_diff, d_diff);
-
-    var res = ym_diff;
-    if (@addWithOverflow(i32, ym_diff, modifier, &res)) {
-        return base.Err.Overflow;
-    }
+    const res = try add(i32, ym_diff, modifier);
     return res;
 }
 
@@ -770,22 +693,15 @@ pub fn diffYears(mjd0: i32, mjd1: i32, cal: *const base.Cal) base.Err!i32 {
     const doy0 = try mjdToDoy(mjd0, cal);
     const doy1 = try mjdToDoy(mjd1, cal);
 
-    var y_diff: i32 = 0;
-    if (@subWithOverflow(i32, doy0.year, doy1.year, &y_diff)) {
-        return base.Err.Overflow;
-    }
-
+    const y_diff = try sub(i32, doy0.year, doy1.year);
     const d0 = try doyToMonthDay(doy0, cal);
     const d1 = try doyToMonthDay(doy1, cal);
-    const adjusted0 = try monthDayToDoyFromSegments(d0, cal, cal.*.leap_lookup_list);
-    const adjusted1 = try monthDayToDoyFromSegments(d1, cal, cal.*.leap_lookup_list);
+    const segments = cal.*.leap_lookup_list;
+    const adjusted0 = try monthDayToDoyFromSegments(d0, cal, segments);
+    const adjusted1 = try monthDayToDoyFromSegments(d1, cal, segments);
 
     const d_diff = @intCast(i32, adjusted0.doy) - @intCast(i32, adjusted1.doy);
     const modifier = diffModifier(y_diff, d_diff);
-
-    var res: i32 = y_diff;
-    if (@addWithOverflow(i32, y_diff, modifier, &res)) {
-        return base.Err.Overflow;
-    }
+    const res = try add(i32, y_diff, modifier);
     return res;
 }
