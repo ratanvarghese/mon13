@@ -9,6 +9,7 @@ pub fn build(b: *std.build.Builder) void {
         .path = "src/mon13.zig",
     };
     const rawSeed = b.option(u64, "seed", "Seed for ptest");
+    const rawSubmoduleTheft = b.option(bool, "submodule-theft", "Use submodule libtheft instead of system libtheft");
 
     //Library files
     const sharedLib = b.addSharedLibrary("mon13", "binding/c/bindc.zig", b.version(0, 5, 1));
@@ -42,12 +43,19 @@ pub fn build(b: *std.build.Builder) void {
     propertyTestExe.linkSystemLibraryName("m");
     propertyTestExe.linkSystemLibraryName("theft");
     propertyTestExe.linkLibrary(sharedLib);
-    propertyTestExe.addLibPath("theft/build");
+    if (rawSubmoduleTheft orelse false) {
+        propertyTestExe.addLibPath("theft/build");
+    }
     propertyTestExe.addIncludeDir("binding/c");
     propertyTestExe.addIncludeDir("test");
-    propertyTestExe.addIncludeDir("theft/inc");
+    if (rawSubmoduleTheft orelse false) {
+        propertyTestExe.addIncludeDir("theft/inc");
+    }
     propertyTestExe.setBuildMode(mode);
-    propertyTestExe.step.dependOn(&makeTheft.step);
+
+    if (rawSubmoduleTheft orelse false) {
+        propertyTestExe.step.dependOn(&makeTheft.step);
+    }
 
     const propertyTestRun = propertyTestExe.run();
     if (rawSeed) |seed| {
@@ -60,6 +68,6 @@ pub fn build(b: *std.build.Builder) void {
         propertyTestRun.addArg(seed_arg);
     }
 
-    const propertyTestStep = b.step("ptest", "Run property-based tests (POSIX only)");
+    const propertyTestStep = b.step("ptest", "Run property-based tests (using libtheft - POSIX only)");
     propertyTestStep.dependOn(&propertyTestRun.step);
 }
