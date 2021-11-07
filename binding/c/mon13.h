@@ -16,6 +16,19 @@ enum mon13_Weekday7 {
     MON13_SUNDAY = 7
 };
 
+enum Weekday10 {
+    MON13_PRIMIDI = 1,
+    MON13_DUODI = 2,
+    MON13_TRIDI = 3,
+    MON13_QUARTIDI = 4,
+    MON13_QUINTIDI = 5,
+    MON13_SEXTIDI = 6,
+    MON13_SEPTIDI = 7,
+    MON13_OCTIDI = 8,
+    MON13_NONIDI = 9,
+    MON13_DECADI = 10,
+};
+
 enum mon13_error {
     MON13_ERROR_NONE = 0,
     MON13_ERROR_UNKNOWN = -1,
