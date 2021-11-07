@@ -1515,6 +1515,19 @@ enum theft_trial_res leap9(struct theft* t, void* a1, void* a2) {
     return res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res leap_fr(struct theft* t, void* a1, void* a2) {
+    const int32_t* mjd = a1;
+    const struct mon13_Cal* c = a2;
+
+    uint8_t m, d;
+    if(!mon13_mjdToYmd(*mjd, c, NULL, &m, &d) && m == 0 && d == 6) {
+        return THEFT_TRIAL_SKIP;
+    }
+    else {
+        return leap9(t, a1, a2);
+    }
+}
+
 enum theft_trial_res leap7(struct theft* t, void* a1, void* a2) {
     const int32_t* mjd = a1;
     const struct mon13_Cal* c = a2;
@@ -3076,7 +3089,7 @@ int main(int argc, char** argv) {
         },
         {
             .name = "mon13_mjdToIsLeapYear: French Revolutionary Romme leap count",
-            .prop2 = leap9,
+            .prop2 = leap_fr,
             .type_info = {
                 &mjd_info,
                 &fr0_cal_info
@@ -3085,7 +3098,7 @@ int main(int argc, char** argv) {
         },
         {
             .name = "mon13_mjdToIsLeapYear: French Revolutionary Romme-1 leap count",
-            .prop2 = leap9,
+            .prop2 = leap_fr,
             .type_info = {
                 &mjd_info,
                 &fr0_cal_info
