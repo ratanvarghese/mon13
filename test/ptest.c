@@ -21,7 +21,9 @@ bool add_with_overflow(int32_t a, int32_t b, int32_t* res) {
     if(raw < -((int64_t)INT32_MAX) || raw > ((int64_t)INT32_MAX - 1)) {
         return true;
     }
-    *res = (int32_t) (raw % INT32_MAX);
+    if(res != NULL) {
+        *res = (int32_t) (raw % INT32_MAX);
+    }
     return false;
 }
 
@@ -482,6 +484,10 @@ enum theft_trial_res c99tm_basic(struct theft* t, void* a1) {
 enum theft_trial_res rd_basic(struct theft* t, void* a1, void* a2) {
     const int32_t* rd0 = a1;
     const int32_t* offset = a2;
+
+    if(add_with_overflow(*rd0, *offset, NULL)) {
+        return THEFT_TRIAL_SKIP;
+    }
 
     int32_t mjd0;
     int status0 = mon13_mjdFromRd(*rd0, &mjd0);

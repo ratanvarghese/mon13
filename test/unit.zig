@@ -172,3 +172,10 @@ test "Moon Landing Day" {
         ),
     );
 }
+
+test "Rata Die Overflow" {
+    const offset = 1389779633;
+    const mjd = 757702997 + offset;
+    const rd = mon13.mjdToRd(mjd) catch return;
+    try expect(false);
+}
