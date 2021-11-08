@@ -31,3 +31,12 @@ pub fn leapDayCount(common: []const ?base.Segment, leap: []const ?base.Segment) 
 pub fn mjdFromVcalc(vcalc: f32) i32 {
     return @floatToInt(i32, std.math.floor(vcalc));
 }
+
+pub fn validInEnum(comptime E: type, x: u8) bool {
+    inline for (std.meta.fields(E)) |field| {
+        if (field.value == x) {
+            return true;
+        }
+    }
+    return false;
+}
