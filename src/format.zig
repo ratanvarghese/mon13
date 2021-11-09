@@ -4,6 +4,16 @@ const gen = @import("gen.zig");
 const base = @import("base.zig");
 const logic = @import("logic.zig");
 
+fn copyLenUtf8(c: u8) base.Err!u8 {
+    return switch (c) {
+        0b11110000...0b11110111 => 4,
+        0b11100000...0b11101111 => 3,
+        0b11000000...0b11011111 => 2,
+        0b00000000...0b01111111 => 1,
+        else => base.Err.InvalidUtf8,
+    };
+}
+
 const Flag = enum(u8) {
     pad_none = '-',
     pad_space = '_',
@@ -200,16 +210,6 @@ const State = enum(u8) {
     }
 };
 
-fn copyLenUtf8(c: u8) base.Err!u8 {
-    return switch (c) {
-        0b11110000...0b11110111 => 4,
-        0b11100000...0b11101111 => 3,
-        0b11000000...0b11011111 => 2,
-        0b00000000...0b01111111 => 1,
-        else => base.Err.InvalidUtf8,
-    };
-}
-
 const DigitInfo = struct {
     pub const radix = 10;
     denominator: u32,
@@ -228,7 +228,7 @@ const DigitInfo = struct {
         return res;
     }
 
-    fn getChar(self: DigitInfo) u8 {
+    fn getTopDigitChar(self: DigitInfo) u8 {
         return @intCast(u8, (self.value / self.denominator)) + '0';
     }
 
@@ -369,7 +369,7 @@ const Position = struct {
         var res = self;
         var x_digit = y_digit;
         while (x_digit.count > 0) {
-            res = res.doChar(x_digit.getChar(), raw_buf);
+            res = res.doChar(x_digit.getTopDigitChar(), raw_buf);
             x_digit = x_digit.removeTopDigit();
         }
         return res;

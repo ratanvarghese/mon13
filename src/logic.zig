@@ -81,7 +81,6 @@ fn getSegments(year: i32, cal: *const base.Cal) [*:null]const ?base.Segment {
 
 fn monthDayToDoyFromSegments(
     d: base.Date,
-    cal: *const base.Cal,
     segments: [*:null]const ?base.Segment,
 ) base.Err!DoyDate {
     var si: u8 = 0;
@@ -96,7 +95,7 @@ fn monthDayToDoyFromSegments(
 }
 
 fn monthDayToDoy(d: base.Date, cal: *const base.Cal) base.Err!DoyDate {
-    return monthDayToDoyFromSegments(d, cal, getSegments(d.year, cal));
+    return monthDayToDoyFromSegments(d, getSegments(d.year, cal));
 }
 
 fn doyToMonthDay(d: DoyDate, cal: *const base.Cal) base.Err!base.Date {
@@ -470,47 +469,6 @@ fn noYzToValidYz(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
     return base.Err.InvalidDate;
 }
 
-//Day of Week
-fn getDayOfWeek(d: base.Date, cal: *const base.Cal) base.Err!u8 {
-    const w = cal.*.week;
-    if (w.continuous) {
-        const d_doy = try monthDayToDoy(d, cal);
-        const d_mjd = try doyToMjd(d_doy, cal);
-        const f_week_rem = @mod(d_mjd, w.length);
-        const shifted_f_week_rem = f_week_rem + @enumToInt(base.Weekday7.Wednesday);
-        const res = clockModulo(@intCast(i32, shifted_f_week_rem), w.length);
-        return @intCast(u8, res);
-    } else {
-        if (seekIc(d, cal)) |ic| {
-            return @enumToInt(base.Weekday7.NoWeekday);
-        }
-
-        const f_week_rem = @mod(d.day, w.length);
-        const shifted_f_week_rem = f_week_rem + w.start - 1;
-        const res = clockModulo(@intCast(i32, shifted_f_week_rem), w.length);
-        return @intCast(u4, res);
-    }
-}
-
-//C99 struct tm
-fn C99TmToDate(tm: *const C99Tm) base.Err!base.Date {
-    if (tm.*.tm_mday < 1 or tm.*.tm_mday > maxInt(u8)) {
-        return base.Err.Overflow;
-    }
-    if (tm.*.tm_mon < 0 or tm.*.tm_mon > maxInt(u8)) {
-        return base.Err.Overflow;
-    }
-    if (tm.*.tm_year < minInt(i32) or tm.*.tm_year > maxInt(i32)) {
-        return base.Err.Overflow;
-    }
-
-    return base.Date{
-        .day = @intCast(u8, tm.*.tm_mday),
-        .month = @intCast(u8, tm.*.tm_mon + 1),
-        .year = @intCast(i32, tm.*.tm_year + 1900),
-    };
-}
-
 //Public functions
 pub fn validYmd(cal: *const base.Cal, year: i32, month: u8, day: u8) bool {
     const d = base.Date{ .year = year, .month = month, .day = day };
@@ -528,13 +486,23 @@ pub fn mjdFromYmd(cal: *const base.Cal, year: i32, month: u8, day: u8) base.Err!
     return try doyToMjd(d_doy, cal);
 }
 
-pub fn mjdFromC99Tm(cal: *const base.Cal, tm: *const c_void) base.Err!i32 {
-    const input_c99_tm = @ptrCast(*const C99Tm, @alignCast(@alignOf(C99Tm), tm));
-    const d = try C99TmToDate(input_c99_tm);
-    const d_yz = try noYzToValidYz(d, cal);
-    const d_doy = try monthDayToDoy(d_yz, cal);
-    const d_mjd = try doyToMjd(d_doy, cal);
-    return d_mjd;
+pub fn mjdFromC99Tm(cal: *const base.Cal, raw_tm: *const c_void) base.Err!i32 {
+    const tm = @ptrCast(*const C99Tm, @alignCast(@alignOf(C99Tm), raw_tm));
+
+    if (tm.*.tm_mday < 1 or tm.*.tm_mday > maxInt(u8)) {
+        return base.Err.Overflow;
+    }
+    if (tm.*.tm_mon < 0 or tm.*.tm_mon > maxInt(u8)) {
+        return base.Err.Overflow;
+    }
+    if (tm.*.tm_year < minInt(i32) or tm.*.tm_year > maxInt(i32)) {
+        return base.Err.Overflow;
+    }
+
+    const day = @intCast(u8, tm.*.tm_mday);
+    const month = @intCast(u8, tm.*.tm_mon + 1);
+    const year = @intCast(i32, tm.*.tm_year + 1900);
+    return try mjdFromYmd(cal, year, month, day);
 }
 
 pub fn mjdFromUnix(unix: i64) base.Err!i32 {
@@ -575,7 +543,7 @@ pub fn mjdToC99Tm(mjd: i32, cal: *const base.Cal, tm: *c_void) base.Err!void {
     const doy = try mjdToDoy(mjd, cal);
     const d_yz = try doyToMonthDay(doy, cal);
     const d = yzToNoYz(d_yz, cal);
-    const weekday = try getDayOfWeek(d, cal);
+    const weekday = try mjdToDayOfWeek(mjd, cal);
 
     var output_c99_tm = @ptrCast(*C99Tm, @alignCast(@alignOf(C99Tm), tm));
     output_c99_tm.*.tm_sec = 0;
@@ -584,7 +552,7 @@ pub fn mjdToC99Tm(mjd: i32, cal: *const base.Cal, tm: *c_void) base.Err!void {
     output_c99_tm.*.tm_mday = @intCast(c_int, d.day);
     output_c99_tm.*.tm_mon = @intCast(c_int, d.month - 1);
     output_c99_tm.*.tm_year = @intCast(c_int, d.year - 1900);
-    output_c99_tm.*.tm_wday = @intCast(c_int, @mod(weekday, 7));
+    output_c99_tm.*.tm_wday = @intCast(c_int, @mod(weekday, cal.*.week.length));
     output_c99_tm.*.tm_yday = doy.doy - 1;
     output_c99_tm.*.tm_isdst = 0;
 }
@@ -605,10 +573,25 @@ pub fn mjdToIsLeapYear(mjd: i32, cal: *const base.Cal) base.Err!bool {
 }
 
 pub fn mjdToDayOfWeek(mjd: i32, cal: *const base.Cal) base.Err!u8 {
-    const doy = try mjdToDoy(mjd, cal);
-    const d_yz = try doyToMonthDay(doy, cal);
-    const weekday = try getDayOfWeek(d_yz, cal);
-    return weekday;
+    const w = cal.*.week;
+    if (w.continuous) {
+        const f_week_rem = @mod(mjd, w.length);
+        const shifted_f_week_rem = f_week_rem + @enumToInt(base.Weekday7.Wednesday);
+        const res = clockModulo(@intCast(i32, shifted_f_week_rem), w.length);
+        return @intCast(u8, res);
+    } else {
+        const doy = try mjdToDoy(mjd, cal);
+        const d = try doyToMonthDay(doy, cal);
+
+        if (seekIc(d, cal)) |ic| {
+            return @enumToInt(base.Weekday7.NoWeekday);
+        }
+
+        const f_week_rem = @mod(d.day, w.length);
+        const shifted_f_week_rem = f_week_rem + w.start - 1;
+        const res = clockModulo(@intCast(i32, shifted_f_week_rem), w.length);
+        return @intCast(u4, res);
+    }
 }
 
 pub fn mjdToDayOfYear(mjd: i32, cal: *const base.Cal) base.Err!u16 {
@@ -694,8 +677,8 @@ pub fn diffYears(mjd0: i32, mjd1: i32, cal: *const base.Cal) base.Err!i32 {
     const d0 = try doyToMonthDay(doy0, cal);
     const d1 = try doyToMonthDay(doy1, cal);
     const segments = cal.*.leap_lookup_list;
-    const adjusted0 = try monthDayToDoyFromSegments(d0, cal, segments);
-    const adjusted1 = try monthDayToDoyFromSegments(d1, cal, segments);
+    const adjusted0 = try monthDayToDoyFromSegments(d0, segments);
+    const adjusted1 = try monthDayToDoyFromSegments(d1, segments);
 
     const d_diff = @intCast(i32, adjusted0.doy) - @intCast(i32, adjusted1.doy);
     const modifier = diffModifier(y_diff, d_diff);
