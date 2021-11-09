@@ -86,13 +86,13 @@ const Sequence = enum(u8) {
     fn getIcName(mjd: i32, cal: *const base.Cal, nlist: *const base.NameList) base.Err!?[*:0]const u8 {
         var d = base.Date{ .year = 0, .month = 0, .day = 0 };
         try logic.mjdToYmd(mjd, cal, &d.year, &d.month, &d.day);
-        const icr = logic.seekIcRes(d, cal) orelse return null;
-        if (icr.ic.era_start_alt_name and d.year == 0 and icr.ic.day_of_year == logic.yearLen(false, cal)) {
+        const ic = gen.seekIc(d, cal) orelse return null;
+        if (ic.era_start_alt_name and d.year == 0 and ic.day_of_year == logic.yearLen(false, cal)) {
             const alt_ic_list = nlist.*.alt_intercalary_list orelse return null;
-            return alt_ic_list[icr.ici];
+            return alt_ic_list[ic.name_i];
         } else {
             const ic_list = nlist.*.intercalary_list orelse return null;
-            return ic_list[icr.ici];
+            return ic_list[ic.name_i];
         }
     }
 

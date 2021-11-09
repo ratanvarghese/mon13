@@ -35,8 +35,16 @@ const LEAP = [_:null]?base.Segment{
 };
 
 const IC = [_:null]?base.Intercalary{
-    gen.initIc(.{ .month = 13, .day = 29 }, COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
-    gen.initIc(.{ .month = 6, .day = 29 }, LEAP[0..LEAP.len], LEAP[0..LEAP.len]),
+    gen.initIc(.{
+        .month = 13,
+        .day = 29,
+        .name_i = 0,
+    }, COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
+    gen.initIc(.{
+        .month = 6,
+        .day = 29,
+        .name_i = 1,
+    }, LEAP[0..LEAP.len], LEAP[0..LEAP.len]),
 };
 
 var ic_var: [IC.len:null]?base.Intercalary = IC;

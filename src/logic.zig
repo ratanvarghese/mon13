@@ -118,30 +118,6 @@ fn doyToMonthDay(d: DoyDate, cal: *const base.Cal) base.Err!base.Date {
     return base.Err.DoyNotFound;
 }
 
-pub fn seekIcRes(d: base.Date, cal: *const base.Cal) ?IcRes {
-    if (cal.*.intercalary_list) |ic_list| {
-        var ici: u8 = 0;
-        while (ic_list[ici]) |res| : (ici += 1) {
-            if (res.month == d.month and res.day == d.day) {
-                return IcRes{ .ic = res, .ici = ici };
-            }
-        }
-    }
-    return null;
-}
-
-fn seekIc(d: base.Date, cal: *const base.Cal) ?base.Intercalary {
-    if (cal.*.intercalary_list) |ic_list| {
-        var ici: u8 = 0;
-        while (ic_list[ici]) |res| : (ici += 1) {
-            if (res.month == d.month and res.day == d.day) {
-                return res;
-            }
-        }
-    }
-    return null;
-}
-
 fn normDoy(d: DoyDate, cal: *const base.Cal) base.Err!DoyDate {
     var doy_done: u16 = 0;
     var year: i32 = d.year;
@@ -163,7 +139,7 @@ fn normDoy(d: DoyDate, cal: *const base.Cal) base.Err!DoyDate {
 
 fn skipIntercalary(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
     var prev_day = d;
-    while (seekIc(prev_day, cal)) |ic| {
+    while (gen.seekIc(prev_day, cal)) |ic| {
         const prev_leap = isLeap(prev_day.year, cal);
         var dd_doy = ic.day_of_year;
         if (prev_leap) {
@@ -583,7 +559,7 @@ pub fn mjdToDayOfWeek(mjd: i32, cal: *const base.Cal) base.Err!u8 {
         const doy = try mjdToDoy(mjd, cal);
         const d = try doyToMonthDay(doy, cal);
 
-        if (seekIc(d, cal)) |ic| {
+        if (gen.seekIc(d, cal)) |ic| {
             return @enumToInt(base.Weekday7.NoWeekday);
         }
 

@@ -78,11 +78,29 @@ pub fn initIc(
     COMMON: []const ?base.Segment,
     LEAP: []const ?base.Segment,
 ) base.Intercalary {
+    var name_i = ic.name_i;
+    if (ic.month == 0 and ic.name_i == 0) {
+        name_i = ic.day - 1;
+    }
+
     return base.Intercalary{
         .month = ic.month,
         .day = ic.day,
         .day_of_year = getDayOfYear(ic.month, ic.day, COMMON[0..COMMON.len]),
         .day_of_leap_year = getDayOfYear(ic.month, ic.day, LEAP[0..LEAP.len]),
         .era_start_alt_name = ic.era_start_alt_name,
+        .name_i = name_i,
     };
+}
+
+pub fn seekIc(d: base.Date, cal: *const base.Cal) ?base.Intercalary {
+    if (cal.*.intercalary_list) |ic_list| {
+        var ici: u8 = 0;
+        while (ic_list[ici]) |res| : (ici += 1) {
+            if (res.month == d.month and res.day == d.day) {
+                return res;
+            }
+        }
+    }
+    return null;
 }

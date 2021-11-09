@@ -47,6 +47,7 @@ pub const Intercalary = packed struct {
     day_of_leap_year: u16 = 0,
     month: u8,
     day: u8,
+    name_i: u8 = 0,
     era_start_alt_name: bool = false,
 };
 
