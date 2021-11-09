@@ -34,48 +34,12 @@ const LEAP = [_:null]?base.Segment{
 };
 
 const IC = [_:null]?base.Intercalary{
-    .{
-        .month = 0,
-        .day = 1,
-        .day_of_year = gen.getDayOfYear(0, 1, COMMON[0..COMMON.len]),
-        .day_of_leap_year = gen.getDayOfYear(0, 1, LEAP[0..LEAP.len]),
-        .era_start_alt_name = false,
-    },
-    .{
-        .month = 0,
-        .day = 2,
-        .day_of_year = gen.getDayOfYear(0, 2, COMMON[0..COMMON.len]),
-        .day_of_leap_year = gen.getDayOfYear(0, 2, LEAP[0..LEAP.len]),
-        .era_start_alt_name = false,
-    },
-    .{
-        .month = 0,
-        .day = 3,
-        .day_of_year = gen.getDayOfYear(0, 3, COMMON[0..COMMON.len]),
-        .day_of_leap_year = gen.getDayOfYear(0, 3, LEAP[0..LEAP.len]),
-        .era_start_alt_name = false,
-    },
-    .{
-        .month = 0,
-        .day = 4,
-        .day_of_year = gen.getDayOfYear(0, 4, COMMON[0..COMMON.len]),
-        .day_of_leap_year = gen.getDayOfYear(0, 4, LEAP[0..LEAP.len]),
-        .era_start_alt_name = false,
-    },
-    .{
-        .month = 0,
-        .day = 5,
-        .day_of_year = gen.getDayOfYear(0, 5, COMMON[0..COMMON.len]),
-        .day_of_leap_year = gen.getDayOfYear(0, 5, LEAP[0..LEAP.len]),
-        .era_start_alt_name = false,
-    },
-    .{
-        .month = 0,
-        .day = 6,
-        .day_of_year = gen.getDayOfYear(0, 6, LEAP[0..LEAP.len]),
-        .day_of_leap_year = gen.getDayOfYear(0, 6, LEAP[0..LEAP.len]),
-        .era_start_alt_name = false,
-    },
+    gen.initIc(.{ .month = 0, .day = 1 }, COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
+    gen.initIc(.{ .month = 0, .day = 2 }, COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
+    gen.initIc(.{ .month = 0, .day = 3 }, COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
+    gen.initIc(.{ .month = 0, .day = 4 }, COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
+    gen.initIc(.{ .month = 0, .day = 5 }, COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
+    gen.initIc(.{ .month = 0, .day = 6 }, LEAP[0..LEAP.len], LEAP[0..LEAP.len]),
 };
 
 var ic_var: [IC.len:null]?base.Intercalary = IC;

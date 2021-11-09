@@ -35,20 +35,8 @@ const LEAP = [_:null]?base.Segment{
 };
 
 const IC = [_:null]?base.Intercalary{
-    .{
-        .month = 13,
-        .day = 29,
-        .day_of_year = gen.getDayOfYear(13, 29, COMMON[0..COMMON.len]),
-        .day_of_leap_year = gen.getDayOfYear(13, 29, LEAP[0..LEAP.len]),
-        .era_start_alt_name = false,
-    },
-    .{
-        .month = 6,
-        .day = 29,
-        .day_of_year = gen.getDayOfYear(6, 29, LEAP[0..LEAP.len]),
-        .day_of_leap_year = gen.getDayOfYear(6, 29, LEAP[0..LEAP.len]),
-        .era_start_alt_name = false,
-    },
+    gen.initIc(.{ .month = 13, .day = 29 }, COMMON[0..COMMON.len], LEAP[0..LEAP.len]),
+    gen.initIc(.{ .month = 6, .day = 29 }, LEAP[0..LEAP.len], LEAP[0..LEAP.len]),
 };
 
 var ic_var: [IC.len:null]?base.Intercalary = IC;

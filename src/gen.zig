@@ -72,3 +72,17 @@ pub fn getDayOfYear(month: u8, day: u8, segments: []const ?base.Segment) u16 {
     }
     unreachable;
 }
+
+pub fn initIc(
+    ic: base.Intercalary,
+    COMMON: []const ?base.Segment,
+    LEAP: []const ?base.Segment,
+) base.Intercalary {
+    return base.Intercalary{
+        .month = ic.month,
+        .day = ic.day,
+        .day_of_year = getDayOfYear(ic.month, ic.day, COMMON[0..COMMON.len]),
+        .day_of_leap_year = getDayOfYear(ic.month, ic.day, LEAP[0..LEAP.len]),
+        .era_start_alt_name = ic.era_start_alt_name,
+    };
+}

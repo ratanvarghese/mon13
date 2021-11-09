@@ -43,11 +43,11 @@ pub const Date = struct {
 };
 
 pub const Intercalary = packed struct {
-    day_of_year: u16,
-    day_of_leap_year: u16,
+    day_of_year: u16 = 0,
+    day_of_leap_year: u16 = 0,
     month: u8,
     day: u8,
-    era_start_alt_name: bool,
+    era_start_alt_name: bool = false,
 };
 
 pub const Segment = packed struct {
