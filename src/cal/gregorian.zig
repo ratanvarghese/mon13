@@ -51,7 +51,7 @@ pub const gregorian = base.Cal{
     },
     .week = .{
         .start = @enumToInt(base.Weekday7.NoWeekday),
-        .length = 7,
+        .length = gen.lastOfEnum(base.Weekday7),
         .continuous = true,
     },
     .epoch_mjd = gen.mjdFromVcalc(-678574.5), //1 Jan, 1 CE

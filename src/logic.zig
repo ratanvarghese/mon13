@@ -5,6 +5,7 @@ const add = std.math.add;
 const sub = std.math.sub;
 const mul = std.math.mul;
 const base = @import("base.zig");
+const gen = @import("gen.zig");
 
 const DoyDate = struct {
     year: i32,
@@ -85,9 +86,8 @@ fn monthDayToDoyFromSegments(
 ) base.Err!DoyDate {
     var si: u8 = 0;
     while (segments[si]) |s| : (si += 1) {
-        if (d.month == s.month and d.day >= s.day_start and d.day <= s.day_end) {
-            const day_of_month = d.day - s.day_start;
-            return DoyDate{ .year = d.year, .doy = s.offset + day_of_month + 1 };
+        if (gen.getDayOfYearFromSegment(d.month, d.day, s)) |res_doy| {
+            return DoyDate{ .year = d.year, .doy = res_doy };
         }
     }
 

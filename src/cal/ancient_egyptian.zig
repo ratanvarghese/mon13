@@ -17,48 +17,49 @@ const COMMON = [_:null]?base.Segment{
     .{ .offset = 30 * 12, .month = 0, .day_start = 1, .day_end = 5 },
 };
 
-var ancient_egyptian_ic = [_:null]?base.Intercalary{
+const IC = [_:null]?base.Intercalary{
     .{
         .month = 0,
         .day = 1,
-        .day_of_year = 30 * 12 + 1,
-        .day_of_leap_year = 30 * 12 + 1,
+        .day_of_year = gen.getDayOfYear(0, 1, COMMON[0..COMMON.len]),
+        .day_of_leap_year = gen.getDayOfYear(0, 1, COMMON[0..COMMON.len]),
         .era_start_alt_name = false,
     },
     .{
         .month = 0,
         .day = 2,
-        .day_of_year = 30 * 12 + 2,
-        .day_of_leap_year = 30 * 12 + 2,
+        .day_of_year = gen.getDayOfYear(0, 2, COMMON[0..COMMON.len]),
+        .day_of_leap_year = gen.getDayOfYear(0, 2, COMMON[0..COMMON.len]),
         .era_start_alt_name = false,
     },
     .{
         .month = 0,
         .day = 3,
-        .day_of_year = 30 * 12 + 3,
-        .day_of_leap_year = 30 * 12 + 3,
+        .day_of_year = gen.getDayOfYear(0, 3, COMMON[0..COMMON.len]),
+        .day_of_leap_year = gen.getDayOfYear(0, 3, COMMON[0..COMMON.len]),
         .era_start_alt_name = false,
     },
     .{
         .month = 0,
         .day = 4,
-        .day_of_year = 30 * 12 + 4,
-        .day_of_leap_year = 30 * 12 + 4,
+        .day_of_year = gen.getDayOfYear(0, 4, COMMON[0..COMMON.len]),
+        .day_of_leap_year = gen.getDayOfYear(0, 4, COMMON[0..COMMON.len]),
         .era_start_alt_name = false,
     },
     .{
         .month = 0,
         .day = 5,
-        .day_of_year = 30 * 12 + 5,
-        .day_of_leap_year = 30 * 12 + 5,
+        .day_of_year = gen.getDayOfYear(0, 5, COMMON[0..COMMON.len]),
+        .day_of_leap_year = gen.getDayOfYear(0, 5, COMMON[0..COMMON.len]),
         .era_start_alt_name = false,
     },
 };
 
+var ic_var: [IC.len:null]?base.Intercalary = IC;
 var common_var: [COMMON.len:null]?base.Segment = COMMON;
 
 pub const ancient_egyptian = base.Cal{
-    .intercalary_list = @as([*:null]?base.Intercalary, &ancient_egyptian_ic),
+    .intercalary_list = @as([*:null]?base.Intercalary, &ic_var),
     .common_lookup_list = @as([*:null]?base.Segment, &common_var),
     .leap_lookup_list = @as([*:null]?base.Segment, &common_var),
     .leap_cycle = .{
@@ -74,7 +75,7 @@ pub const ancient_egyptian = base.Cal{
     },
     .week = .{
         .start = @enumToInt(base.Weekday10.Primidi),
-        .length = 10,
+        .length = gen.lastOfEnum(base.Weekday10),
         .continuous = false,
     },
     .epoch_mjd = -951363, //Day before 1 Thoth, 1 Nabonassar

@@ -4,12 +4,10 @@ const std = @import("std");
 pub fn monthMax(segments: []const ?base.Segment) u8 {
     //Assumes same months for leap and non-leap years.
     var month_max: u8 = 1;
-    var si: u8 = 0;
-    while (si < segments.len) : (si += 1) {
-        if (segments[si]) |s| {
-            if (s.month > month_max) {
-                month_max = s.month;
-            }
+    for (segments) |raw_s| {
+        const s = raw_s orelse unreachable;
+        if (s.month > month_max) {
+            month_max = s.month;
         }
     }
     return month_max;
@@ -39,4 +37,38 @@ pub fn validInEnum(comptime E: type, x: u8) bool {
         }
     }
     return false;
+}
+
+pub fn lastOfEnum(comptime E: type) comptime_int {
+    var raw_res: ?comptime_int = null;
+    inline for (std.meta.fields(E)) |field| {
+        if (raw_res) |res| {
+            if (res < field.value) {
+                raw_res = field.value;
+            }
+        } else {
+            raw_res = field.value;
+        }
+    }
+    const final = raw_res orelse unreachable;
+    return final;
+}
+
+pub fn getDayOfYearFromSegment(month: u8, day: u8, s: base.Segment) ?u16 {
+    if (s.month == month and s.day_start <= day and s.day_end >= day) {
+        const day_of_month = day - s.day_start;
+        return s.offset + day_of_month + 1;
+    } else {
+        return null;
+    }
+}
+
+pub fn getDayOfYear(month: u8, day: u8, segments: []const ?base.Segment) u16 {
+    for (segments) |raw_s| {
+        const s = raw_s orelse unreachable;
+        if (getDayOfYearFromSegment(month, day, s)) |res| {
+            return res;
+        }
+    }
+    unreachable;
 }

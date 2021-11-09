@@ -34,34 +34,35 @@ const LEAP = [_:null]?base.Segment{
     .{ .offset = 28 * 12 + 1, .month = 13, .day_start = 1, .day_end = 29 },
 };
 
-var cotsworth_ic = [_:null]?base.Intercalary{
+const IC = [_:null]?base.Intercalary{
     .{
         .month = 13,
         .day = 29,
-        .day_of_year = 28 * 13 + 1,
-        .day_of_leap_year = 28 * 13 + 2,
+        .day_of_year = gen.getDayOfYear(13, 29, COMMON[0..COMMON.len]),
+        .day_of_leap_year = gen.getDayOfYear(13, 29, LEAP[0..LEAP.len]),
         .era_start_alt_name = false,
     },
     .{
         .month = 6,
         .day = 29,
-        .day_of_year = 28 * 6 + 1,
-        .day_of_leap_year = 28 * 6 + 1,
+        .day_of_year = gen.getDayOfYear(6, 29, LEAP[0..LEAP.len]),
+        .day_of_leap_year = gen.getDayOfYear(6, 29, LEAP[0..LEAP.len]),
         .era_start_alt_name = false,
     },
 };
 
+var ic_var: [IC.len:null]?base.Intercalary = IC;
 var common_var: [COMMON.len:null]?base.Segment = COMMON;
 var leap_var: [LEAP.len:null]?base.Segment = LEAP;
 
 pub const cotsworth = base.Cal{
-    .intercalary_list = @as([*:null]?base.Intercalary, &cotsworth_ic),
+    .intercalary_list = @as([*:null]?base.Intercalary, &ic_var),
     .common_lookup_list = @as([*:null]?base.Segment, &common_var),
     .leap_lookup_list = @as([*:null]?base.Segment, &leap_var),
     .leap_cycle = cal_gr.gregorian.leap_cycle,
     .week = .{
         .start = @enumToInt(base.Weekday7.Sunday),
-        .length = cal_gr.gregorian.week.length,
+        .length = gen.lastOfEnum(base.Weekday7),
         .continuous = false,
     },
     .epoch_mjd = cal_gr.gregorian.epoch_mjd,
