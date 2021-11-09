@@ -32,7 +32,7 @@ const C99Tm = extern struct {
     tm_isdst: c_int,
 };
 
-pub const Date = struct {
+const Date = struct {
     year: i32,
     month: u8,
     day: u8,
@@ -66,15 +66,6 @@ fn isLeap(year: i32, cal: *const base.Cal) bool {
             unreachable;
         }
         return res_simple;
-    }
-}
-
-pub fn yearLen(leap: bool, cal: *const base.Cal) u16 {
-    const lc = cal.*.leap_cycle;
-    if (leap) {
-        return lc.common_days + lc.leap_days;
-    } else {
-        return lc.common_days;
     }
 }
 
@@ -129,7 +120,7 @@ fn normDoy(d: DoyDate, cal: *const base.Cal) base.Err!DoyDate {
     var year: i32 = d.year;
     while (true) {
         const leap = isLeap(year, cal);
-        const doy_sum = try add(u16, doy_done, yearLen(leap, cal));
+        const doy_sum = try add(u16, doy_done, gen.yearLen(leap, cal));
         if (doy_sum >= d.doy) {
             //doy_done never exceeds d.doy.
             //That makes it slightly easier to determine the result.
@@ -153,7 +144,7 @@ fn skipIntercalary(d: Date, cal: *const base.Cal) base.Err!Date {
         }
 
         var offset: u16 = 1;
-        if (yearLen(prev_leap, cal) < dd_doy) {
+        if (gen.yearLen(prev_leap, cal) < dd_doy) {
             offset = 0;
         }
 
@@ -213,7 +204,7 @@ fn diffModifier(bigDiff: i32, smallDiff: i32) i32 {
 
 fn daysInCycle(cal: *const base.Cal) i32 {
     const lc = cal.*.leap_cycle;
-    const common_cycle: i32 = @intCast(i32, yearLen(false, cal)) * lc.year_count;
+    const common_cycle: i32 = @intCast(i32, gen.yearLen(false, cal)) * lc.year_count;
     const leap_cycle = lc.leap_year_count * lc.leap_days;
     return common_cycle + leap_cycle;
 }
@@ -242,7 +233,7 @@ fn mjdToDoySymmetric(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
     var sym_year = estimate_start_doy.year;
     var start_mjd = estimate_start_mjd;
     if (estimate_start_mjd < mjd) {
-        if ((mjd - estimate_start_mjd) >= yearLen(false, cal)) {
+        if ((mjd - estimate_start_mjd) >= gen.yearLen(false, cal)) {
             const next_year = estimate_start_doy.year + 1;
             const next_start_doy = DoyDate{ .year = next_year, .doy = 1 };
             const next_start_mjd = try doyToMjd(next_start_doy, cal);
@@ -263,7 +254,7 @@ fn mjdToDoySymmetric(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
     if (final_doy < 1) {
         return base.Err.BadCalendar;
     }
-    if (final_doy > yearLen(isLeap(sym_year, cal), cal)) {
+    if (final_doy > gen.yearLen(isLeap(sym_year, cal), cal)) {
         return base.Err.BadCalendar;
     }
 
@@ -286,7 +277,7 @@ fn mjdToDoyCommon(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
     var f_100_quot: i32 = 0;
     var f_100_rem: i32 = 0;
     if (lc.skip4000) {
-        const common_4000: i32 = @intCast(i32, yearLen(false, cal)) * 4000;
+        const common_4000: i32 = @intCast(i32, gen.yearLen(false, cal)) * 4000;
         const leap_4000: i32 = (1000 - 31) * @intCast(i32, lc.leap_days);
         const total_4000 = common_4000 + leap_4000;
         f_4000_quot = @divFloor(day_total, total_4000);
@@ -296,13 +287,13 @@ fn mjdToDoyCommon(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
     }
 
     if (lc.skip100) {
-        const common_400: i32 = @intCast(i32, yearLen(false, cal)) * 400;
+        const common_400: i32 = @intCast(i32, gen.yearLen(false, cal)) * 400;
         const leap_400: i32 = (100 - 3) * @intCast(i32, lc.leap_days);
         const total_400 = common_400 + leap_400;
         f_400_quot = @divFloor(f_4000_rem, total_400);
         f_400_rem = @mod(f_4000_rem, total_400);
 
-        const common_100: i32 = @intCast(i32, yearLen(false, cal)) * 100;
+        const common_100: i32 = @intCast(i32, gen.yearLen(false, cal)) * 100;
         const leap_100: i32 = ((100 / lc.year_count) - 1) * @intCast(i32, lc.leap_days);
         const total_100 = common_100 + leap_100;
         f_100_quot = @divFloor(f_400_rem, total_100);
@@ -314,15 +305,15 @@ fn mjdToDoyCommon(mjd: i32, cal: *const base.Cal) base.Err!DoyDate {
     const total_cycle = daysInCycle(cal);
     const f_cycle_quot = @divFloor(f_100_rem, total_cycle);
     const f_cycle_rem = @mod(f_100_rem, total_cycle);
-    const f_common_quot = @divFloor(f_cycle_rem, yearLen(false, cal));
-    const f_common_rem = @mod(f_cycle_rem, yearLen(false, cal));
+    const f_common_quot = @divFloor(f_cycle_rem, gen.yearLen(false, cal));
+    const f_common_rem = @mod(f_cycle_rem, gen.yearLen(false, cal));
 
     var res: DoyDate = .{ .year = 0, .doy = 0 };
     res.year = 4000 * f_4000_quot + 400 * f_400_quot + 100 * f_100_quot + lc.year_count * f_cycle_quot + f_common_quot;
     res.year += lc.offset_years;
 
     if (f_100_quot == lc.year_count or f_common_quot == lc.year_count) {
-        res.doy = yearLen(true, cal);
+        res.doy = gen.yearLen(true, cal);
     } else {
         res.year += 1;
         res.doy = @intCast(u16, f_common_rem + 1);

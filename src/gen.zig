@@ -104,3 +104,12 @@ pub fn seekIc(month: u8, day: u8, cal: *const base.Cal) ?base.Intercalary {
     }
     return null;
 }
+
+pub fn yearLen(leap: bool, cal: *const base.Cal) u16 {
+    const lc = cal.*.leap_cycle;
+    if (leap) {
+        return lc.common_days + lc.leap_days;
+    } else {
+        return lc.common_days;
+    }
+}
