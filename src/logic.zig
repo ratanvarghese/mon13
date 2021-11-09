@@ -32,6 +32,12 @@ const C99Tm = extern struct {
     tm_isdst: c_int,
 };
 
+pub const Date = struct {
+    year: i32,
+    month: u8,
+    day: u8,
+};
+
 fn clockModulo(a: i32, b: u31) u31 {
     return @intCast(u31, @mod((a - 1), b)) + 1;
 }
@@ -81,7 +87,7 @@ fn getSegments(year: i32, cal: *const base.Cal) [*:null]const ?base.Segment {
 }
 
 fn monthDayToDoyFromSegments(
-    d: base.Date,
+    d: Date,
     segments: [*:null]const ?base.Segment,
 ) base.Err!DoyDate {
     var si: u8 = 0;
@@ -94,11 +100,11 @@ fn monthDayToDoyFromSegments(
     return base.Err.DateNotFound;
 }
 
-fn monthDayToDoy(d: base.Date, cal: *const base.Cal) base.Err!DoyDate {
+fn monthDayToDoy(d: Date, cal: *const base.Cal) base.Err!DoyDate {
     return monthDayToDoyFromSegments(d, getSegments(d.year, cal));
 }
 
-fn doyToMonthDay(d: DoyDate, cal: *const base.Cal) base.Err!base.Date {
+fn doyToMonthDay(d: DoyDate, cal: *const base.Cal) base.Err!Date {
     const segments = getSegments(d.year, cal);
 
     var si: u8 = 0;
@@ -107,7 +113,7 @@ fn doyToMonthDay(d: DoyDate, cal: *const base.Cal) base.Err!base.Date {
         const s_end = s.offset + s_len;
         if (d.doy > s.offset and d.doy <= s_end) {
             const day = @intCast(u8, d.doy - s.offset + s.day_start - 1);
-            const res: base.Date = .{
+            const res: Date = .{
                 .year = d.year,
                 .month = s.month,
                 .day = day,
@@ -137,9 +143,9 @@ fn normDoy(d: DoyDate, cal: *const base.Cal) base.Err!DoyDate {
     return DoyDate{ .year = year, .doy = d.doy - doy_done };
 }
 
-fn skipIntercalary(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
+fn skipIntercalary(d: Date, cal: *const base.Cal) base.Err!Date {
     var prev_day = d;
-    while (gen.seekIc(prev_day, cal)) |ic| {
+    while (gen.seekIc(prev_day.month, prev_day.day, cal)) |ic| {
         const prev_leap = isLeap(prev_day.year, cal);
         var dd_doy = ic.day_of_year;
         if (prev_leap) {
@@ -165,7 +171,7 @@ fn skipIntercalary(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
     return prev_day;
 }
 
-fn normDay(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
+fn normDay(d: Date, cal: *const base.Cal) base.Err!Date {
     const segments = getSegments(d.year, cal);
 
     var matching_si: u8 = 0;
@@ -404,11 +410,11 @@ fn doyToMjd(doy: DoyDate, cal: *const base.Cal) base.Err!i32 {
 }
 
 //Validation
-fn valid_year(d: base.Date, cal: *const base.Cal) bool {
+fn valid_year(d: Date, cal: *const base.Cal) bool {
     return (cal.*.year0 or d.year != 0);
 }
 
-fn valid_assume_yz(d_yz: base.Date, cal: *const base.Cal) bool {
+fn valid_assume_yz(d_yz: Date, cal: *const base.Cal) bool {
     const segments = getSegments(d_yz.year, cal);
 
     var si: u8 = 0;
@@ -425,17 +431,17 @@ fn yzNeedsAdjustment(y: i32, cal: *const base.Cal) bool {
     return (!cal.*.year0) and (y < 1);
 }
 
-fn yzToNoYz(d: base.Date, cal: *const base.Cal) base.Date {
+fn yzToNoYz(d: Date, cal: *const base.Cal) Date {
     const y = if (yzNeedsAdjustment(d.year, cal)) (d.year -% 1) else d.year;
     return .{ .year = y, .month = d.month, .day = d.day };
 }
 
-fn noYzToYz(d: base.Date, cal: *const base.Cal) base.Date {
+fn noYzToYz(d: Date, cal: *const base.Cal) Date {
     const y = if (yzNeedsAdjustment(d.year, cal)) (d.year +% 1) else d.year;
     return .{ .year = y, .month = d.month, .day = d.day };
 }
 
-fn noYzToValidYz(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
+fn noYzToValidYz(d: Date, cal: *const base.Cal) base.Err!Date {
     if (valid_year(d, cal)) {
         const d_yz = noYzToYz(d, cal);
         if (valid_assume_yz(d_yz, cal)) {
@@ -447,7 +453,7 @@ fn noYzToValidYz(d: base.Date, cal: *const base.Cal) base.Err!base.Date {
 
 //Public functions
 pub fn validYmd(cal: *const base.Cal, year: i32, month: u8, day: u8) bool {
-    const d = base.Date{ .year = year, .month = month, .day = day };
+    const d = Date{ .year = year, .month = month, .day = day };
     if (valid_year(d, cal)) {
         return valid_assume_yz(noYzToYz(d, cal), cal);
     } else {
@@ -456,7 +462,7 @@ pub fn validYmd(cal: *const base.Cal, year: i32, month: u8, day: u8) bool {
 }
 
 pub fn mjdFromYmd(cal: *const base.Cal, year: i32, month: u8, day: u8) base.Err!i32 {
-    const d = base.Date{ .year = year, .month = month, .day = day };
+    const d = Date{ .year = year, .month = month, .day = day };
     const d_norm = try noYzToValidYz(d, cal);
     const d_doy = try monthDayToDoy(d_norm, cal);
     return try doyToMjd(d_doy, cal);
@@ -559,7 +565,7 @@ pub fn mjdToDayOfWeek(mjd: i32, cal: *const base.Cal) base.Err!u8 {
         const doy = try mjdToDoy(mjd, cal);
         const d = try doyToMonthDay(doy, cal);
 
-        if (gen.seekIc(d, cal)) |ic| {
+        if (gen.seekIc(d.month, d.day, cal)) |ic| {
             return @enumToInt(base.Weekday7.NoWeekday);
         }
 
@@ -590,7 +596,7 @@ pub fn addMonths(mjd: i32, cal: *const base.Cal, offset: i32) base.Err!i32 {
     const month_sum = try add(i32, skipped_d.month, offset);
 
     const year_shift = @divFloor((month_sum - 1), month_max); //-1 in case month_sum == month_max
-    const rolled_d: base.Date = .{
+    const rolled_d: Date = .{
         .year = try add(i32, skipped_d.year, year_shift),
         .month = @intCast(u8, clockModulo(month_sum, month_max)),
         .day = skipped_d.day,
@@ -609,7 +615,7 @@ pub fn addYears(mjd: i32, cal: *const base.Cal, offset: i32) base.Err!i32 {
     const doy = try mjdToDoy(mjd, cal);
     const d_yz = try doyToMonthDay(doy, cal);
     var y = try add(i32, d_yz.year, offset);
-    const rolled_d = base.Date{ .year = y, .month = d_yz.month, .day = d_yz.day };
+    const rolled_d = Date{ .year = y, .month = d_yz.month, .day = d_yz.day };
     if (valid_assume_yz(rolled_d, cal)) {
         const res_doy = try monthDayToDoy(rolled_d, cal);
         return try doyToMjd(res_doy, cal);

@@ -93,11 +93,11 @@ pub fn initIc(
     };
 }
 
-pub fn seekIc(d: base.Date, cal: *const base.Cal) ?base.Intercalary {
+pub fn seekIc(month: u8, day: u8, cal: *const base.Cal) ?base.Intercalary {
     if (cal.*.intercalary_list) |ic_list| {
         var ici: u8 = 0;
         while (ic_list[ici]) |res| : (ici += 1) {
-            if (res.month == d.month and res.day == d.day) {
+            if (res.month == month and res.day == day) {
                 return res;
             }
         }

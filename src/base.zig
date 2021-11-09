@@ -36,12 +36,6 @@ pub const Weekday10 = enum(u4) {
     Decadi = 10,
 };
 
-pub const Date = struct {
-    year: i32,
-    month: u8,
-    day: u8,
-};
-
 pub const Intercalary = packed struct {
     day_of_year: u16 = 0,
     day_of_leap_year: u16 = 0,
