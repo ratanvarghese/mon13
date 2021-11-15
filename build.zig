@@ -30,7 +30,7 @@ pub fn build(b: *std.build.Builder) void {
     const testStep = b.step("utest", "Run unit tests");
     testStep.dependOn(&unitTests.step);
 
-    //Property-based tests (using theft library)
+    //Property-based tests (using theft library - POSIX only)
     const submoduleInit = b.addSystemCommand(&[_][]const u8{ "git", "submodule", "init" });
     const submoduleUpdate = b.addSystemCommand(&[_][]const u8{ "git", "submodule", "update" });
     submoduleUpdate.step.dependOn(&submoduleInit.step);
@@ -70,4 +70,14 @@ pub fn build(b: *std.build.Builder) void {
 
     const propertyTestStep = b.step("ptest", "Run property-based tests (using libtheft - POSIX only)");
     propertyTestStep.dependOn(&propertyTestRun.step);
+
+    //Lua FFI test
+    const sep = [_]u8{std.fs.path.sep};
+    var luajitTestCmd = b.addSystemCommand(&[_][]const u8{ "luajit", "binding" ++ sep ++ "lua_ffi" ++ sep ++ "test.lua" });
+    luajitTestCmd.setEnvironmentVariable("LD_LIBRARY_PATH", "zig-out" ++ sep ++ "lib");
+    luajitTestCmd.setEnvironmentVariable("LUA_PATH", "binding" ++ sep ++ "lua_ffi" ++ sep ++ "?.lua");
+
+    const luajitTestStep = b.step("luaffi", "Run Lua FFI tests (using luajit)");
+    luajitTestStep.dependOn(&sharedLib.step);
+    luajitTestStep.dependOn(&luajitTestCmd.step);
 }
