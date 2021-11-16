@@ -234,10 +234,12 @@ local function tail(res, status)
 	end
 end
 
-local int32 = ffi.typeof("int32_t[1]")
-local uint8 = ffi.typeof("uint8_t[1]")
-local uint16 = ffi.typeof("uint16_t[1]")
-local charvla = ffi.typeof("char[?]")
+local c_bool = ffi.typeof("bool[1]")
+local c_int64 = ffi.typeof("int64_t[1]")
+local c_int32 = ffi.typeof("int32_t[1]")
+local c_uint8 = ffi.typeof("uint8_t[1]")
+local c_uint16 = ffi.typeof("uint16_t[1]")
+local c_str = ffi.typeof("char[?]")
 
 function mon13.validYmd(cal, ymd)
 	return raw_lib.validYmd(cal, ymd.year, ymd.month, ymd.day) ~= 0
@@ -245,28 +247,28 @@ end
 
 
 function mon13.mjdFromYmd(cal, ymd)
-	local res = int32()
+	local res = c_int32()
 	local status = raw_lib.mon13_mjdFromYmd(cal, ymd.year, ymd.month, ymd.day, res)
 	return tail(res, status)
 end
 
 function mon13.mjdFromUnix(unix_time)
-	local res = int32()
+	local res = c_int32()
 	local status = raw_lib.mon13_mjdFromUnix(unix_time, res)
 	return tail(res, status)
 end
 
 function mon13.mjdFromRd(rd)
-	local res = int32()
+	local res = c_int32()
 	local status = raw_lib.mon13_mjdFromRd(rd, res)
 	return tail(res, status)
 end
 
 
 function mon13.mjdToYmd(mjd, cal)
-	local res_y = int32()
-	local res_m = uint8()
-	local res_d = uint8()
+	local res_y = c_int32()
+	local res_m = c_uint8()
+	local res_d = c_uint8()
 	local status = raw_lib.mon13_mjdToYmd(mjd, cal, res_y, res_m, res_d)
 	if status == mon13.Error.NONE then
 		return {
@@ -280,19 +282,19 @@ function mon13.mjdToYmd(mjd, cal)
 end
 
 function mon13.mjdToUnix(mjd)
-	local res = ffi.new("int64_t[1]")
+	local res = c_int64()
 	local status = raw_lib.mon13_mjdToUnix(mjd, res)
 	return tail(res, status)
 end
 
 function mon13.mjdToRd(mjd)
-	local res = int32()
+	local res = c_int32()
 	local status = raw_lib.mon13_mjdToRd(mjd, res)
 	return tail(res, status)
 end
 
 function mon13.mjdToIsLeapYear(mjd, cal)
-	local res = ffi.new("bool[1]")
+	local res = c_bool()
 	local status = raw_lib.mon13_mjdToIsLeapYear(mjd, cal, res)
 	if status == mon13.Error.NONE then
 		return res[0]
@@ -302,39 +304,39 @@ function mon13.mjdToIsLeapYear(mjd, cal)
 end
 
 function mon13.mjdToDayOfWeek(mjd, cal)
-	local res = uint8()
+	local res = c_uint8()
 	local status = raw_lib.mon13_mjdToDayOfWeek(mjd, cal, res)
 	return tail(res, status)
 end
 
 function mon13.mjdToDayOfYear(mjd, cal)
-	local res = uint16()
+	local res = c_uint16()
 	local status = raw_lib.mon13_mjdToDayOfYear(mjd, cal, res)
 	return tail(res, status)
 end
 
 
 function mon13.addMonths(mjd, cal, offset)
-	local res = int32()
+	local res = c_int32()
 	local status = raw_lib.mon13_addMonths(mjd, cal, offset, res)
 	return tail(res, status)
 end
 
 function mon13.addYears(mjd, cal, offset)
-	local res = int32()
+	local res = c_int32()
 	local status = raw_lib.mon13_addYears(mjd, cal, offset, res)
 	return tail(res, status)
 end
 
 
 function mon13.diffMonths(mjd0, mjd1, cal)
-	local res = int32()
+	local res = c_int32()
 	local status = raw_lib.mon13_diffMonths(mjd0, mjd1, cal, res)
 	return tail(res, status)
 end
 
 function mon13.diffYears(mjd0, mjd1, cal)
-	local res = int32()
+	local res = c_int32()
 	local status = raw_lib.mon13_diffYears(mjd0, mjd1, cal, res)
 	return tail(res, status)
 end
@@ -353,7 +355,7 @@ function mon13.format(mjd, cal, arg3, arg4)
 		return nil, buflen
 	end
 
-	local buf = charvla(buflen + 1)
+	local buf = c_str(buflen + 1)
 	local status = raw_lib.mon13_format(mjd, cal, nlist, fmt, buf, buflen + 1)
 	if status < 0 then
 		return nil, status
