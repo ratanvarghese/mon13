@@ -2,12 +2,12 @@ ffi = require("ffi")
 ffi.cdef[[
 //Structures
 struct mon13_NameList {
-	const char** month_list;
-	const char** weekday_list;
-	const char** era_list;
-	const char** intercalary_list;
-	const char** alt_intercalary_list;
-	const char* calendar_name;
+	char** month_list;
+	char** weekday_list;
+	char** era_list;
+	char** intercalary_list;
+	char** alt_intercalary_list;
+	char* calendar_name;
 };
 
 struct mon13_Cal;
@@ -240,6 +240,9 @@ local c_int32 = ffi.typeof("int32_t[1]")
 local c_uint8 = ffi.typeof("uint8_t[1]")
 local c_uint16 = ffi.typeof("uint16_t[1]")
 local c_str = ffi.typeof("char[?]")
+local c_strlist = ffi.typeof("char*[?]")
+local c_strptr = ffi.typeof("char**")
+local c_namelist = ffi.typeof("struct mon13_NameList")
 
 function mon13.validYmd(cal, ymd)
 	return raw_lib.mon13_validYmd(cal, ymd.year, ymd.month, ymd.day) ~= 0
@@ -341,6 +344,18 @@ function mon13.diffYears(mjd0, mjd1, cal)
 	return tail(res, status)
 end
 
+local function makeStringList(t)
+	if ffi.istype(c_strptr, t) then
+		return t
+	end
+
+	local res = c_strlist(#t)
+	for i,v in ipairs(t) do
+		local buf = c_str(#v, v)
+		res[i-1] = buf
+	end
+	return res
+end
 
 function mon13.format(mjd, cal, arg3, arg4)
 	local nlist = arg3
@@ -348,6 +363,17 @@ function mon13.format(mjd, cal, arg3, arg4)
 	if fmt == nil then
 		nlist = nil
 		fmt = arg3
+	end
+
+	if type(nlist) == "table" then
+		local old_nlist = nlist
+		nlist = c_namelist()
+		nlist.month_list = makeStringList(old_nlist.month_list)
+		nlist.weekday_list = makeStringList(old_nlist.weekday_list)
+		nlist.era_list = makeStringList(old_nlist.era_list)
+		nlist.intercalary_list = makeStringList(old_nlist.intercalary_list)
+		nlist.alt_intercalary_list = makeStringList(old_nlist.alt_intercalary_list)
+		nlist.calendar_name = old_nlist.calendar_name
 	end
 
 	local buflen = raw_lib.mon13_format(mjd, cal, nlist, fmt, nil, 0)

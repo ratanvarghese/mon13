@@ -89,10 +89,10 @@ pub const Cal = extern struct {
 };
 
 pub const NameList = extern struct {
-    month_list: [*:null]?[*:0]const u8,
-    weekday_list: [*:null]?[*:0]const u8,
-    era_list: [*:null]?[*:0]const u8,
-    intercalary_list: ?[*:null]?[*:0]const u8,
-    alt_intercalary_list: ?[*:null]?[*:0]const u8,
-    calendar_name: [*:0]const u8,
+    month_list: [*:null]?[*:0]u8,
+    weekday_list: [*:null]?[*:0]u8,
+    era_list: [*:null]?[*:0]u8,
+    intercalary_list: ?[*:null]?[*:0]u8,
+    alt_intercalary_list: ?[*:null]?[*:0]u8,
+    calendar_name: [*:0]u8,
 };

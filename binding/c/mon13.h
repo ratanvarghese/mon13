@@ -51,12 +51,12 @@ enum mon13_Error {
 
 //Structures
 struct mon13_NameList {
-    const char** month_list;
-    const char** weekday_list;
-    const char** era_list;
-    const char** intercalary_list;
-    const char** alt_intercalary_list;
-    const char* calendar_name;
+    char** month_list;
+    char** weekday_list;
+    char** era_list;
+    char** intercalary_list;
+    char** alt_intercalary_list;
+    char* calendar_name;
 };
 
 struct mon13_Cal;

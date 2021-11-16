@@ -1,7 +1,7 @@
 const base = @import("../../base.zig");
 const common = @import("common.zig");
 
-var gregorian_month_list = [_:null]?[*:0]const u8{
+var gregorian_month_list = [_:null]?[*:0]u8{
     "January",
     "February",
     "March",
@@ -16,7 +16,7 @@ var gregorian_month_list = [_:null]?[*:0]const u8{
     "December",
 };
 
-var gregorian_weekday_list = [_:null]?[*:0]const u8{
+var gregorian_weekday_list = [_:null]?[*:0]u8{
     "Monday",
     "Tuesday",
     "Wednesday",
@@ -26,16 +26,19 @@ var gregorian_weekday_list = [_:null]?[*:0]const u8{
     "Sunday",
 };
 
-var gregorian_era_list = [_:null]?[*:0]const u8{
+var gregorian_era_list = [_:null]?[*:0]u8{
     "Before Common Era",
     "Common Era",
 };
 
+const NAME = "Gregorian";
+var name_var: [NAME.len:0]u8 = NAME.*;
+
 pub const gregorian_names_en_US = base.NameList{
-    .month_list = @as([*:null]?[*:0]const u8, &gregorian_month_list),
-    .weekday_list = @as([*:null]?[*:0]const u8, &gregorian_weekday_list),
-    .era_list = @as([*:null]?[*:0]const u8, &gregorian_era_list),
+    .month_list = @ptrCast([*:null]?[*:0]u8, &gregorian_month_list),
+    .weekday_list = @ptrCast([*:null]?[*:0]u8, &gregorian_weekday_list),
+    .era_list = @ptrCast([*:null]?[*:0]u8, &gregorian_era_list),
     .intercalary_list = null,
     .alt_intercalary_list = null,
-    .calendar_name = "Gregorian",
+    .calendar_name = @ptrCast([*:0]u8, &name_var),
 };

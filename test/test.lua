@@ -150,6 +150,45 @@ do
 	assert(s == "16 November 2021, Common Era (Gregorian)", "format")
 end
 
+do
+	local nlist = {
+		month_list = {
+			"A",
+			"B",
+			"C",
+			"D",
+			"E",
+			"F",
+			"G",
+			"H",
+			"I",
+			"J",
+			"K",
+			"L",
+			"M"
+		},
+		weekday_list = mon13.tranquility_names_en_US.weekday_list,
+		era_list = {
+			"BT",
+			"AT"
+		},
+		intercalary_list = {
+			"ARM",
+			"ALD"
+		},
+		alt_intercalary_list = {
+			"MLD",
+			nil
+		},
+		calendar_name = mon13.tranquility_names_en_US.calendar_name
+	}
+
+	local d = {year = 50, month = 4, day = 1}
+	local mjd = mon13.mjdFromYmd(mon13.tranquility, d)
+	local s = mon13.format(mjd, mon13.tranquility, nlist, "%Y-%B%d (%f)")
+	assert(s == "50-D01 (Tranquility)", "format, custom namelist")
+end
+
 print("Lua API tests passed.")
 
 -- local mjd = mon13.mjdFromUnix(os.time())

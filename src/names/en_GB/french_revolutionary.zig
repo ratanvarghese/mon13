@@ -3,7 +3,7 @@ const base = @import("../../base.zig");
 //Recorded in Clavis Calendaria: Or, A Compendious Analysis of the Calendar
 //by John Brady
 //https://books.google.ca/books?id=pKjhAAAAMAAJ&pg=PA38&redir_esc=y#v=onepage&q&f=false
-var french_revolutionary_month_list_en_GB_joke = [_:null]?[*:0]const u8{
+var french_revolutionary_month_list_en_GB_joke = [_:null]?[*:0]u8{
     "Wheezy",
     "Sneezy",
     "Freezy",
@@ -21,7 +21,7 @@ var french_revolutionary_month_list_en_GB_joke = [_:null]?[*:0]const u8{
 //Suggested in The French Revolution, A History
 //By Thomas Carlyle
 //https://books.google.ca/books?id=81sQAAAAYAAJ&pg=PP7&source=gbs_selected_pages&cad=2#v=onepage&q=Vintagearious&f=false
-var french_revolutionary_month_list_en_GB_carlyle = [_:null]?[*:0]const u8{
+var french_revolutionary_month_list_en_GB_carlyle = [_:null]?[*:0]u8{
     "Vintagearious",
     "Fogarious",
     "Frostarious",
@@ -36,7 +36,7 @@ var french_revolutionary_month_list_en_GB_carlyle = [_:null]?[*:0]const u8{
     "Fruitidor",
 };
 
-var french_revolutionary_weekday_list_en_GB = [_:null]?[*:0]const u8{
+var french_revolutionary_weekday_list_en_GB = [_:null]?[*:0]u8{
     "First Day",
     "Second Day",
     "Third Day",
@@ -49,12 +49,12 @@ var french_revolutionary_weekday_list_en_GB = [_:null]?[*:0]const u8{
     "Tenth Day",
 };
 
-var french_revolutionary_era_list_en_GB = [_:null]?[*:0]const u8{
+var french_revolutionary_era_list_en_GB = [_:null]?[*:0]u8{
     "Before Liberty",
     "of Liberty",
 };
 
-var french_revolutionary_intercalary_list_en_GB = [_:null]?[*:0]const u8{
+var french_revolutionary_intercalary_list_en_GB = [_:null]?[*:0]u8{
     "Festival of Virtue",
     "Festival of Genius",
     "Festival of Labour",
@@ -63,17 +63,20 @@ var french_revolutionary_intercalary_list_en_GB = [_:null]?[*:0]const u8{
     "Festival of the Revolution",
 };
 
+const NAME = "French Revolutionary";
+var name_var: [NAME.len:0]u8 = NAME.*;
+
 pub const french_revolutionary_names_en_GB = base.NameList{
-    .month_list = @as([*:null]?[*:0]const u8, &french_revolutionary_month_list_en_GB_carlyle),
-    .weekday_list = @as([*:null]?[*:0]const u8, &french_revolutionary_weekday_list_en_GB),
-    .era_list = @as([*:null]?[*:0]const u8, &french_revolutionary_era_list_en_GB),
-    .intercalary_list = @as([*:null]?[*:0]const u8, &french_revolutionary_intercalary_list_en_GB),
+    .month_list = @ptrCast([*:null]?[*:0]u8, &french_revolutionary_month_list_en_GB_carlyle),
+    .weekday_list = @ptrCast([*:null]?[*:0]u8, &french_revolutionary_weekday_list_en_GB),
+    .era_list = @ptrCast([*:null]?[*:0]u8, &french_revolutionary_era_list_en_GB),
+    .intercalary_list = @ptrCast([*:null]?[*:0]u8, &french_revolutionary_intercalary_list_en_GB),
     .alt_intercalary_list = null,
-    .calendar_name = "French Revolutionary",
+    .calendar_name = @ptrCast([*:0]u8, &name_var),
 };
 
 pub const french_revolutionary_names_en_GB_joke = base.NameList{
-    .month_list = @as([*:null]?[*:0]const u8, &french_revolutionary_month_list_en_GB_joke),
+    .month_list = @ptrCast([*:null]?[*:0]u8, &french_revolutionary_month_list_en_GB_joke),
     .weekday_list = french_revolutionary_names_en_GB.weekday_list,
     .era_list = french_revolutionary_names_en_GB.era_list,
     .intercalary_list = french_revolutionary_names_en_GB.intercalary_list,
