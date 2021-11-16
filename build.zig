@@ -73,7 +73,7 @@ pub fn build(b: *std.build.Builder) void {
 
     //Lua FFI test
     const sep = [_]u8{std.fs.path.sep};
-    var luajitTestCmd = b.addSystemCommand(&[_][]const u8{ "luajit", "binding" ++ sep ++ "lua_ffi" ++ sep ++ "test.lua" });
+    var luajitTestCmd = b.addSystemCommand(&[_][]const u8{ "luajit", "test" ++ sep ++ "test.lua" });
     luajitTestCmd.setEnvironmentVariable("LD_LIBRARY_PATH", "zig-out" ++ sep ++ "lib");
     luajitTestCmd.setEnvironmentVariable("LUA_PATH", "binding" ++ sep ++ "lua_ffi" ++ sep ++ "?.lua");
 
