@@ -16,7 +16,7 @@ enum mon13_Weekday7 {
     MON13_SUNDAY = 7
 };
 
-enum Weekday10 {
+enum mon13_Weekday10 {
     MON13_PRIMIDI = 1,
     MON13_DUODI = 2,
     MON13_TRIDI = 3,
@@ -29,7 +29,7 @@ enum Weekday10 {
     MON13_DECADI = 10,
 };
 
-enum mon13_error {
+enum mon13_Error {
     MON13_ERROR_NONE = 0,
     MON13_ERROR_UNKNOWN = -1,
     MON13_ERROR_NULL_CALENDAR = -2,
@@ -118,12 +118,12 @@ int mon13_mjdToIsLeapYear(
 int mon13_mjdToDayOfWeek(
     int32_t mjd,
     const struct mon13_Cal* cal,
-    int* res_weekday
+    uint8_t* res_weekday
 );
 int mon13_mjdToDayOfYear(
     int32_t mjd,
     const struct mon13_Cal* cal,
-    int* res_yearday
+    uint16_t* res_yearday
 );
 
 int mon13_addMonths(

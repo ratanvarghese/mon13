@@ -74,6 +74,15 @@ pub const PublicError = extern enum {
     }
 };
 
+fn tail(comptime T: type, res: *T, raw: mon13.Err!T) c_int {
+    if (raw) |x| {
+        res.* = x;
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
 pub export fn mon13_validYmd(
     raw_cal: ?*const mon13.Cal,
     year: i32,
@@ -93,13 +102,7 @@ pub export fn mon13_mjdFromYmd(
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     var res_mjd = raw_mjd orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.mjdFromYmd(cal, year, month, day)) |mjd| {
-        res_mjd.* = mjd;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(i32, res_mjd, mon13.mjdFromYmd(cal, year, month, day));
 }
 
 pub export fn mon13_mjdFromC99Tm(
@@ -110,13 +113,7 @@ pub export fn mon13_mjdFromC99Tm(
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     const tm = raw_tm orelse return @enumToInt(PublicError.NULL_INPUT);
     var res_mjd = raw_mjd orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.mjdFromC99Tm(cal, tm)) |mjd| {
-        res_mjd.* = mjd;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(i32, res_mjd, mon13.mjdFromC99Tm(cal, tm));
 }
 
 pub export fn mon13_mjdFromUnix(
@@ -124,13 +121,7 @@ pub export fn mon13_mjdFromUnix(
     raw_mjd: ?*i32,
 ) c_int {
     var res_mjd = raw_mjd orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.mjdFromUnix(unix)) |mjd| {
-        res_mjd.* = mjd;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(i32, res_mjd, mon13.mjdFromUnix(unix));
 }
 
 pub export fn mon13_mjdFromRd(
@@ -138,13 +129,7 @@ pub export fn mon13_mjdFromRd(
     raw_mjd: ?*i32,
 ) c_int {
     var res_mjd = raw_mjd orelse return @enumToInt(PublicError.NULL_RESULT);
-
-    if (mon13.mjdFromRd(rd)) |mjd| {
-        res_mjd.* = mjd;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(i32, res_mjd, mon13.mjdFromRd(rd));
 }
 
 pub export fn mon13_mjdToYmd(
@@ -155,7 +140,6 @@ pub export fn mon13_mjdToYmd(
     day: ?*u8,
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-
     if (mon13.mjdToYmd(mjd, cal, year, month, day)) {
         return @enumToInt(PublicError.NONE);
     } else |err| {
@@ -183,13 +167,7 @@ pub export fn mon13_mjdToUnix(
     raw_unix: ?*i64,
 ) c_int {
     var res_unix = raw_unix orelse return @enumToInt(PublicError.NULL_INPUT);
-
-    if (mon13.mjdToUnix(mjd)) |unix| {
-        res_unix.* = unix;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(i64, res_unix, mon13.mjdToUnix(mjd));
 }
 
 pub export fn mon13_mjdToRd(
@@ -197,58 +175,37 @@ pub export fn mon13_mjdToRd(
     raw_rd: ?*i32,
 ) c_int {
     var res_rd = raw_rd orelse return @enumToInt(PublicError.NULL_INPUT);
-
-    if (mon13.mjdToRd(mjd)) |rd| {
-        res_rd.* = rd;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(i32, res_rd, mon13.mjdToRd(mjd));
 }
 
 pub export fn mon13_mjdToIsLeapYear(
     mjd: i32,
     raw_cal: ?*const mon13.Cal,
-    raw_isLeap: ?*c_int,
+    raw_isLeap: ?*bool,
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     var res_isLeap = raw_isLeap orelse return @enumToInt(PublicError.NULL_RESULT);
-    if (mon13.mjdToIsLeapYear(mjd, cal)) |isLeap| {
-        res_isLeap.* = @boolToInt(isLeap);
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(bool, res_isLeap, mon13.mjdToIsLeapYear(mjd, cal));
 }
 
 pub export fn mon13_mjdToDayOfWeek(
     mjd: i32,
     raw_cal: ?*const mon13.Cal,
-    raw_weekday: ?*c_int,
+    raw_weekday: ?*u8,
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     var res_weekday = raw_weekday orelse return @enumToInt(PublicError.NULL_RESULT);
-    if (mon13.mjdToDayOfWeek(mjd, cal)) |weekday| {
-        res_weekday.* = weekday;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(u8, res_weekday, mon13.mjdToDayOfWeek(mjd, cal));
 }
 
 pub export fn mon13_mjdToDayOfYear(
     mjd: i32,
     raw_cal: ?*const mon13.Cal,
-    raw_yearday: ?*c_int,
+    raw_yearday: ?*u16,
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     var res_yearday = raw_yearday orelse return @enumToInt(PublicError.NULL_RESULT);
-    if (mon13.mjdToDayOfYear(mjd, cal)) |yearday| {
-        res_yearday.* = @intCast(c_int, yearday);
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(u16, res_yearday, mon13.mjdToDayOfYear(mjd, cal));
 }
 
 pub export fn mon13_addMonths(
@@ -259,12 +216,7 @@ pub export fn mon13_addMonths(
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     var res_sum = raw_sum orelse return @enumToInt(PublicError.NULL_RESULT);
-    if (mon13.addMonths(mjd, cal, offset)) |sum| {
-        res_sum.* = sum;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(i32, res_sum, mon13.addMonths(mjd, cal, offset));
 }
 
 pub export fn mon13_addYears(
@@ -275,12 +227,7 @@ pub export fn mon13_addYears(
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     var res_sum = raw_sum orelse return @enumToInt(PublicError.NULL_RESULT);
-    if (mon13.addYears(mjd, cal, offset)) |sum| {
-        res_sum.* = sum;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(i32, res_sum, mon13.addYears(mjd, cal, offset));
 }
 
 pub export fn mon13_diffMonths(
@@ -291,12 +238,7 @@ pub export fn mon13_diffMonths(
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     var res_diff = raw_diff orelse return @enumToInt(PublicError.NULL_RESULT);
-    if (mon13.diffMonths(mjd0, mjd1, cal)) |diff| {
-        res_diff.* = diff;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(c_int, res_diff, mon13.diffMonths(mjd0, mjd1, cal));
 }
 
 pub export fn mon13_diffYears(
@@ -307,12 +249,7 @@ pub export fn mon13_diffYears(
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     var res_diff = raw_diff orelse return @enumToInt(PublicError.NULL_RESULT);
-    if (mon13.diffYears(mjd0, mjd1, cal)) |diff| {
-        res_diff.* = diff;
-        return @enumToInt(PublicError.NONE);
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return tail(c_int, res_diff, mon13.diffYears(mjd0, mjd1, cal));
 }
 
 pub export fn mon13_format(

@@ -1,160 +1,115 @@
 ffi = require("ffi")
 ffi.cdef[[
-//Enumerations
-enum mon13_Weekday7 {
-    MON13_NO_WEEKDAY = 0,
-    MON13_MONDAY = 1,
-    MON13_TUESDAY = 2,
-    MON13_WEDNESDAY = 3,
-    MON13_THURSDAY = 4,
-    MON13_FRIDAY = 5,
-    MON13_SATURDAY = 6,
-    MON13_SUNDAY = 7
-};
-
-enum Weekday10 {
-    MON13_PRIMIDI = 1,
-    MON13_DUODI = 2,
-    MON13_TRIDI = 3,
-    MON13_QUARTIDI = 4,
-    MON13_QUINTIDI = 5,
-    MON13_SEXTIDI = 6,
-    MON13_SEPTIDI = 7,
-    MON13_OCTIDI = 8,
-    MON13_NONIDI = 9,
-    MON13_DECADI = 10,
-};
-
-enum mon13_error {
-    MON13_ERROR_NONE = 0,
-    MON13_ERROR_UNKNOWN = -1,
-    MON13_ERROR_NULL_CALENDAR = -2,
-    MON13_ERROR_NULL_NAME_LIST = -3,
-    MON13_ERROR_NULL_FORMAT = -4,
-    MON13_ERROR_NULL_INPUT = -5,
-    MON13_ERROR_NULL_RESULT = -6,
-    MON13_ERROR_NULL_DATE = -7,
-    MON13_ERROR_OVERFLOW = -64,
-    MON13_ERROR_BAD_CALENDAR = -65,
-    MON13_ERROR_DATE_NOT_FOUND = -66,
-    MON13_ERROR_DAY_OF_YEAR_NOT_FOUND = -67,
-    MON13_ERROR_INVALID_UTF8 = -69,
-    MON13_ERROR_INVALID_STATE = -70,
-    MON13_ERROR_INVALID_SEQUENCE = -71,
-    MON13_ERROR_FAILED_TO_INSERT_NULLCHAR = -72,
-    MON13_ERROR_INVALID_DATE = -73,
-};
-
 //Structures
 struct mon13_NameList {
-    const char** month_list;
-    const char** weekday_list;
-    const char** era_list;
-    const char** intercalary_list;
-    const char** alt_intercalary_list;
-    const char* calendar_name;
+	const char** month_list;
+	const char** weekday_list;
+	const char** era_list;
+	const char** intercalary_list;
+	const char** alt_intercalary_list;
+	const char* calendar_name;
 };
 
 struct mon13_Cal;
 
 //Functions
 int mon13_validYmd(
-    const struct mon13_Cal* cal,
-    int32_t year,
-    uint8_t month,
-    uint8_t day
+	const struct mon13_Cal* cal,
+	int32_t year,
+	uint8_t month,
+	uint8_t day
 );
 
 int mon13_mjdFromYmd(
-    const struct mon13_Cal* cal,
-    int32_t year,
-    uint8_t month,
-    uint8_t day,
-    int32_t* res_mjd
+	const struct mon13_Cal* cal,
+	int32_t year,
+	uint8_t month,
+	uint8_t day,
+	int32_t* res_mjd
 );
 int mon13_mjdFromC99Tm(
-    const struct mon13_Cal* cal,
-    const void* tm,
-    int32_t* res_mjd
+	const struct mon13_Cal* cal,
+	const void* tm,
+	int32_t* res_mjd
 );
 int mon13_mjdFromUnix(
-    int64_t u,
-    int32_t* res_mjd
+	int64_t u,
+	int32_t* res_mjd
 );
 int mon13_mjdFromRd(
-    int32_t rd,
-    int32_t* res_mjd
+	int32_t rd,
+	int32_t* res_mjd
 );
 
 int mon13_mjdToYmd(
-    int32_t mjd,
-    const struct mon13_Cal* cal,
-    int32_t* res_year,
-    uint8_t* res_month,
-    uint8_t* res_day
+	int32_t mjd,
+	const struct mon13_Cal* cal,
+	int32_t* res_year,
+	uint8_t* res_month,
+	uint8_t* res_day
 );
 int mon13_mjdToC99Tm(
-    int32_t mjd,
-    const struct mon13_Cal* cal,
-    void* res_tm
+	int32_t mjd,
+	const struct mon13_Cal* cal,
+	void* res_tm
 );
 int mon13_mjdToUnix(
-    int32_t mjd,
-    int64_t* res_unix
+	int32_t mjd,
+	int64_t* res_unix
 );
 int mon13_mjdToRd(
-    int32_t mjd,
-    int32_t* res_rd
+	int32_t mjd,
+	int32_t* res_rd
 );
 int mon13_mjdToIsLeapYear(
-    int32_t mjd,
-    const struct mon13_Cal* cal,
-    int* res_isLeap
+	int32_t mjd,
+	const struct mon13_Cal* cal,
+	int* res_isLeap
 );
 int mon13_mjdToDayOfWeek(
-    int32_t mjd,
-    const struct mon13_Cal* cal,
-    int* res_weekday
+	int32_t mjd,
+	const struct mon13_Cal* cal,
+	uint8_t* res_weekday
 );
 int mon13_mjdToDayOfYear(
-    int32_t mjd,
-    const struct mon13_Cal* cal,
-    int* res_yearday
+	int32_t mjd,
+	const struct mon13_Cal* cal,
+	uint16_t* res_yearday
 );
 
 int mon13_addMonths(
-    int32_t mjd,
-    const struct mon13_Cal* cal,
-    int32_t offset,
-    int32_t* res_mjd
+	int32_t mjd,
+	const struct mon13_Cal* cal,
+	int32_t offset,
+	int32_t* res_mjd
 );
 int mon13_addYears(
-    int32_t mjd,
-    const struct mon13_Cal* cal,
-    int32_t offset,
-    int32_t* res_mjd
+	int32_t mjd,
+	const struct mon13_Cal* cal,
+	int32_t offset,
+	int32_t* res_mjd
 );
 
 int mon13_diffMonths(
-    int32_t mjd0,
-    int32_t mjd1,
-    const struct mon13_Cal* cal,
-    int32_t* res_months
+	int32_t mjd0,
+	int32_t mjd1,
+	const struct mon13_Cal* cal,
+	int32_t* res_months
 );
 int mon13_diffYears(
-    int32_t mjd0,
-    int32_t mjd1,
-    const struct mon13_Cal* cal,
-    int32_t* res_months
+	int32_t mjd0,
+	int32_t mjd1,
+	const struct mon13_Cal* cal,
+	int32_t* res_months
 );
 
 int mon13_format(
-    int32_t mjd,
-    const struct mon13_Cal* cal,
-    const struct mon13_NameList* nlist,
-    const char* fmt,
-    char* buf,
-    int32_t buflen
+	int32_t mjd,
+	const struct mon13_Cal* cal,
+	const struct mon13_NameList* nlist,
+	const char* fmt,
+	char* buf,
+	int32_t buflen
 );
 
 //Predefined name lists
@@ -227,13 +182,62 @@ local mon13 = {
 	french_revolutionary_romme_sub1 = raw_lib.mon13_french_revolutionary_romme_sub1,
 }
 
+mon13.Weekday7 = {
+	NO_WEEKDAY = 0,
+	MONDAY = 1,
+	TUESDAY = 2,
+	WEDNESDAY = 3,
+	THURSDAY = 4,
+	FRIDAY = 5,
+	SATURDAY = 6,
+	SUNDAY = 7
+}
+
+mon13.Weekday10 = {
+	PRIMIDI = 1,
+	DUODI = 2,
+	TRIDI = 3,
+	QUARTIDI = 4,
+	QUINTIDI = 5,
+	SEXTIDI = 6,
+	SEPTIDI = 7,
+	OCTIDI = 8,
+	NONIDI = 9,
+	DECADI = 10,
+}
+
+mon13.Error = {
+	NONE = 0,
+	UNKNOWN = -1,
+	NULL_CALENDAR = -2,
+	NULL_NAME_LIST = -3,
+	NULL_FORMAT = -4,
+	NULL_INPUT = -5,
+	NULL_RESULT = -6,
+	NULL_DATE = -7,
+	OVERFLOW = -64,
+	BAD_CALENDAR = -65,
+	DATE_NOT_FOUND = -66,
+	DAY_OF_YEAR_NOT_FOUND = -67,
+	INVALID_UTF8 = -69,
+	INVALID_STATE = -70,
+	INVALID_SEQUENCE = -71,
+	FAILED_TO_INSERT_NULLCHAR = -72,
+	INVALID_DATE = -73,
+}
+
 local function tail(res, status)
-	if status == raw_lib.MON13_ERROR_NONE then
+	if status == mon13.Error.NONE then
 		return tonumber(res[0])
 	else
 		return nil, status
 	end
 end
+
+local int32 = ffi.typeof("int32_t[1]")
+local uint8 = ffi.typeof("uint8_t[1]")
+local uint16 = ffi.typeof("uint16_t[1]")
+local charvla = ffi.typeof("char[?]")
 
 function mon13.validYmd(cal, ymd)
 	return raw_lib.validYmd(cal, ymd.year, ymd.month, ymd.day) ~= 0
@@ -241,30 +245,30 @@ end
 
 
 function mon13.mjdFromYmd(cal, ymd)
-	local res = ffi.new("int32_t[1]")
+	local res = int32()
 	local status = raw_lib.mon13_mjdFromYmd(cal, ymd.year, ymd.month, ymd.day, res)
 	return tail(res, status)
 end
 
 function mon13.mjdFromUnix(unix_time)
-	local res = ffi.new("int32_t[1]")
+	local res = int32()
 	local status = raw_lib.mon13_mjdFromUnix(unix_time, res)
 	return tail(res, status)
 end
 
 function mon13.mjdFromRd(rd)
-	local res = ffi.new("int32_t[1]")
+	local res = int32()
 	local status = raw_lib.mon13_mjdFromRd(rd, res)
 	return tail(res, status)
 end
 
 
 function mon13.mjdToYmd(mjd, cal)
-	local res_y = ffi.new("int32_t[1]")
-	local res_m = ffi.new("uint8_t[1]")
-	local res_d = ffi.new("uint8_t[1]")
+	local res_y = int32()
+	local res_m = uint8()
+	local res_d = uint8()
 	local status = raw_lib.mon13_mjdToYmd(mjd, cal, res_y, res_m, res_d)
-	if status == raw_lib.MON13_ERROR_NONE then
+	if status == mon13.Error.NONE then
 		return {
 			year = tonumber(res_y[0]),
 			month = tonumber(res_m[0]),
@@ -282,55 +286,55 @@ function mon13.mjdToUnix(mjd)
 end
 
 function mon13.mjdToRd(mjd)
-	local res = ffi.new("int32_t[1]")
+	local res = int32()
 	local status = raw_lib.mon13_mjdToRd(mjd, res)
 	return tail(res, status)
 end
 
 function mon13.mjdToIsLeapYear(mjd, cal)
-	local res = ffi.new("int[1]")
+	local res = ffi.new("bool[1]")
 	local status = raw_lib.mon13_mjdToIsLeapYear(mjd, cal, res)
-	if status == raw_lib.MON13_ERROR_NONE then
-		return tonumber(res[0]) ~= 0
+	if status == mon13.Error.NONE then
+		return res[0]
 	else
 		return nil, status
 	end
 end
 
 function mon13.mjdToDayOfWeek(mjd, cal)
-	local res = ffi.new("int[1]")
+	local res = uint8()
 	local status = raw_lib.mon13_mjdToDayOfWeek(mjd, cal, res)
 	return tail(res, status)
 end
 
 function mon13.mjdToDayOfYear(mjd, cal)
-	local res = ffi.new("int[1]")
+	local res = uint16()
 	local status = raw_lib.mon13_mjdToDayOfYear(mjd, cal, res)
 	return tail(res, status)
 end
 
 
 function mon13.addMonths(mjd, cal, offset)
-	local res = ffi.new("int32_t[1]")
+	local res = int32()
 	local status = raw_lib.mon13_addMonths(mjd, cal, offset, res)
 	return tail(res, status)
 end
 
 function mon13.addYears(mjd, cal, offset)
-	local res = ffi.new("int32_t[1]")
+	local res = int32()
 	local status = raw_lib.mon13_addYears(mjd, cal, offset, res)
 	return tail(res, status)
 end
 
 
 function mon13.diffMonths(mjd0, mjd1, cal)
-	local res = ffi.new("int32_t[1]")
+	local res = int32()
 	local status = raw_lib.mon13_diffMonths(mjd0, mjd1, cal, res)
 	return tail(res, status)
 end
 
 function mon13.diffYears(mjd0, mjd1, cal)
-	local res = ffi.new("int32_t[1]")
+	local res = int32()
 	local status = raw_lib.mon13_diffYears(mjd0, mjd1, cal, res)
 	return tail(res, status)
 end
@@ -349,7 +353,7 @@ function mon13.format(mjd, cal, arg3, arg4)
 		return nil, buflen
 	end
 
-	local buf = ffi.new("char[?]", buflen + 1)
+	local buf = charvla(buflen + 1)
 	local status = raw_lib.mon13_format(mjd, cal, nlist, fmt, buf, buflen + 1)
 	if status < 0 then
 		return nil, status

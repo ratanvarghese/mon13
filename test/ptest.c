@@ -706,7 +706,7 @@ enum theft_trial_res ymd_add_1day_gr(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    int leap;
+    bool leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -747,7 +747,7 @@ enum theft_trial_res ymd_add_1day_tq(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    int leap;
+    bool leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -795,7 +795,7 @@ enum theft_trial_res ymd_add_1day_ct(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    int leap;
+    bool leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -833,7 +833,7 @@ enum theft_trial_res ymd_add_1day_ps(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    int leap;
+    bool leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -873,7 +873,7 @@ enum theft_trial_res ymd_add_1day_sym454(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    int leap;
+    bool leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -913,7 +913,7 @@ enum theft_trial_res ymd_add_1day_sym010(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    int leap;
+    bool leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -953,7 +953,7 @@ enum theft_trial_res ymd_add_1day_fr(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    int leap;
+    bool leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -1006,7 +1006,7 @@ enum theft_trial_res add_1month_gr(struct theft* t, void* a1, void* a2) {
             correct_res = (m1 == 3) && (d1 == 1);
         }
         else if(d0 == 30) {
-            int leap;
+            bool leap;
             mon13_mjdToIsLeapYear(*mjd0, c, &leap);
             if(leap) {
                 correct_res = (m1 == 3) && (d1 == 1);
@@ -1202,7 +1202,7 @@ enum theft_trial_res add_1month_sym454(struct theft* t, void* a1, void* a2) {
         return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    int leap;
+    bool leap;
     mon13_mjdToIsLeapYear(*mjd0, c, &leap);
 
 
@@ -1262,7 +1262,7 @@ enum theft_trial_res add_1month_sym010(struct theft* t, void* a1, void* a2) {
         return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    int leap;
+    bool leap;
     mon13_mjdToIsLeapYear(*mjd0, c, &leap);
 
     bool correct_res = false;
@@ -1320,7 +1320,7 @@ enum theft_trial_res add_1month_fr(struct theft* t, void* a1, void* a2) {
         return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    int leap;
+    bool leap;
     mon13_mjdToIsLeapYear(*mjd0, c, &leap);
 
     bool correct_res = false;
@@ -1365,7 +1365,7 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
         return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    int leap;
+    bool leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -1460,7 +1460,7 @@ enum theft_trial_res doy_same(struct theft* t, void* a1, void* a2, void* a3) {
     const struct mon13_Cal* c0 = a2;
     const struct mon13_Cal* c1 = a3;
 
-    int doy0, doy1;
+    uint16_t doy0, doy1;
     int status0 = mon13_mjdToDayOfYear(*mjd, c0, &doy0);
     if(status0) {
         return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1478,7 +1478,7 @@ enum theft_trial_res leap_same(struct theft* t, void* a1, void* a2, void* a3) {
     const struct mon13_Cal* c0 = a2;
     const struct mon13_Cal* c1 = a3;
 
-    int leap0, leap1;
+    bool leap0, leap1;
     int status0 = mon13_mjdToIsLeapYear(*mjd, c0, &leap0);
     if(status0) {
         return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1502,7 +1502,7 @@ enum theft_trial_res leap9(struct theft* t, void* a1, void* a2) {
         if(status0) {
             return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
         }
-        int is_leap;
+        bool is_leap;
         int status1 = mon13_mjdToIsLeapYear(sum, c, &is_leap);
         if(status1) {
             return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1539,7 +1539,7 @@ enum theft_trial_res leap7(struct theft* t, void* a1, void* a2) {
         if(status0) {
             return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
         }
-        int is_leap;
+        bool is_leap;
         int status1 = mon13_mjdToIsLeapYear(sum, c, &is_leap);
         if(status1) {
             return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1556,7 +1556,7 @@ enum theft_trial_res leap0(struct theft* t, void* a1, void* a2) {
     const int32_t* mjd = a1;
     const struct mon13_Cal* c = a2;
 
-    int is_leap;
+    bool is_leap;
     int status = mon13_mjdToIsLeapYear(*mjd, c, &is_leap);
     if(status) {
         return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1574,12 +1574,12 @@ enum theft_trial_res day_of_week_continuous(struct theft* t, void* a1, void* a2)
     int32_t sum0 = *mjd_raw;
     int32_t sum1 = sum0 + 1;
 
-    int dow0;
+    uint8_t dow0;
     int status0 = mon13_mjdToDayOfWeek(sum0, c, &dow0);
     if(status0) {
         return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    int dow1;
+    uint8_t dow1;
     int status1 = mon13_mjdToDayOfWeek(sum1, c, &dow1);
     if(status1) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1601,7 +1601,7 @@ enum theft_trial_res day_of_week_tq(struct theft* t, void* a1, void* a2) {
         return THEFT_TRIAL_SKIP;
     }
 
-    int dow;
+    uint8_t dow;
     int status = mon13_mjdToDayOfWeek(*mjd, c, &dow);
     if(status) {
         return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1633,7 +1633,7 @@ enum theft_trial_res day_of_week_fr(struct theft* t, void* a1, void* a2) {
         return THEFT_TRIAL_SKIP;
     }
 
-    int dow;
+    uint8_t dow;
     int status = mon13_mjdToDayOfWeek(*mjd, c, &dow);
     if(status) {
         return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1665,7 +1665,7 @@ enum theft_trial_res day_of_week_same(struct theft* t, void* a1, void* a2, void*
     const struct mon13_Cal* c0 = a2;
     const struct mon13_Cal* c1 = a2;
 
-    int dow0, dow1;
+    uint8_t dow0, dow1;
     int status0 = mon13_mjdToDayOfWeek(*mjd, c0, &dow0);
     if(status0) {
         return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1683,7 +1683,7 @@ enum theft_trial_res day_of_year_add_one(struct theft* t, void* a1, void* a2) {
 
     int32_t sum = *mjd + 1;
 
-    int doy0, doy1;
+    uint16_t doy0, doy1;
     int status0 = mon13_mjdToDayOfYear(*mjd, c, &doy0);
     if(status0) {
         return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1692,7 +1692,7 @@ enum theft_trial_res day_of_year_add_one(struct theft* t, void* a1, void* a2) {
     if(status1) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    int leap;
+    bool leap;
     if(mon13_mjdToIsLeapYear(*mjd, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -1715,7 +1715,7 @@ enum theft_trial_res day_of_year_add_one_sym454(struct theft* t, void* a1, void*
 
     int32_t sum = *mjd + 1;
 
-    int doy0, doy1;
+    uint16_t doy0, doy1;
     int status0 = mon13_mjdToDayOfYear(*mjd, c, &doy0);
     if(status0) {
         return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1724,7 +1724,7 @@ enum theft_trial_res day_of_year_add_one_sym454(struct theft* t, void* a1, void*
     if(status1) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    int leap;
+    bool leap;
     if(mon13_mjdToIsLeapYear(*mjd, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -1909,7 +1909,7 @@ enum theft_trial_res format_weekday(struct theft* t, void* a1, void* a2, void* a
     const struct name_cal* nc = a2;
     const char* placeholder = a3;
 
-    int day;
+    uint8_t day;
     int status = mon13_mjdToDayOfWeek(*mjd, nc->c, &day);
     if(status) {
         return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -2018,7 +2018,7 @@ enum theft_trial_res format_doy(struct theft* t, void* a1, void* a2, void* a3) {
     const struct name_cal* nc = a2;
     const char* placeholder = a3;
 
-    int doy;
+    uint16_t doy;
     int status = mon13_mjdToDayOfYear(*mjd, nc->c, &doy);
     if(status) {
         return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -2166,7 +2166,7 @@ enum theft_trial_res format_weekday_number(struct theft* t, void* a1, void* a2, 
     const struct name_cal* nc = a2;
     const char* placeholder = a3;
 
-    int weekday;
+    uint8_t weekday;
     int status = mon13_mjdToDayOfWeek(*mjd, nc->c, &weekday);
     if(status) {
         return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -2274,16 +2274,20 @@ enum theft_trial_res format_numeric_padding(struct theft* t, void* a1, void* a2,
     switch(fmt[3]) {
         case 'd': targ = d; break;
         case 'j': {
-            if(mon13_mjdToDayOfYear(*mjd, nc->c, &targ)) {
+            uint16_t doy;
+            if(mon13_mjdToDayOfYear(*mjd, nc->c, &doy)) {
                 return THEFT_TRIAL_FAIL; //Getting ymd already worked
             }
+            targ = doy;
             break;
         }
         case 'm': targ = m; break;
         case 'u': {
-            if(mon13_mjdToDayOfWeek(*mjd, nc->c, &targ)) {
+            uint8_t weekday;
+            if(mon13_mjdToDayOfWeek(*mjd, nc->c, &weekday)) {
                 return THEFT_TRIAL_FAIL; //Getting ymd already worked
             }
+            targ = weekday;
             break;
         }
         case 'Y': {
