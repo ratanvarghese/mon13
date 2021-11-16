@@ -64,7 +64,7 @@ int mon13_mjdToRd(
 int mon13_mjdToIsLeapYear(
 	int32_t mjd,
 	const struct mon13_Cal* cal,
-	int* res_isLeap
+	bool* res_isLeap
 );
 int mon13_mjdToDayOfWeek(
 	int32_t mjd,
@@ -242,7 +242,7 @@ local c_uint16 = ffi.typeof("uint16_t[1]")
 local c_str = ffi.typeof("char[?]")
 
 function mon13.validYmd(cal, ymd)
-	return raw_lib.validYmd(cal, ymd.year, ymd.month, ymd.day) ~= 0
+	return raw_lib.mon13_validYmd(cal, ymd.year, ymd.month, ymd.day) ~= 0
 end
 
 
