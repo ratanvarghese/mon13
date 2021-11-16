@@ -45,7 +45,6 @@ pub const PublicError = extern enum {
     BAD_CALENDAR = -65,
     DATE_NOT_FOUND = -66,
     DAY_OF_YEAR_NOT_FOUND = -67,
-    BAD_MODE = -68,
     INVALID_UTF8 = -69,
     INVALID_STATE = -70,
     INVALID_SEQUENCE = -71,
@@ -54,11 +53,17 @@ pub const PublicError = extern enum {
 
     fn make(err: mon13.Err) PublicError {
         return switch (err) {
+            mon13.Err.Unknown => PublicError.UNKNOWN,
+            mon13.Err.NullCalendar => PublicError.NULL_CALENDAR,
+            mon13.Err.NullNameList => PublicError.NULL_NAME_LIST,
+            mon13.Err.NullFormat => PublicError.NULL_FORMAT,
+            mon13.Err.NullInput => PublicError.NULL_INPUT,
+            mon13.Err.NullResult => PublicError.NULL_RESULT,
+            mon13.Err.NullDate => PublicError.NULL_DATE,
             mon13.Err.Overflow => PublicError.OVERFLOW,
             mon13.Err.BadCalendar => PublicError.BAD_CALENDAR,
             mon13.Err.DateNotFound => PublicError.DATE_NOT_FOUND,
             mon13.Err.DoyNotFound => PublicError.DAY_OF_YEAR_NOT_FOUND,
-            mon13.Err.BadMode => PublicError.BAD_MODE,
             mon13.Err.InvalidUtf8 => PublicError.INVALID_UTF8,
             mon13.Err.BeyondEndState => PublicError.INVALID_STATE,
             mon13.Err.InvalidSequence => PublicError.INVALID_SEQUENCE,
