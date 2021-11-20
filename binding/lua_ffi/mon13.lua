@@ -349,11 +349,12 @@ local function makeStringList(t)
 		return t
 	end
 
-	local res = c_strlist(#t)
+	local res = c_strlist(#t + 1)
 	for i,v in ipairs(t) do
 		local buf = c_str(#v, v)
 		res[i-1] = buf
 	end
+	res[#t] = nil
 	return res
 end
 

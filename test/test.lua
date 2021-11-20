@@ -178,7 +178,7 @@ do
 		},
 		alt_intercalary_list = {
 			"MLD",
-			nil
+			""
 		},
 		calendar_name = mon13.tranquility_names_en_US.calendar_name
 	}
