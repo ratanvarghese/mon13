@@ -2,3 +2,4 @@ test/test*.log
 plan
 zig-cache
 zig-out
+*__pycache__*

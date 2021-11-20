@@ -10,6 +10,12 @@ pub fn build(b: *std.build.Builder) void {
     };
     const rawSeed = b.option(u64, "seed", "Seed for ptest");
     const rawSubmoduleTheft = b.option(bool, "submodule-theft", "Use submodule libtheft instead of system libtheft");
+    const luaFfiExe = b.option([]const u8, "lua-ffi-exe", "Lua interpreter with FFI") orelse "luajit";
+    const pyCtypesExe = b.option([]const u8, "py-ctypes-exe", "Python3 interpreter with ctypes") orelse "python3";
+    const sep = [_]u8{std.fs.path.sep};
+    const test_path = "test" ++ sep;
+    const ld_path = "zig-out" ++ sep ++ "lib";
+    const bind_path = "binding" ++ sep;
 
     //Library files
     const sharedLib = b.addSharedLibrary("mon13", "binding/c/bindc.zig", b.version(0, 5, 1));
@@ -72,12 +78,20 @@ pub fn build(b: *std.build.Builder) void {
     propertyTestStep.dependOn(&propertyTestRun.step);
 
     //Lua FFI test
-    const sep = [_]u8{std.fs.path.sep};
-    var luajitTestCmd = b.addSystemCommand(&[_][]const u8{ "luajit", "test" ++ sep ++ "test.lua" });
-    luajitTestCmd.setEnvironmentVariable("LD_LIBRARY_PATH", "zig-out" ++ sep ++ "lib");
-    luajitTestCmd.setEnvironmentVariable("LUA_PATH", "binding" ++ sep ++ "lua_ffi" ++ sep ++ "?.lua");
+    var luajitTestCmd = b.addSystemCommand(&[_][]const u8{ luaFfiExe, test_path ++ "test.lua" });
+    luajitTestCmd.setEnvironmentVariable("LD_LIBRARY_PATH", ld_path);
+    luajitTestCmd.setEnvironmentVariable("LUA_PATH", bind_path ++ "lua_ffi" ++ sep ++ "?.lua");
 
-    const luajitTestStep = b.step("luaffi", "Run Lua FFI tests (using luajit)");
+    const luajitTestStep = b.step("lutest", "Run Lua FFI tests");
     luajitTestStep.dependOn(&sharedLib.step);
     luajitTestStep.dependOn(&luajitTestCmd.step);
+
+    //Python FFI test
+    var pyTestCmd = b.addSystemCommand(&[_][]const u8{ pyCtypesExe, test_path ++ "test.py" });
+    pyTestCmd.setEnvironmentVariable("LD_LIBRARY_PATH", ld_path);
+    pyTestCmd.setEnvironmentVariable("PYTHONPATH", bind_path ++ "py_ctypes");
+
+    const pyTestStep = b.step("pytest", "Run Python ctypes tests");
+    pyTestStep.dependOn(&sharedLib.step);
+    pyTestStep.dependOn(&pyTestCmd.step);
 }
