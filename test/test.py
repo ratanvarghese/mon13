@@ -72,6 +72,8 @@ if True:
 	dow0, status0 = mon13.mjdToDayOfWeek(mjd0, mon13.holocene)
 	dow1, status1 = mon13.mjdToDayOfWeek(mjd1, mon13.holocene)
 	assert (dow0 == 7 and dow1 == 1), "add 1 to MJD, start next week"
+	assert (dow0 == mon13.Weekday7.SUNDAY.value), "End week on Sunday"
+	assert (dow1 == mon13.Weekday7.MONDAY.value), "Start week on Monday"
 
 if True:
 	mjd0 = 343542

@@ -81,6 +81,8 @@ do
 	local dow0 = mon13.mjdToDayOfWeek(mjd0, mon13.holocene)
 	local dow1 = mon13.mjdToDayOfWeek(mjd1, mon13.holocene)
 	assert(dow0 == 7 and dow1 == 1, "add 1 to MJD, start next week")
+	assert(dow0 == mon13.Weekday7.SUNDAY, "End week on Sunday")
+	assert(dow1 == mon13.Weekday7.MONDAY, "Start week on Monday")
 end
 
 do

@@ -1,6 +1,7 @@
 from ctypes import *
 from ctypes.util import find_library
 from collections import namedtuple
+from enum import Enum
 
 _libmon13 = cdll.LoadLibrary(find_library("mon13"))
 
@@ -63,6 +64,28 @@ NameList = namedtuple('NameList',[
 	'alt_intercalary_list',
 	'calendar_name'
 ])
+
+class Weekday7(Enum):
+	NO_WEEKDAY = 0
+	MONDAY = 1
+	TUESDAY = 2
+	WEDNESDAY = 3
+	THURSDAY = 4
+	FRIDAY = 5
+	SATURDAY = 6
+	SUNDAY = 7
+
+class Weekday10(Enum):
+	PRIMIDI = 1
+	DUODI = 2
+	TRIDI = 3
+	QUARTIDI = 4
+	QUINTIDI = 5
+	SEXTIDI = 6
+	SEPTIDI = 7
+	OCTIDI = 8
+	NONIDI = 9
+	DECADI = 10
 
 def _tail(res, status):
 	if status == 0:
