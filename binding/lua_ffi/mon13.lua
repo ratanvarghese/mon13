@@ -112,6 +112,8 @@ int mon13_format(
 	int32_t buflen
 );
 
+const char* mon13_errorMessage(int errorCode);
+
 //Predefined name lists
 extern const struct mon13_NameList mon13_gregorian_names_en_US;
 extern const struct mon13_NameList mon13_tranquility_names_en_US;
@@ -226,11 +228,15 @@ mon13.Error = {
 	INVALID_DATE = -73,
 }
 
+local function throw(status)
+	error("mon13 error: " .. ffi.string(raw_lib.mon13_errorMessage(status)))
+end
+
 local function tail(res, status)
 	if status == mon13.Error.NONE then
 		return tonumber(res[0])
 	else
-		return nil, status
+		throw(status)
 	end
 end
 
@@ -280,7 +286,7 @@ function mon13.mjdToYmd(mjd, cal)
 			day = tonumber(res_d[0])
 		}
 	else
-		return nil, status
+		return throw(status)
 	end
 end
 
@@ -302,7 +308,7 @@ function mon13.mjdToIsLeapYear(mjd, cal)
 	if status == mon13.Error.NONE then
 		return res[0]
 	else
-		return nil, status
+		return throw(status)
 	end
 end
 
@@ -379,13 +385,13 @@ function mon13.format(mjd, cal, arg3, arg4)
 
 	local buflen = raw_lib.mon13_format(mjd, cal, nlist, fmt, nil, 0)
 	if buflen < 0 then
-		return nil, buflen
+		throw(buflen)
 	end
 
 	local buf = c_str(buflen + 1)
 	local status = raw_lib.mon13_format(mjd, cal, nlist, fmt, buf, buflen + 1)
 	if status < 0 then
-		return nil, status
+		throw(status)
 	else
 		return ffi.string(buf)
 	end

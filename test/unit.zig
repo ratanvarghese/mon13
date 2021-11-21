@@ -173,13 +173,6 @@ test "Moon Landing Day" {
     );
 }
 
-test "Rata Die Overflow" {
-    const offset = 1389779633;
-    const mjd = 757702997 + offset;
-    const rd = mon13.mjdToRd(mjd) catch return;
-    try expect(false);
-}
-
 test "Add Years on La Fête de la Révolution" {
     const mjd0 = -1294533640;
     const offset = 2568471;
@@ -209,4 +202,21 @@ test "Add Years on La Fête de la Révolution" {
     try expect(y1 == (y0 + offset + 1));
     try expect(m1 == 1);
     try expect(d1 == 1);
+}
+
+test "Rata Die Overflow Message" {
+    const offset = 1389779633;
+    const mjd = 757702997 + offset;
+    if (mon13.mjdToRd(mjd)) |rd| {
+        try expect(false);
+    } else |err| {
+        try expect(err == mon13.Err.Overflow);
+        const msg = mon13.errorMessage(err);
+        const expected = "Overflow occurred (internal)";
+        try expect(mem.eql(
+            u8,
+            expected[0..expected.len],
+            msg[0..expected.len],
+        ));
+    }
 }

@@ -161,6 +161,8 @@ int mon13_format(
     int32_t buflen
 );
 
+const char* mon13_errorMessage(int errorCode);
+
 //Predefined name lists
 extern const struct mon13_NameList mon13_gregorian_names_en_US;
 extern const struct mon13_NameList mon13_tranquility_names_en_US;

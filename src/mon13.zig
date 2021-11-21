@@ -1,6 +1,12 @@
 pub usingnamespace @import("base.zig");
 pub usingnamespace @import("logic.zig");
 pub usingnamespace @import("format.zig");
+pub usingnamespace @import("message.zig");
+
+const gen = @import("gen.zig");
+pub const utils = struct {
+    pub const validInEnum = gen.validInEnum;
+};
 
 pub usingnamespace @import("cal/gregorian.zig");
 pub usingnamespace @import("cal/tranquility.zig");

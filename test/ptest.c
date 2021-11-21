@@ -2459,6 +2459,43 @@ enum theft_trial_res format_truncate(struct theft* t, void* a1, void* a2, void* 
     return THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res error_code_message(struct theft* t, void* a1) {
+    const int8_t* error_code_p = a1;
+    int error_code = *error_code_p;
+
+    const char* res = mon13_errorMessage(error_code);
+    if(error_code >= MON13_ERROR_UNKNOWN || error_code == -68) {
+        const char* expected = "Unknown error";
+        int expected_len = strlen(expected);
+        int cmp = memcmp(res, expected, expected_len);
+        return (cmp == 0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+    }
+    else if(error_code >= MON13_ERROR_NULL_DATE) {
+        const char* expected = "Null ";
+        int cmp = memcmp(res, expected, 5);
+        return (cmp == 0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+    }
+    else if(error_code > MON13_ERROR_OVERFLOW) {
+        const char* expected = "Unknown error";
+        int expected_len = strlen(expected);
+        int cmp = memcmp(res, expected, expected_len);
+        return (cmp == 0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+    }
+    else if(error_code >= MON13_ERROR_INVALID_DATE) {
+        const char* expected = "Unknown error";
+        int expected_len = strlen(expected);
+        int cmp = memcmp(res, expected, expected_len);
+        int res_len = strlen(res);
+        return (cmp != 0) && (res_len > 5) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+    }
+    else {
+        const char* expected = "Unknown error";
+        int expected_len = strlen(expected);
+        int cmp = memcmp(res, expected, expected_len);
+        return (cmp == 0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+    }
+}
+
 //Theft type info
 struct theft_type_info gr2tq_oa_info = {
     .alloc = select_gr2tq_oa, //nothing to free
@@ -2628,6 +2665,7 @@ struct theft_type_info year_offset_info;
 struct theft_type_info placeholder_info;
 struct theft_type_info small_offset_info;
 struct theft_type_info positive_offset_info;
+struct theft_type_info error_code_info;
 
 int main(int argc, char** argv) {
     theft_seed seed;
@@ -2669,6 +2707,9 @@ int main(int argc, char** argv) {
     uint32_t positive_offset_limit = INT32_MAX;
     positive_offset_info.env = &positive_offset_limit;
     positive_offset_info.autoshrink_config.enable = false;
+
+    theft_copy_builtin_type_info(THEFT_BUILTIN_int8_t, &error_code_info);
+    error_code_info.autoshrink_config.enable = false;
 
     struct theft_run_config config[] = {
         {
@@ -3665,6 +3706,14 @@ int main(int argc, char** argv) {
             },
             .seed = seed,
             .trials = SIZEOF_ARR(name_cal_list) * 100
+        },
+        {
+            .name = "mon13_errorMessage",
+            .prop1 = error_code_message,
+            .type_info = {
+                &error_code_info
+            },
+            .seed = seed
         }
     };
 

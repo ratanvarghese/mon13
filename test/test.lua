@@ -11,6 +11,14 @@ do
 end
 
 do
+	local d = {year = 13, month = 13, day = 13}
+	local status, msg = pcall(mon13.mjdFromYmd, mon13.gregorian, d)
+	assert(not status, "mjdFromYmd error status")
+	local expected = "Invalid date"
+	assert(msg:sub(-#expected) == expected, "mjdFromYmd error message")
+end
+
+do
 	local d0 = {year = 10, month = 10, day = 10}
 	local d1 = {year = d0.year, month = d0.month, day = d0.day + 1}
 	local mjd0 = mon13.mjdFromYmd(mon13.tranquility, d0)
@@ -51,6 +59,15 @@ do
 	local mjd0 = 462342
 	local mjd1 = mon13.mjdFromRd(mon13.mjdToRd(mjd0))
 	assert(mjd1 == mjd0, "Rd round trip")
+end
+
+do
+	local offset = 1389779633
+	local mjd = 757702997 + offset
+	local status, msg = pcall(mon13.mjdToRd, mjd)
+	assert(not status, "mjdToRd error status")
+	local expected = "Overflow occurred (internal)"
+	assert(msg:sub(-#expected) == expected, "mjdToRd error message")
 end
 
 do
@@ -189,6 +206,17 @@ do
 	local mjd = mon13.mjdFromYmd(mon13.tranquility, d)
 	local s = mon13.format(mjd, mon13.tranquility, nlist, "%Y-%B%d (%f)")
 	assert(s == "50-D01 (Tranquility)", "format, custom namelist")
+end
+
+do
+	local d = {year = 50, month = 4, day = 1}
+	local mjd = mon13.mjdFromYmd(mon13.tranquility, d)
+	local status, msg = pcall(
+		mon13.format, mjd, mon13.tranquility, "%Y-%B%d (%f)"
+	)
+	assert(not status, "format, nil namelist error status")
+	local expected = "Invalid format sequence"
+	assert(msg:sub(-#expected) == expected, msg)--"format, nil namelist error message")
 end
 
 print("Lua API tests passed.")

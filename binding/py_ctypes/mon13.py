@@ -87,11 +87,41 @@ class Weekday10(Enum):
 	NONIDI = 9
 	DECADI = 10
 
+class ErrorStatus(Enum):
+	NONE = 0
+	UNKNOWN = -1
+	NULL_CALENDAR = -2
+	NULL_NAME_LIST = -3
+	NULL_FORMAT = -4
+	NULL_INPUT = -5
+	NULL_RESULT = -6
+	NULL_DATE = -7
+	OVERFLOW = -64
+	BAD_CALENDAR = -65
+	DATE_NOT_FOUND = -66
+	DAY_OF_YEAR_NOT_FOUND = -67
+	INVALID_UTF8 = -69
+	INVALID_STATE = -70
+	INVALID_SEQUENCE = -71
+	FAILED_TO_INSERT_NULLCHAR = -72
+	INVALID_DATE = -73
+
+class Mon13Error(RuntimeError):
+	def __init__(self, status):
+		self.status = ErrorStatus(status)
+		_libmon13.mon13_errorMessage.restype = c_char_p
+		bmessage = _libmon13.mon13_errorMessage(status)
+		self.message = bmessage.decode("UTF-8")
+	def __str__(self):
+		return 'Mon13Error: {0}'.format(self.message)
+	def __repr__(self):
+		return self.__str__()
+
 def _tail(res, status):
-	if status == 0:
-		return res.value, status
+	if status == ErrorStatus.NONE.value:
+		return res.value
 	else:
-		return None, status
+		raise Mon13Error(status)
 
 
 def validYmd(cal, ymd):
@@ -119,10 +149,10 @@ def mjdToYmd(mjd, cal):
 	m = c_uint8()
 	d = c_uint8()
 	status = _libmon13.mon13_mjdToYmd(mjd, cal, byref(y), byref(m), byref(d))
-	if status == 0:
-		return Ymd(y.value, m.value, d.value), status
+	if status == ErrorStatus.NONE.value:
+		return Ymd(y.value, m.value, d.value)
 	else:
-		return None, status
+		raise Mon13Error(status)
 
 def mjdToUnix(mjd):
 	res = c_int64()
@@ -214,12 +244,12 @@ def format(mjd, cal, nlist=None, fmt=""):
 	b_fmt = bytes(fmt, "UTF-8")
 	c_fmt = create_string_buffer(b_fmt, len(b_fmt) + 1)
 	buflen = _libmon13.mon13_format(mjd, cal, nlist_arg, c_fmt, None, 0)
-	if buflen < 0:
-		return None, buflen
+	if buflen < ErrorStatus.NONE.value:
+		raise Mon13Error(buflen)
 
 	buf = create_string_buffer(buflen)
 	status = _libmon13.mon13_format(mjd, cal, nlist_arg, c_fmt, buf, buflen + 1)
-	if status < 0:
-		return None, status
+	if status < ErrorStatus.NONE.value:
+		raise Mon13Error(status)
 	else:
-		return buf.value.decode("UTF-8"), status
+		return buf.value.decode("UTF-8")

@@ -30,7 +30,7 @@ pub fn mjdFromVcalc(vcalc: f32) i32 {
     return @floatToInt(i32, std.math.floor(vcalc));
 }
 
-pub fn validInEnum(comptime E: type, x: u8) bool {
+pub fn validInEnum(comptime E: type, x: i32) bool {
     inline for (std.meta.fields(E)) |field| {
         if (field.value == x) {
             return true;

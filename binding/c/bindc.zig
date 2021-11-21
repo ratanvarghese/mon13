@@ -1,4 +1,5 @@
 const mon13 = @import("mon13");
+const std = @import("std");
 
 pub export const mon13_gregorian = mon13.gregorian;
 pub export const mon13_gregorian_year_zero = mon13.gregorian_year_zero;
@@ -70,6 +71,28 @@ pub const PublicError = extern enum {
             mon13.Err.FailedToInsertNullCharacter => PublicError.FAILED_TO_INSERT_NULLCHAR,
             mon13.Err.InvalidDate => PublicError.ERROR_INVALID_DATE,
             else => PublicError.UNKNOWN,
+        };
+    }
+
+    fn toErr(self: PublicError) mon13.Err {
+        return switch (self) {
+            PublicError.UNKNOWN => mon13.Err.Unknown,
+            PublicError.NULL_CALENDAR => mon13.Err.NullCalendar,
+            PublicError.NULL_NAME_LIST => mon13.Err.NullNameList,
+            PublicError.NULL_FORMAT => mon13.Err.NullFormat,
+            PublicError.NULL_INPUT => mon13.Err.NullInput,
+            PublicError.NULL_RESULT => mon13.Err.NullResult,
+            PublicError.NULL_DATE => mon13.Err.NullDate,
+            PublicError.OVERFLOW => mon13.Err.Overflow,
+            PublicError.BAD_CALENDAR => mon13.Err.BadCalendar,
+            PublicError.DATE_NOT_FOUND => mon13.Err.DateNotFound,
+            PublicError.DAY_OF_YEAR_NOT_FOUND => mon13.Err.DoyNotFound,
+            PublicError.INVALID_UTF8 => mon13.Err.InvalidUtf8,
+            PublicError.INVALID_STATE => mon13.Err.BeyondEndState,
+            PublicError.INVALID_SEQUENCE => mon13.Err.InvalidSequence,
+            PublicError.FAILED_TO_INSERT_NULLCHAR => mon13.Err.FailedToInsertNullCharacter,
+            PublicError.ERROR_INVALID_DATE => mon13.Err.InvalidDate,
+            else => mon13.Err.Unknown,
         };
     }
 };
@@ -275,4 +298,14 @@ pub export fn mon13_format(
     } else |err| {
         return @enumToInt(PublicError.make(err));
     }
+}
+
+pub export fn mon13_errorMessage(errorCode: c_int) [*:0]const u8 {
+    if (errorCode > std.math.minInt(i32) and errorCode < std.math.maxInt(i32)) {
+        if (mon13.utils.validInEnum(PublicError, @intCast(i32, errorCode))) {
+            const e = @intToEnum(PublicError, @intCast(i32, errorCode));
+            return mon13.errorMessage(e.toErr());
+        }
+    }
+    return mon13.errorMessage(mon13.Err.Unknown);
 }
