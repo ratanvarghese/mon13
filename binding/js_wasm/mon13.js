@@ -101,6 +101,15 @@ class Service {
 
 	}
 
+	_tail_u16(status) {
+		if(status !== 0) {
+			throw new Error(this._statusToString(status));
+		}
+		const buf = new Uint16Array(this.instance.exports.memory.buffer, this.mem_offset, 1);
+		return buf[0];
+	}
+
+
 	validYmd(cal, ymd) {
 		const res = this.instance.exports.mon13_validYmd(
 			cal, ymd.year, ymd.month, ymd.day, this.mem_offset
@@ -181,7 +190,7 @@ class Service {
 		const status = this.instance.exports.mon13_mjdToDayOfYear(
 			mjd, cal, this.mem_offset
 		);
-		return this._tail(status);
+		return this._tail_u16(status);
 	}
 
 	addMonths(mjd, cal, month_offset) {
