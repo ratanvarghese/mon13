@@ -4,28 +4,32 @@ pub fn build(b: *std.build.Builder) void {
     // Standard release options allow the person running `zig build` to select
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
+    const target = b.standardTargetOptions(.{});
     const mon13Pkg = std.build.Pkg{
         .name = "mon13",
         .path = "src/mon13.zig",
     };
     const rawSeed = b.option(u64, "seed", "Seed for ptest");
     const rawSubmoduleTheft = b.option(bool, "submodule-theft", "Use submodule libtheft instead of system libtheft");
-    const luaFfiExe = b.option([]const u8, "lua-ffi-exe", "Lua interpreter with FFI") orelse "luajit";
+    const luaFfiExe = b.option([]const u8, "lua-ffi-exe", "Lua interpreter with LuaJIT-style FFI") orelse "luajit";
     const pyCtypesExe = b.option([]const u8, "py-ctypes-exe", "Python3 interpreter with ctypes") orelse "python3";
+    const jsWasmExe = b.option([]const u8, "js-exe", "NodeJS with WASM") orelse "node";
     const sep = [_]u8{std.fs.path.sep};
     const test_path = "test" ++ sep;
-    const ld_path = "zig-out" ++ sep ++ "lib";
+    const ld_path = b.lib_dir;
     const bind_path = "binding" ++ sep;
 
     //Library files
     const sharedLib = b.addSharedLibrary("mon13", "binding/c/bindc.zig", b.version(0, 5, 1));
     sharedLib.addPackage(mon13Pkg);
     sharedLib.setBuildMode(mode);
+    sharedLib.setTarget(target);
     sharedLib.install();
 
     const staticLib = b.addStaticLibrary("mon13", "binding/c/bindc.zig");
     staticLib.addPackage(mon13Pkg);
     staticLib.setBuildMode(mode);
+    staticLib.setTarget(target);
     staticLib.install();
 
     //Unit tests
@@ -83,7 +87,7 @@ pub fn build(b: *std.build.Builder) void {
     luajitTestCmd.setEnvironmentVariable("LUA_PATH", bind_path ++ "lua_ffi" ++ sep ++ "?.lua");
 
     const luajitTestStep = b.step("lutest", "Run Lua FFI tests");
-    luajitTestStep.dependOn(&sharedLib.step);
+    luajitTestStep.dependOn(b.getInstallStep());
     luajitTestStep.dependOn(&luajitTestCmd.step);
 
     //Python FFI test
@@ -92,6 +96,19 @@ pub fn build(b: *std.build.Builder) void {
     pyTestCmd.setEnvironmentVariable("PYTHONPATH", bind_path ++ "py_ctypes");
 
     const pyTestStep = b.step("pytest", "Run Python ctypes tests");
-    pyTestStep.dependOn(&sharedLib.step);
+    pyTestStep.dependOn(b.getInstallStep());
     pyTestStep.dependOn(&pyTestCmd.step);
+
+    //JavaScript WASM test
+    const jsWasmStep = b.step("jstest", "Run JavaScript WASM tests (if -Dtarget=wasm32-freestanding)");
+    if (target.os_tag) |os_tag| {
+        if (target.cpu_arch) |cpu_arch| {
+            if (os_tag == std.Target.Os.Tag.freestanding and cpu_arch == std.Target.Cpu.Arch.wasm32) {
+                var jsWasmCmd = b.addSystemCommand(&[_][]const u8{ jsWasmExe, test_path ++ "test.js" });
+                jsWasmCmd.addArg(ld_path);
+                jsWasmStep.dependOn(b.getInstallStep());
+                jsWasmStep.dependOn(&jsWasmCmd.step);
+            }
+        }
+    }
 }
