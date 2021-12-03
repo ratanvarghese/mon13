@@ -163,7 +163,7 @@ do
 	local s = mon13.format(
 		mjd,
 		mon13.gregorian,
-		mon13.gregorian_names_en_US,
+		mon13.names_en_US_gregorian,
 		"%-d %B %Y, %q (%f)"
 	)
 	assert(s == "16 November 2021, Common Era (Gregorian)", "format")
@@ -186,7 +186,7 @@ do
 			"L",
 			"M"
 		},
-		weekday_list = mon13.tranquility_names_en_US.weekday_list,
+		weekday_list = mon13.names_en_US_tranquility.weekday_list,
 		era_list = {
 			"BT",
 			"AT"
@@ -199,7 +199,7 @@ do
 			"MLD",
 			""
 		},
-		calendar_name = mon13.tranquility_names_en_US.calendar_name
+		calendar_name = mon13.names_en_US_tranquility.calendar_name
 	}
 
 	local d = {year = 50, month = 4, day = 1}
@@ -225,11 +225,11 @@ print("Lua API tests passed.")
 -- print(mon13.format(mjd, mon13.gregorian, "%Y-%m-%d"))
 
 -- local fmt = "%-d %B %Y, %q (%f)"
--- print(mon13.format(mjd, mon13.gregorian, mon13.gregorian_names_en_US, fmt))
--- print(mon13.format(mjd, mon13.tranquility, mon13.tranquility_names_en_US, fmt))
+-- print(mon13.format(mjd, mon13.gregorian, mon13.names_en_US_gregorian, fmt))
+-- print(mon13.format(mjd, mon13.tranquility, mon13.names_en_US_tranquility, fmt))
 -- print(mon13.format(
 -- 	mjd,
 -- 	mon13.french_revolutionary_romme_sub1,
--- 	mon13.french_revolutionary_names_fr_FR,
+-- 	mon13.names_fr_FR_french_revolutionary,
 -- 	fmt
 -- ))

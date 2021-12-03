@@ -45,7 +45,7 @@ var french_revolutionary_intercalary_list_fr_FR = [_:null]?[*:0]u8{
 const NAME = "Révolutionnaire Français";
 var name_var: [NAME.len:0]u8 = NAME.*;
 
-pub const french_revolutionary_names_fr_FR = base.NameList{
+pub const names_fr_FR_french_revolutionary = base.NameList{
     .month_list = @ptrCast([*:null]?[*:0]u8, &french_revolutionary_month_list_fr_FR),
     .weekday_list = @ptrCast([*:null]?[*:0]u8, &french_revolutionary_weekday_list_fr_FR),
     .era_list = @ptrCast([*:null]?[*:0]u8, &french_revolutionary_era_list_fr_FR),

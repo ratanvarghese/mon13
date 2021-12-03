@@ -29,21 +29,21 @@ class Service {
 		this.french_revolutionary_romme_sub1 = ex.mon13_french_revolutionary_romme_sub1;
 
 
-		this.gregorian_names_en_US = ex.mon13_gregorian_names_en_US;
-		this.tranquility_names_en_US = ex.mon13_tranquility_names_en_US;
-		this.holocene_names_en_US = ex.mon13_holocene_names_en_US;
-		this.cotsworth_names_en_US = ex.mon13_cotsworth_names_en_US;
-		this.julian_names_en_US = ex.mon13_julian_names_en_US;
-		this.positivist_names_en_US = ex.mon13_positivist_names_en_US;
-		this.symmetry454_names_en_US = ex.mon13_symmetry454_names_en_US;
-		this.symmetry010_names_en_US = ex.mon13_symmetry010_names_en_US;
-		this.ancient_egyptian_names_en_US = ex.mon13_ancient_egyptian_names_en_US;
-		this.french_revolutionary_names_en_GB = ex.mon13_french_revolutionary_names_en_GB;
-		this.french_revolutionary_names_en_GB_joke = ex.mon13_french_revolutionary_names_en_GB_joke;
-		this.gregorian_names_fr_FR = ex.mon13_gregorian_names_fr_FR;
-		this.julian_names_fr_FR = ex.mon13_julian_names_fr_FR;
-		this.positivist_names_fr_FR = ex.mon13_positivist_names_fr_FR;
-		this.french_revolutionary_names_fr_FR = ex.mon13_french_revolutionary_names_fr_FR;
+		this.names_en_US_gregorian = ex.mon13_names_en_US_gregorian;
+		this.names_en_US_tranquility = ex.mon13_names_en_US_tranquility;
+		this.names_en_US_holocene = ex.mon13_names_en_US_holocene;
+		this.names_en_US_cotsworth = ex.mon13_names_en_US_cotsworth;
+		this.names_en_US_julian = ex.mon13_names_en_US_julian;
+		this.names_en_US_positivist = ex.mon13_names_en_US_positivist;
+		this.names_en_US_symmetry454 = ex.mon13_names_en_US_symmetry454;
+		this.names_en_US_symmetry010 = ex.mon13_names_en_US_symmetry010;
+		this.names_en_US_ancient_egyptian = ex.mon13_names_en_US_ancient_egyptian;
+		this.names_en_GB_french_revolutionary = ex.mon13_names_en_GB_french_revolutionary;
+		this.names_en_GB_french_revolutionary_joke = ex.mon13_names_en_GB_french_revolutionary_joke;
+		this.names_fr_FR_gregorian = ex.mon13_names_fr_FR_gregorian;
+		this.names_fr_FR_julian = ex.mon13_names_fr_FR_julian;
+		this.names_fr_FR_positivist = ex.mon13_names_fr_FR_positivist;
+		this.names_fr_FR_french_revolutionary = ex.mon13_names_fr_FR_french_revolutionary;
 
 		this.Weekday7 = {
 			NO_WEEKDAY: 0,

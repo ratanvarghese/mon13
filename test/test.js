@@ -184,7 +184,7 @@ WebAssembly.instantiate(typedArray,{}).then(lib => {
 		const s = m.format(
 			mjd,
 			m.gregorian,
-			m.gregorian_names_en_US,
+			m.names_en_US_gregorian,
 			"%-d %B %Y, %q (%f)"
 		)
 		my_assert(s == "16 November 2021, Common Era (Gregorian)", "format")

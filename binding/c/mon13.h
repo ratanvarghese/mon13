@@ -164,23 +164,23 @@ int mon13_format(
 const char* mon13_errorMessage(int errorCode);
 
 //Predefined name lists
-extern const struct mon13_NameList mon13_gregorian_names_en_US;
-extern const struct mon13_NameList mon13_tranquility_names_en_US;
-extern const struct mon13_NameList mon13_holocene_names_en_US;
-extern const struct mon13_NameList mon13_cotsworth_names_en_US;
-extern const struct mon13_NameList mon13_julian_names_en_US;
-extern const struct mon13_NameList mon13_positivist_names_en_US;
-extern const struct mon13_NameList mon13_symmetry454_names_en_US;
-extern const struct mon13_NameList mon13_symmetry010_names_en_US;
-extern const struct mon13_NameList mon13_ancient_egyptian_names_en_US;
+extern const struct mon13_NameList mon13_names_en_US_gregorian;
+extern const struct mon13_NameList mon13_names_en_US_tranquility;
+extern const struct mon13_NameList mon13_names_en_US_holocene;
+extern const struct mon13_NameList mon13_names_en_US_cotsworth;
+extern const struct mon13_NameList mon13_names_en_US_julian;
+extern const struct mon13_NameList mon13_names_en_US_positivist;
+extern const struct mon13_NameList mon13_names_en_US_symmetry454;
+extern const struct mon13_NameList mon13_names_en_US_symmetry010;
+extern const struct mon13_NameList mon13_names_en_US_ancient_egyptian;
 
-extern const struct mon13_NameList mon13_french_revolutionary_names_en_GB;
-extern const struct mon13_NameList mon13_french_revolutionary_names_en_GB_joke;
+extern const struct mon13_NameList mon13_names_en_GB_french_revolutionary;
+extern const struct mon13_NameList mon13_names_en_GB_french_revolutionary_joke;
 
-extern const struct mon13_NameList mon13_gregorian_names_fr_FR;
-extern const struct mon13_NameList mon13_julian_names_fr_FR;
-extern const struct mon13_NameList mon13_positivist_names_fr_FR;
-extern const struct mon13_NameList mon13_french_revolutionary_names_fr_FR;
+extern const struct mon13_NameList mon13_names_fr_FR_gregorian;
+extern const struct mon13_NameList mon13_names_fr_FR_julian;
+extern const struct mon13_NameList mon13_names_fr_FR_positivist;
+extern const struct mon13_NameList mon13_names_fr_FR_french_revolutionary;
 
 //Predefined calendars
 extern const struct mon13_Cal mon13_gregorian;

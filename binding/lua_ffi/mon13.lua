@@ -115,23 +115,23 @@ int mon13_format(
 const char* mon13_errorMessage(int errorCode);
 
 //Predefined name lists
-extern const struct mon13_NameList mon13_gregorian_names_en_US;
-extern const struct mon13_NameList mon13_tranquility_names_en_US;
-extern const struct mon13_NameList mon13_holocene_names_en_US;
-extern const struct mon13_NameList mon13_cotsworth_names_en_US;
-extern const struct mon13_NameList mon13_julian_names_en_US;
-extern const struct mon13_NameList mon13_positivist_names_en_US;
-extern const struct mon13_NameList mon13_symmetry454_names_en_US;
-extern const struct mon13_NameList mon13_symmetry010_names_en_US;
-extern const struct mon13_NameList mon13_ancient_egyptian_names_en_US;
+extern const struct mon13_NameList mon13_names_en_US_gregorian;
+extern const struct mon13_NameList mon13_names_en_US_tranquility;
+extern const struct mon13_NameList mon13_names_en_US_holocene;
+extern const struct mon13_NameList mon13_names_en_US_cotsworth;
+extern const struct mon13_NameList mon13_names_en_US_julian;
+extern const struct mon13_NameList mon13_names_en_US_positivist;
+extern const struct mon13_NameList mon13_names_en_US_symmetry454;
+extern const struct mon13_NameList mon13_names_en_US_symmetry010;
+extern const struct mon13_NameList mon13_names_en_US_ancient_egyptian;
 
-extern const struct mon13_NameList mon13_french_revolutionary_names_en_GB;
-extern const struct mon13_NameList mon13_french_revolutionary_names_en_GB_joke;
+extern const struct mon13_NameList mon13_names_en_GB_french_revolutionary;
+extern const struct mon13_NameList mon13_names_en_GB_french_revolutionary_joke;
 
-extern const struct mon13_NameList mon13_gregorian_names_fr_FR;
-extern const struct mon13_NameList mon13_julian_names_fr_FR;
-extern const struct mon13_NameList mon13_positivist_names_fr_FR;
-extern const struct mon13_NameList mon13_french_revolutionary_names_fr_FR;
+extern const struct mon13_NameList mon13_names_fr_FR_gregorian;
+extern const struct mon13_NameList mon13_names_fr_FR_julian;
+extern const struct mon13_NameList mon13_names_fr_FR_positivist;
+extern const struct mon13_NameList mon13_names_fr_FR_french_revolutionary;
 
 //Predefined calendars
 extern const struct mon13_Cal mon13_gregorian;
@@ -151,23 +151,23 @@ extern const struct mon13_Cal mon13_french_revolutionary_romme_sub1;
 local raw_lib = ffi.load("mon13")
 
 local mon13 = {
-	gregorian_names_en_US = raw_lib.mon13_gregorian_names_en_US,
-	tranquility_names_en_US = raw_lib.mon13_tranquility_names_en_US,
-	holocene_names_en_US = raw_lib.mon13_holocene_names_en_US,
-	cotsworth_names_en_US = raw_lib.mon13_cotsworth_names_en_US,
-	julian_names_en_US = raw_lib.mon13_julian_names_en_US,
-	positivist_names_en_US = raw_lib.mon13_positivist_names_en_US,
-	symmetry454_names_en_US = raw_lib.mon13_symmetry454_names_en_US,
-	symmetry010_names_en_US = raw_lib.mon13_symmetry010_names_en_US,
-	ancient_egyptian_names_en_US = raw_lib.mon13_ancient_egyptian_names_en_US,
+	names_en_US_gregorian = raw_lib.mon13_names_en_US_gregorian,
+	names_en_US_tranquility = raw_lib.mon13_names_en_US_tranquility,
+	names_en_US_holocene = raw_lib.mon13_names_en_US_holocene,
+	names_en_US_cotsworth = raw_lib.mon13_names_en_US_cotsworth,
+	names_en_US_julian = raw_lib.mon13_names_en_US_julian,
+	names_en_US_positivist = raw_lib.mon13_names_en_US_positivist,
+	names_en_US_symmetry454 = raw_lib.mon13_names_en_US_symmetry454,
+	names_en_US_symmetry010 = raw_lib.mon13_names_en_US_symmetry010,
+	names_en_US_ancient_egyptian = raw_lib.mon13_names_en_US_ancient_egyptian,
 
-	french_revolutionary_names_en_GB = raw_lib.mon13_french_revolutionary_names_en_GB,
-	french_revolutionary_names_en_GB_joke = raw_lib.mon13_french_revolutionary_names_en_GB_joke,
+	names_en_GB_french_revolutionary = raw_lib.mon13_names_en_GB_french_revolutionary,
+	names_en_GB_french_revolutionary_joke = raw_lib.mon13_names_en_GB_french_revolutionary_joke,
 
-	gregorian_names_fr_FR = raw_lib.mon13_gregorian_names_fr_FR,
-	julian_names_fr_FR = raw_lib.mon13_julian_names_fr_FR,
-	positivist_names_fr_FR = raw_lib.mon13_positivist_names_fr_FR,
-	french_revolutionary_names_fr_FR = raw_lib.mon13_french_revolutionary_names_fr_FR,
+	names_fr_FR_gregorian = raw_lib.mon13_names_fr_FR_gregorian,
+	names_fr_FR_julian = raw_lib.mon13_names_fr_FR_julian,
+	names_fr_FR_positivist = raw_lib.mon13_names_fr_FR_positivist,
+	names_fr_FR_french_revolutionary = raw_lib.mon13_names_fr_FR_french_revolutionary,
 
 	gregorian = raw_lib.mon13_gregorian,
 	gregorian_year_zero = raw_lib.mon13_gregorian_year_zero,

@@ -109,43 +109,43 @@ void print_cal(FILE* f, const void* instance, void* env) {
         fprintf(f, "NULL");
     }
     else if(c == &mon13_gregorian) {
-        fprintf(f, "%s", mon13_gregorian_names_en_US.calendar_name);
+        fprintf(f, "%s", mon13_names_en_US_gregorian.calendar_name);
     }
     else if(c == &mon13_gregorian_year_zero) {
-        fprintf(f, "%s (Year Zero)", mon13_gregorian_names_en_US.calendar_name);
+        fprintf(f, "%s (Year Zero)", mon13_names_en_US_gregorian.calendar_name);
     }
     else if(c == &mon13_tranquility) {
-        fprintf(f, "%s", mon13_tranquility_names_en_US.calendar_name);
+        fprintf(f, "%s", mon13_names_en_US_tranquility.calendar_name);
     }
     else if(c == &mon13_tranquility_year_zero) {
-        fprintf(f, "%s (Year Zero)", mon13_tranquility_names_en_US.calendar_name);
+        fprintf(f, "%s (Year Zero)", mon13_names_en_US_tranquility.calendar_name);
     }
     else if(c == &mon13_holocene) {
-        fprintf(f, "%s", mon13_holocene_names_en_US.calendar_name);
+        fprintf(f, "%s", mon13_names_en_US_holocene.calendar_name);
     }
     else if(c == &mon13_cotsworth) {
-        fprintf(f, "%s", mon13_cotsworth_names_en_US.calendar_name);
+        fprintf(f, "%s", mon13_names_en_US_cotsworth.calendar_name);
     }
     else if(c == &mon13_julian) {
-        fprintf(f, "%s", mon13_julian_names_en_US.calendar_name);
+        fprintf(f, "%s", mon13_names_en_US_julian.calendar_name);
     }
     else if(c == &mon13_positivist) {
-        fprintf(f, "%s", mon13_positivist_names_en_US.calendar_name);
+        fprintf(f, "%s", mon13_names_en_US_positivist.calendar_name);
     }
     else if(c == &mon13_symmetry454) {
-        fprintf(f, "%s", mon13_symmetry454_names_en_US.calendar_name);
+        fprintf(f, "%s", mon13_names_en_US_symmetry454.calendar_name);
     }
     else if(c == &mon13_symmetry010) {
-        fprintf(f, "%s", mon13_symmetry010_names_en_US.calendar_name);
+        fprintf(f, "%s", mon13_names_en_US_symmetry010.calendar_name);
     }
     else if(c == &mon13_ancient_egyptian) {
-        fprintf(f, "%s", mon13_ancient_egyptian_names_en_US.calendar_name);
+        fprintf(f, "%s", mon13_names_en_US_ancient_egyptian.calendar_name);
     }
     else if(c == &mon13_french_revolutionary_romme) {
-        fprintf(f, "%s Romme", mon13_french_revolutionary_names_en_GB.calendar_name);
+        fprintf(f, "%s Romme", mon13_names_en_GB_french_revolutionary.calendar_name);
     }
     else if(c == &mon13_french_revolutionary_romme_sub1) {
-        fprintf(f, "%s Romme-1", mon13_french_revolutionary_names_en_GB.calendar_name);
+        fprintf(f, "%s Romme-1", mon13_names_en_GB_french_revolutionary.calendar_name);
     }
     else {
         fprintf(f, "UNKNOWN");
@@ -156,22 +156,22 @@ void print_name_cal(FILE* f, const void* instance, void* env) {
     const struct name_cal* nc = instance;
     print_cal(f, nc->c, NULL);
     fprintf(f, " ");
-    if(nc->n == &mon13_gregorian_names_fr_FR) {
+    if(nc->n == &mon13_names_fr_FR_gregorian) {
         fprintf(f, "fr_FR");
     }
-    else if(nc->n == &mon13_julian_names_fr_FR) {
+    else if(nc->n == &mon13_names_fr_FR_julian) {
         fprintf(f, "fr_FR");
     }
-    else if(nc->n == &mon13_positivist_names_fr_FR) {
+    else if(nc->n == &mon13_names_fr_FR_positivist) {
         fprintf(f, "fr_FR");
     }
-    else if(nc->n == &mon13_french_revolutionary_names_fr_FR) {
+    else if(nc->n == &mon13_names_fr_FR_french_revolutionary) {
         fprintf(f, "fr_FR");
     }
-    else if(nc->n == &mon13_french_revolutionary_names_en_GB) {
+    else if(nc->n == &mon13_names_en_GB_french_revolutionary) {
         fprintf(f, "en_GB");
     }
-    else if(nc->n == &mon13_french_revolutionary_names_en_GB_joke) {
+    else if(nc->n == &mon13_names_en_GB_french_revolutionary_joke) {
         fprintf(f, "en_GB (joke)");
     }
     else {
@@ -2224,7 +2224,7 @@ enum theft_trial_res format_strftime(struct theft* t, void* a1, void* a2, void* 
     const char* fmt = a3;
 
     const struct mon13_Cal* c = &mon13_gregorian_year_zero;
-    const struct mon13_NameList* n = &mon13_gregorian_names_en_US;
+    const struct mon13_NameList* n = &mon13_names_en_US_gregorian;
 
     int64_t u0;
     int status = mon13_mjdToUnix(*mjd, &u0);

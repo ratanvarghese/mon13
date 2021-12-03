@@ -82,7 +82,7 @@ test "holocene" {
 
 test "Cotsworth format" {
     const c = &mon13.cotsworth;
-    const n = &mon13.cotsworth_names_en_US;
+    const n = &mon13.names_en_US_cotsworth;
     const mjd = try mon13.mjdFromYmd(c, -2823980, 6, 29);
 
     const buf_size = 100;
@@ -158,7 +158,7 @@ test "Date not found? But why?" {
 test "Moon Landing Day" {
     const mjd = 40422;
     const c = &mon13.tranquility_year_zero;
-    const n = &mon13.tranquility_names_en_US;
+    const n = &mon13.names_en_US_tranquility;
     const expected = "Moon Landing Day";
 
     var buf = [_]u8{0} ** 100;

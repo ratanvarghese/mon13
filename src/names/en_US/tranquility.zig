@@ -35,9 +35,9 @@ var tranquility_alt_intercalary_list_en_US = [_:null]?[*:0]u8{
 const NAME = "Tranquility";
 var name_var: [NAME.len:0]u8 = NAME.*;
 
-pub const tranquility_names_en_US = base.NameList{
+pub const names_en_US_tranquility = base.NameList{
     .month_list = @ptrCast([*:null]?[*:0]u8, &tranquility_month_list_en_US),
-    .weekday_list = names_gr.gregorian_names_en_US.weekday_list,
+    .weekday_list = names_gr.names_en_US_gregorian.weekday_list,
     .era_list = @ptrCast([*:null]?[*:0]u8, &tranquility_era_list_en_US),
     .intercalary_list = @ptrCast([*:null]?[*:0]u8, &tranquility_intercalary_list_en_US),
     .alt_intercalary_list = @ptrCast([*:null]?[*:0]u8, &tranquility_alt_intercalary_list_en_US),

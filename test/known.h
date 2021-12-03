@@ -37,87 +37,87 @@ struct name_cal {
 const struct name_cal name_cal_list[] = {
 	{
 		.c = &mon13_gregorian,
-		.n = &mon13_gregorian_names_en_US,
+		.n = &mon13_names_en_US_gregorian,
 	},
 	{
 		.c = &mon13_gregorian_year_zero,
-		.n = &mon13_gregorian_names_en_US,
+		.n = &mon13_names_en_US_gregorian,
 	},
 	{
 		.c = &mon13_gregorian,
-		.n = &mon13_gregorian_names_fr_FR,
+		.n = &mon13_names_fr_FR_gregorian,
 	},
 	{
 		.c = &mon13_gregorian_year_zero,
-		.n = &mon13_gregorian_names_fr_FR,
+		.n = &mon13_names_fr_FR_gregorian,
 	},
 	{
 		.c = &mon13_tranquility,
-		.n = &mon13_tranquility_names_en_US,
+		.n = &mon13_names_en_US_tranquility,
 	},
 	{
 		.c = &mon13_tranquility_year_zero,
-		.n = &mon13_tranquility_names_en_US,
+		.n = &mon13_names_en_US_tranquility,
 	},
 	{
 		.c = &mon13_holocene,
-		.n = &mon13_holocene_names_en_US,
+		.n = &mon13_names_en_US_holocene,
 	},
 	{
 		.c = &mon13_cotsworth,
-		.n = &mon13_cotsworth_names_en_US,
+		.n = &mon13_names_en_US_cotsworth,
 	},
 	{
 		.c = &mon13_julian,
-		.n = &mon13_julian_names_en_US,
+		.n = &mon13_names_en_US_julian,
 	},
 	{
 		.c = &mon13_julian,
-		.n = &mon13_julian_names_fr_FR,
+		.n = &mon13_names_fr_FR_julian,
 	},
 	{
 		.c = &mon13_positivist,
-		.n = &mon13_positivist_names_en_US,
+		.n = &mon13_names_en_US_positivist,
 	},
 	{
 		.c = &mon13_positivist,
-		.n = &mon13_positivist_names_fr_FR,
+		.n = &mon13_names_fr_FR_positivist,
 	},
 	{
 		.c = &mon13_symmetry454,
-		.n = &mon13_symmetry454_names_en_US,
+		.n = &mon13_names_en_US_symmetry454,
 	},
 	{
 		.c = &mon13_symmetry010,
-		.n = &mon13_symmetry010_names_en_US,
+		.n = &mon13_names_en_US_symmetry010,
 	},
 	{
 		.c = &mon13_ancient_egyptian,
-		.n = &mon13_ancient_egyptian_names_en_US,
+		.n = &mon13_names_en_US_ancient_egyptian,
 	},
 	{
 		.c = &mon13_french_revolutionary_romme,
-		.n = &mon13_french_revolutionary_names_en_GB,
+		.n = &mon13_names_en_GB_french_revolutionary,
 	},
 	{
 		.c = &mon13_french_revolutionary_romme,
-		.n = &mon13_french_revolutionary_names_en_GB_joke,
+		.n = &mon13_names_en_GB_french_revolutionary_joke,
 	},
 	{
 		.c = &mon13_french_revolutionary_romme,
-		.n = &mon13_french_revolutionary_names_fr_FR,
+		.n = &mon13_names_fr_FR_french_revolutionary,
 	},
 	{
 		.c = &mon13_french_revolutionary_romme_sub1,
-		.n = &mon13_french_revolutionary_names_en_GB,
+		.n = &mon13_names_en_GB_french_revolutionary,
 	},
 	{
 		.c = &mon13_french_revolutionary_romme_sub1,
-		.n = &mon13_french_revolutionary_names_en_GB_joke,
+		.n = &mon13_names_en_GB_french_revolutionary_joke,
 	},
 	{
 		.c = &mon13_french_revolutionary_romme_sub1,
-		.n = &mon13_french_revolutionary_names_fr_FR,
+		.n = &mon13_names_fr_FR_french_revolutionary,
 	},
 };
 

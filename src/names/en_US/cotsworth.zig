@@ -30,10 +30,10 @@ var cotsworth_intercalary_list = [_:null]?[*:0]u8{
 const NAME = "Cotsworth";
 var name_var: [NAME.len:0]u8 = NAME.*;
 
-pub const cotsworth_names_en_US = base.NameList{
+pub const names_en_US_cotsworth = base.NameList{
     .month_list = @ptrCast([*:null]?[*:0]u8, &cotsworth_month_list),
-    .weekday_list = names_gr.gregorian_names_en_US.weekday_list,
-    .era_list = names_gr.gregorian_names_en_US.era_list,
+    .weekday_list = names_gr.names_en_US_gregorian.weekday_list,
+    .era_list = names_gr.names_en_US_gregorian.era_list,
     .intercalary_list = @ptrCast([*:null]?[*:0]u8, &cotsworth_intercalary_list),
     .alt_intercalary_list = null,
     .calendar_name = @ptrCast([*:0]u8, &name_var),

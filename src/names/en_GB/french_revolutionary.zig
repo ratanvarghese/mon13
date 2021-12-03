@@ -66,7 +66,7 @@ var french_revolutionary_intercalary_list_en_GB = [_:null]?[*:0]u8{
 const NAME = "French Revolutionary";
 var name_var: [NAME.len:0]u8 = NAME.*;
 
-pub const french_revolutionary_names_en_GB = base.NameList{
+pub const names_en_GB_french_revolutionary = base.NameList{
     .month_list = @ptrCast([*:null]?[*:0]u8, &french_revolutionary_month_list_en_GB_carlyle),
     .weekday_list = @ptrCast([*:null]?[*:0]u8, &french_revolutionary_weekday_list_en_GB),
     .era_list = @ptrCast([*:null]?[*:0]u8, &french_revolutionary_era_list_en_GB),
@@ -75,11 +75,11 @@ pub const french_revolutionary_names_en_GB = base.NameList{
     .calendar_name = @ptrCast([*:0]u8, &name_var),
 };
 
-pub const french_revolutionary_names_en_GB_joke = base.NameList{
+pub const names_en_GB_french_revolutionary_joke = base.NameList{
     .month_list = @ptrCast([*:null]?[*:0]u8, &french_revolutionary_month_list_en_GB_joke),
-    .weekday_list = french_revolutionary_names_en_GB.weekday_list,
-    .era_list = french_revolutionary_names_en_GB.era_list,
-    .intercalary_list = french_revolutionary_names_en_GB.intercalary_list,
-    .alt_intercalary_list = french_revolutionary_names_en_GB.alt_intercalary_list,
-    .calendar_name = french_revolutionary_names_en_GB.calendar_name,
+    .weekday_list = names_en_GB_french_revolutionary.weekday_list,
+    .era_list = names_en_GB_french_revolutionary.era_list,
+    .intercalary_list = names_en_GB_french_revolutionary.intercalary_list,
+    .alt_intercalary_list = names_en_GB_french_revolutionary.alt_intercalary_list,
+    .calendar_name = names_en_GB_french_revolutionary.calendar_name,
 };

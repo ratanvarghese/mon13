@@ -33,7 +33,7 @@ var gregorian_era_list_fr_FR = [_:null]?[*:0]u8{
 const NAME = "Grégorien";
 var name_var: [NAME.len:0]u8 = NAME.*;
 
-pub const gregorian_names_fr_FR = base.NameList{
+pub const names_fr_FR_gregorian = base.NameList{
     .month_list = @ptrCast([*:null]?[*:0]u8, &gregorian_month_list_fr_FR),
     .weekday_list = @ptrCast([*:null]?[*:0]u8, &gregorian_weekday_list_fr_FR),
     .era_list = @ptrCast([*:null]?[*:0]u8, &gregorian_era_list_fr_FR),

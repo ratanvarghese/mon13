@@ -48,7 +48,7 @@ var ancient_egyptian_intercalary_list = [_:null]?[*:0]u8{
 const NAME = "Ancient Egyptian";
 var name_var: [NAME.len:0]u8 = NAME.*;
 
-pub const ancient_egyptian_names_en_US = base.NameList{
+pub const names_en_US_ancient_egyptian = base.NameList{
     .month_list = @ptrCast([*:null]?[*:0]u8, &ancient_egyptian_month_list),
     .weekday_list = @ptrCast([*:null]?[*:0]u8, &ancient_egyptian_weekday_list),
     .era_list = @ptrCast([*:null]?[*:0]u8, &ancient_egyptian_era_list),

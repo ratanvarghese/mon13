@@ -147,7 +147,7 @@ if True:
 	s = mon13.format(
 		mjd,
 		mon13.gregorian,
-		mon13.gregorian_names_en_US,
+		mon13.names_en_US_gregorian,
 		f"%-d %B %Y, %q (%f)"
 	)
 	assert (s == "16 November 2021, Common Era (Gregorian)"), "format"
@@ -169,7 +169,7 @@ if True:
 			"L",
 			"M"
 		],
-		weekday_list = mon13.tranquility_names_en_US.weekday_list,
+		weekday_list = mon13.names_en_US_tranquility.weekday_list,
 		era_list = [
 			"BT",
 			"AT"
@@ -182,7 +182,7 @@ if True:
 			"MLD",
 			""
 		],
-		calendar_name = mon13.tranquility_names_en_US.calendar_name
+		calendar_name = mon13.names_en_US_tranquility.calendar_name
 	)
 
 	d = mon13.Ymd(year = 50, month = 4, day = 1)
@@ -206,15 +206,15 @@ print("Python API tests passed.")
 # print(mjd0, mjd1)
 
 
-# s2, status2 = mon13.format(mjd0, mon13.symmetry454, mon13.symmetry454_names_en_US, f"%-d %B %Y, %q (%f)")
+# s2, status2 = mon13.format(mjd0, mon13.symmetry454, mon13.names_en_US_symmetry454, f"%-d %B %Y, %q (%f)")
 # print(s2, status2)
 
 # list3 = mon13.NameList(
 # 	month_list = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-# 	weekday_list = mon13.symmetry454_names_en_US.weekday_list,
+# 	weekday_list = mon13.names_en_US_symmetry454.weekday_list,
 # 	era_list = ["BCE", "CE"],
-# 	intercalary_list = mon13.symmetry454_names_en_US.intercalary_list,
-# 	alt_intercalary_list = mon13.symmetry454_names_en_US.alt_intercalary_list,
+# 	intercalary_list = mon13.names_en_US_symmetry454.intercalary_list,
+# 	alt_intercalary_list = mon13.names_en_US_symmetry454.alt_intercalary_list,
 # 	calendar_name = "Sym454"
 # )
 

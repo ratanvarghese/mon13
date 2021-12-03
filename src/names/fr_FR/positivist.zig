@@ -33,9 +33,9 @@ var positivist_intercalary_list_fr_FR = [_:null]?[*:0]u8{
 const NAME = "Positiviste";
 var name_var: [NAME.len:0]u8 = NAME.*;
 
-pub const positivist_names_fr_FR = base.NameList{
+pub const names_fr_FR_positivist = base.NameList{
     .month_list = @ptrCast([*:null]?[*:0]u8, &positivist_month_list_fr_FR),
-    .weekday_list = names_gr.gregorian_names_fr_FR.weekday_list,
+    .weekday_list = names_gr.names_fr_FR_gregorian.weekday_list,
     .era_list = @ptrCast([*:null]?[*:0]u8, &positivist_era_list_fr_FR),
     .intercalary_list = @ptrCast([*:null]?[*:0]u8, &positivist_intercalary_list_fr_FR),
     .alt_intercalary_list = null,
