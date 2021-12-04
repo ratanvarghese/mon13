@@ -105,6 +105,7 @@ class ErrorStatus(Enum):
 	INVALID_SEQUENCE = -71
 	FAILED_TO_INSERT_NULLCHAR = -72
 	INVALID_DATE = -73
+	INVALID_NAME_LIST = -74
 
 class Mon13Error(RuntimeError):
 	def __init__(self, status):

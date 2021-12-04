@@ -7,8 +7,9 @@
 
 #define SIZEOF_ARR(arr) sizeof(arr)/sizeof(*arr)
 #define UNIX_DAY (24 * 60 * 60)
-#define STRFTIME_BUF 500
-#define ASCII_COPY_BUF 500
+#define STRFTIME_BUF 512
+#define ASCII_COPY_BUF 512
+#define STRING_LIST_LEN 32
 
 struct test_Date {
 	int32_t year;

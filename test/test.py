@@ -191,6 +191,47 @@ if True:
 	assert (s == "50-D01 (Tranquility)"), "format, custom namelist"
 
 if True:
+	nlist = mon13.NameList(
+		month_list = [
+			"A",
+			"B",
+			"C",
+			"D",
+			"E",
+			"F",
+			"G",
+			"H",
+			"I",
+			"J",
+			"K",
+			"L",
+		],
+		weekday_list = mon13.names_en_US_tranquility.weekday_list,
+		era_list = [
+			"BT",
+			"AT"
+		],
+		intercalary_list = [
+			"ARM",
+			"ALD"
+		],
+		alt_intercalary_list = [
+			"MLD",
+			""
+		],
+		calendar_name = mon13.names_en_US_tranquility.calendar_name
+	)
+
+	d = mon13.Ymd(year = 50, month = 4, day = 1)
+	mjd = mon13.mjdFromYmd(mon13.tranquility, d)
+	try:
+		s = mon13.format(mjd, mon13.tranquility, nlist, f"%Y-%B%d (%f)")
+		assert (False), "format, invalid namelist, throw error"
+	except mon13.Mon13Error as e:
+		assert e.status is mon13.ErrorStatus.INVALID_NAME_LIST, "format, invalid namelist, error"
+	assert (s == "50-D01 (Tranquility)"), "format, custom namelist"
+
+if True:
 	d = mon13.Ymd(year = 50, month = 4, day = 1)
 	mjd = mon13.mjdFromYmd(mon13.tranquility, d)
 	try:

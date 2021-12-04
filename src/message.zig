@@ -16,6 +16,7 @@ const msg_beyond_end_state = "Beyond format end state (internal)";
 const msg_invalid_sequence = "Invalid format sequence";
 const msg_failed_to_insert_null = "Failed to insert null character (internal)";
 const msg_invalid_date = "Invalid date";
+const msg_invalid_name_list = "Invalid name list";
 
 pub fn errorMessage(e: base.Err) [*:0]const u8 {
     return switch (e) {
@@ -35,5 +36,6 @@ pub fn errorMessage(e: base.Err) [*:0]const u8 {
         base.Err.InvalidSequence => msg_invalid_sequence,
         base.Err.FailedToInsertNullCharacter => msg_failed_to_insert_null,
         base.Err.InvalidDate => msg_invalid_date,
+        base.Err.InvalidNameList => msg_invalid_name_list,
     };
 }

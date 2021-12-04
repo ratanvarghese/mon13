@@ -15,6 +15,7 @@ pub const Err = error{
     InvalidSequence,
     FailedToInsertNullCharacter,
     InvalidDate,
+    InvalidNameList,
 };
 
 pub const Weekday7 = enum(u4) {

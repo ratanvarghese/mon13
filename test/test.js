@@ -190,5 +190,116 @@ WebAssembly.instantiate(typedArray,{}).then(lib => {
 		my_assert(s == "16 November 2021, Common Era (Gregorian)", "format")
 	}
 
+	{
+		const nlist = {
+			month_list: [
+				"A",
+				"B",
+				"C",
+				"D",
+				"E",
+				"F",
+				"G",
+				"H",
+				"I",
+				"J",
+				"K",
+				"L",
+				"M"
+			],
+			weekday_list: [
+				"Mon",
+				"Tue",
+				"Wed",
+				"Thu",
+				"Fri",
+				"Sat",
+				"Sun",
+			],
+			era_list: [
+				"BT",
+				"AT"
+			],
+			intercalary_list: [
+				"ARM",
+				"ALD"
+			],
+			alt_intercalary_list: [
+				"MLD",
+				""
+			],
+			calendar_name: "TRQ"
+		}
+	
+		const d = {year: 50, month: 4, day: 1}
+		const mjd = m.mjdFromYmd(m.tranquility, d)
+		const s = m.format(mjd, m.tranquility, nlist, "%Y-%B%d (%f)")
+		my_assert(s == "50-D01 (TRQ)", "format, custom namelist")
+	}
+
+	{
+		const nlist = {
+			month_list: [
+				"A",
+				"B",
+				"C",
+				"D",
+				"E",
+				"F",
+				"G",
+				"H",
+				"I",
+				"J",
+				"K",
+				"L",
+			],
+			weekday_list: [
+				"Mon",
+				"Tue",
+				"Wed",
+				"Thu",
+				"Fri",
+				"Sat",
+				"Sun",
+			],
+			era_list: [
+				"BT",
+				"AT"
+			],
+			intercalary_list: [
+				"ARM",
+				"ALD"
+			],
+			alt_intercalary_list: [
+				"MLD",
+				""
+			],
+			calendar_name: "TRQ"
+		}
+	
+		const d = {year: 50, month: 4, day: 1}
+		const mjd = m.mjdFromYmd(m.tranquility, d)
+		var msg = ""
+		try {
+			m.format(mjd, m.tranquility, nlist, "%Y-%B%d (%f)")
+		} catch(e) {
+			msg = e.message
+		}
+		my_assert(msg === "Invalid name list", "format, invalid namelist")
+	}
+
+	{
+		const d = {year: 50, month: 4, day: 1}
+		const mjd = m.mjdFromYmd(m.tranquility, d)
+		var msg = ""
+		try {
+			m.format(mjd, m.tranquility, "%Y-%B%d (%f)")
+		} catch (e) {
+			msg = e.message;
+		}
+		const expected = "Invalid format sequence"
+		my_assert(msg === expected, "format, missing namelist error message")
+	}
+
 	console.log("JavaScript API tests passed.")
 })

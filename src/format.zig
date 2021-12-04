@@ -4,6 +4,63 @@ const gen = @import("gen.zig");
 const base = @import("base.zig");
 const logic = @import("logic.zig");
 
+pub fn validNameList(
+    cal: *const base.Cal,
+    raw_nlist: ?*const base.NameList,
+) bool {
+    const nlist = raw_nlist orelse return true;
+    var i: u8 = 0;
+    while (nlist.month_list[i]) |m| : (i += 1) {}
+    if (i != cal.*.common_month_max and i != cal.*.leap_month_max) {
+        return false;
+    }
+
+    i = 0;
+    while (nlist.weekday_list[i]) |w| : (i += 1) {}
+    if (i != cal.*.week.length) {
+        return false;
+    }
+
+    i = 0;
+    while (nlist.era_list[i]) |e| : (i += 1) {}
+    if (i != 2) { //Reconsider for calendars with regnal era
+        return false;
+    }
+
+    if (cal.*.intercalary_list) |ic_list| {
+        i = 0;
+        while (ic_list[i]) |ic| : (i += 1) {}
+        const ic_count = i;
+
+        if (nlist.intercalary_list) |nic_list| {
+            i = 0;
+            while (nic_list[i]) |nic| : (i += 1) {}
+            if (i != ic_count) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+        if (nlist.alt_intercalary_list) |alt_nic_list| {
+            i = 0;
+            while (alt_nic_list[i]) |nic| : (i += 1) {}
+            if (i != ic_count) {
+                return false;
+            }
+        }
+    } else {
+        if (nlist.intercalary_list) |nic_list| {
+            return false;
+        }
+        if (nlist.alt_intercalary_list) |alt_nic_list| {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 fn copyLenUtf8(c: u8) base.Err!u8 {
     return switch (c) {
         0b11110000...0b11110111 => 4,
@@ -417,6 +474,10 @@ pub fn format(
     fmt: [*]const u8,
     raw_buf: ?[]u8,
 ) base.Err!c_int {
+    if (!validNameList(cal, raw_nlist)) {
+        return base.Err.InvalidNameList;
+    }
+
     var s = State.start;
 
     var spec = Specifier{};

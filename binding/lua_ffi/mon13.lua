@@ -226,6 +226,7 @@ mon13.Error = {
 	INVALID_SEQUENCE = -71,
 	FAILED_TO_INSERT_NULLCHAR = -72,
 	INVALID_DATE = -73,
+	INVALID_NAME_LIST = -74,
 }
 
 local function throw(status)

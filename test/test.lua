@@ -209,6 +209,48 @@ do
 end
 
 do
+	local nlist = {
+		month_list = {
+			"A",
+			"B",
+			"C",
+			"D",
+			"E",
+			"F",
+			"G",
+			"H",
+			"I",
+			"J",
+			"K",
+			"L",
+		},
+		weekday_list = mon13.names_en_US_tranquility.weekday_list,
+		era_list = {
+			"BT",
+			"AT"
+		},
+		intercalary_list = {
+			"ARM",
+			"ALD"
+		},
+		alt_intercalary_list = {
+			"MLD",
+			""
+		},
+		calendar_name = mon13.names_en_US_tranquility.calendar_name
+	}
+
+	local d = {year = 50, month = 4, day = 1}
+	local mjd = mon13.mjdFromYmd(mon13.tranquility, d)
+	local status, msg = pcall(
+		mon13.format, mjd, mon13.tranquility, nlist, "%Y-%B%d (%f)"
+	)
+	assert(not status, "format, invalid namelist status")
+	local expected = "Invalid name list"
+	assert(msg:sub(-#expected) == expected, "format, invalid namelist message")
+end
+
+do
 	local d = {year = 50, month = 4, day = 1}
 	local mjd = mon13.mjdFromYmd(mon13.tranquility, d)
 	local status, msg = pcall(

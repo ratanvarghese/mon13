@@ -50,7 +50,8 @@ pub const PublicError = extern enum {
     INVALID_STATE = -70,
     INVALID_SEQUENCE = -71,
     FAILED_TO_INSERT_NULLCHAR = -72,
-    ERROR_INVALID_DATE = -73,
+    INVALID_DATE = -73,
+    INVALID_NAME_LIST = -74,
 
     fn make(err: mon13.Err) PublicError {
         return switch (err) {
@@ -69,7 +70,8 @@ pub const PublicError = extern enum {
             mon13.Err.BeyondEndState => PublicError.INVALID_STATE,
             mon13.Err.InvalidSequence => PublicError.INVALID_SEQUENCE,
             mon13.Err.FailedToInsertNullCharacter => PublicError.FAILED_TO_INSERT_NULLCHAR,
-            mon13.Err.InvalidDate => PublicError.ERROR_INVALID_DATE,
+            mon13.Err.InvalidDate => PublicError.INVALID_DATE,
+            mon13.Err.InvalidNameList => PublicError.INVALID_NAME_LIST,
             else => PublicError.UNKNOWN,
         };
     }
@@ -91,7 +93,8 @@ pub const PublicError = extern enum {
             PublicError.INVALID_STATE => mon13.Err.BeyondEndState,
             PublicError.INVALID_SEQUENCE => mon13.Err.InvalidSequence,
             PublicError.FAILED_TO_INSERT_NULLCHAR => mon13.Err.FailedToInsertNullCharacter,
-            PublicError.ERROR_INVALID_DATE => mon13.Err.InvalidDate,
+            PublicError.INVALID_DATE => mon13.Err.InvalidDate,
+            PublicError.INVALID_NAME_LIST => mon13.Err.InvalidNameList,
             else => mon13.Err.Unknown,
         };
     }
@@ -204,11 +207,16 @@ pub export fn mon13_mjdToRd(
 pub export fn mon13_mjdToIsLeapYear(
     mjd: i32,
     raw_cal: ?*const mon13.Cal,
-    raw_isLeap: ?*bool,
+    raw_isLeap: ?*c_int,
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     var res_isLeap = raw_isLeap orelse return @enumToInt(PublicError.NULL_RESULT);
-    return tail(bool, res_isLeap, mon13.mjdToIsLeapYear(mjd, cal));
+    if (mon13.mjdToIsLeapYear(mjd, cal)) |x| {
+        res_isLeap.* = @boolToInt(x);
+        return @enumToInt(PublicError.NONE);
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
 }
 
 pub export fn mon13_mjdToDayOfWeek(
@@ -273,6 +281,28 @@ pub export fn mon13_diffYears(
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     var res_diff = raw_diff orelse return @enumToInt(PublicError.NULL_RESULT);
     return tail(c_int, res_diff, mon13.diffYears(mjd0, mjd1, cal));
+}
+
+pub export fn mon13_validNameList(
+    raw_cal: ?*const mon13.Cal,
+    raw_nlist: ?*const mon13.NameList,
+) c_int {
+    const cal = raw_cal orelse return @boolToInt(false);
+    if (raw_nlist) |nlist| {
+        if (@ptrCast(?*c_void, nlist.month_list)) |months| {} else {
+            return @boolToInt(false);
+        }
+        if (@ptrCast(?*c_void, nlist.weekday_list)) |weekdays| {} else {
+            return @boolToInt(false);
+        }
+        if (@ptrCast(?*c_void, nlist.era_list)) |eras| {} else {
+            return @boolToInt(false);
+        }
+        if (@ptrCast(?*c_void, nlist.calendar_name)) |name| {} else {
+            return @boolToInt(false);
+        }
+    }
+    return @boolToInt(mon13.validNameList(cal, raw_nlist));
 }
 
 pub export fn mon13_format(

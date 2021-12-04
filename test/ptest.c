@@ -64,7 +64,7 @@ bool add_1day_yearend(int32_t y0, int32_t y1, uint8_t m0, uint8_t m1, uint8_t d0
     }
 }
 
-const char* contained(char* needle, const char** haystack, size_t maxlen, char placeholder) {
+const char* contained(char* needle, char** haystack, size_t maxlen, char placeholder) {
     for(int i = 0; haystack[i] != NULL; i++) {
         const char* expected = haystack[i]; 
         size_t len = strlen(expected);
@@ -77,7 +77,7 @@ const char* contained(char* needle, const char** haystack, size_t maxlen, char p
     return NULL;
 }
 
-const char* contained_ic(char* needle, const struct mon13_NameList* nlist, size_t maxlen, char placeholder) {
+const char* contained_ic(char* needle, struct mon13_NameList* nlist, size_t maxlen, char placeholder) {
     const char* expected = contained(needle, nlist->intercalary_list, maxlen, placeholder);
     if(expected == NULL && nlist->alt_intercalary_list != NULL) {
         return contained(needle, nlist->alt_intercalary_list, maxlen, placeholder);
@@ -91,6 +91,39 @@ bool format_res_check(size_t res, const char* expected) {
 
 bool format_res_check_nonblank(size_t res, const char* expected) {
     return format_res_check(res, expected) && expected[0] != '\0';
+}
+
+size_t strlistlen(char** string_list) {
+    if(string_list == NULL) {
+        return 0;
+    }
+    size_t i = 0;
+    while(string_list[i] != NULL) {
+        i++;
+    }
+    return i;
+}
+
+bool valid_names_check(void* a1, void* a2, size_t w, size_t m, size_t e, size_t i, size_t a) {
+    const struct mon13_Cal* c = a1;
+    const struct mon13_NameList* n = a2;
+    int res = mon13_validNameList(c, n);
+    if(w != strlistlen(n->weekday_list)) {
+        return !res;
+    }
+    if(m != strlistlen(n->month_list)) {
+        return !res;
+    }
+    if(e != strlistlen(n->era_list)) {
+        return !res;
+    }
+    if(i != strlistlen(n->intercalary_list)) {
+        return !res;
+    }
+    if(a != strlistlen(n->alt_intercalary_list)) {
+        return !res;
+    }
+    return res;
 }
 
 //Theft printers
@@ -182,6 +215,20 @@ void print_name_cal(FILE* f, const void* instance, void* env) {
 void print_s(FILE* f, const void* instance, void* env) {
     const char* s = instance;
     fprintf(f, "%s", s);
+}
+
+void print_custom_namelist(FILE* f, const void* instance, void* env) {
+    const struct mon13_NameList* n = instance;
+    fprintf(
+        f,
+        "[m: %lu, w: %lu, e: %lu, i: %lu, a: %lu, c: %u]",
+        strlistlen(n->month_list),
+        strlistlen(n->weekday_list),
+        strlistlen(n->era_list),
+        strlistlen(n->intercalary_list),
+        strlistlen(n->alt_intercalary_list),
+        strlen(n->calendar_name)
+        );
 }
 
 //Theft allocators
@@ -315,7 +362,8 @@ enum theft_alloc_res alloc_numeric_fmt(struct theft* t, void* env, void** instan
     return THEFT_ALLOC_OK;
 }
 
-enum theft_alloc_res alloc_ascii_copy_fmt(struct theft* t, void* env, void** instance) {
+enum theft_alloc_res alloc_ascii_string(struct theft* t, void* env, void** instance) {
+    char* exclude = env;
     size_t fmt_len = (size_t) theft_random_choice(t, ASCII_COPY_BUF-1);
     fmt_len = (fmt_len > 0) ? fmt_len : 1;
     char* res = malloc(fmt_len * sizeof(char));
@@ -324,11 +372,67 @@ enum theft_alloc_res alloc_ascii_copy_fmt(struct theft* t, void* env, void** ins
     }
     for(int i = 0; i < (fmt_len - 1); i++) { //Leave 1 more, for null character
         res[i] = theft_random_choice(t, 94) + 32; //avoid control codes
-        if(res[i] < 32 || res[i] == '%') {
+        if(res[i] < 32 || res[i] == *exclude) {
             res[i] = ' ';
         }
     }
     res[fmt_len - 1] = '\0';
+    *instance = res;
+    return THEFT_ALLOC_OK;
+}
+
+enum theft_alloc_res alloc_ascii_copy_fmt(struct theft* t, void* env, void** instance) {
+    char exclude = '%';
+    return alloc_ascii_string(t, &exclude, instance);
+}
+
+enum theft_alloc_res alloc_ascii_string_list(struct theft* t, void* env, void** instance) {
+    char exclude = '\0';
+    size_t len = (size_t) theft_random_choice(t, STRING_LIST_LEN-1);
+    len = (len > 0) ? len : 1;
+    char** res = malloc(len * sizeof(char*));
+    if(res == NULL) {
+        return THEFT_ALLOC_ERROR;
+    }
+    for(int i = 0; i < (len - 1); i++) { //Leave 1 more, for null sentinel
+        if(alloc_ascii_string(t, &exclude, (void**)&(res[i])) != THEFT_ALLOC_OK) {
+            return THEFT_ALLOC_ERROR;
+        }
+    }
+    res[len - 1] = NULL;
+    *instance = res;
+    return THEFT_ALLOC_OK;
+}
+
+enum theft_alloc_res alloc_ascii_name_list(struct theft* t, void* env, void** instance) {
+    struct mon13_NameList* res = malloc(sizeof(struct mon13_NameList));
+    if(alloc_ascii_string_list(t, env, (void**) &(res->month_list)) != THEFT_ALLOC_OK) {
+        return THEFT_ALLOC_ERROR;
+    }
+    if(alloc_ascii_string_list(t, env, (void**) &(res->weekday_list)) != THEFT_ALLOC_OK) {
+        return THEFT_ALLOC_ERROR;
+    }
+    if(alloc_ascii_string_list(t, env, (void**) &(res->era_list)) != THEFT_ALLOC_OK) {
+        return THEFT_ALLOC_ERROR;
+    }
+
+    if(theft_random_choice(t, 2)) {
+        if(alloc_ascii_string_list(t, env, (void**) &(res->intercalary_list)) != THEFT_ALLOC_OK) {
+            return THEFT_ALLOC_ERROR;
+        }
+        if(alloc_ascii_string_list(t, env, (void**) &(res->alt_intercalary_list)) != THEFT_ALLOC_OK) {
+            return THEFT_ALLOC_ERROR;
+        }
+    } else {
+        res->intercalary_list = NULL;
+        res->alt_intercalary_list = NULL;
+    }
+
+    char exclude = '\0';
+    if(alloc_ascii_string(t, &exclude, (void**) &(res->calendar_name)) != THEFT_ALLOC_OK) {
+        return THEFT_ALLOC_ERROR;
+    }
+
     *instance = res;
     return THEFT_ALLOC_OK;
 }
@@ -370,6 +474,27 @@ enum theft_alloc_res alloc_emoji_copy_fmt(struct theft* t, void* env, void** ins
     *instance = res;
 
     return THEFT_ALLOC_OK;
+}
+
+//Theft free
+void free_string_list(void* instance, void* env) {
+    char** string_list = instance;
+    if(string_list != NULL) {
+        for(int i = 0; string_list[i] != NULL; i++) {
+            free(string_list[i]);
+        }
+        free(string_list);
+    }
+}
+
+void free_name_list(void* instance, void* env) {
+    struct mon13_NameList* names = instance;
+    free_string_list(names->month_list, env);
+    free_string_list(names->weekday_list, env);
+    free_string_list(names->era_list, env);
+    free_string_list(names->intercalary_list, env);
+    free_string_list(names->alt_intercalary_list, env);
+    free(names->calendar_name);
 }
 
 //Theft trials
@@ -706,7 +831,7 @@ enum theft_trial_res ymd_add_1day_gr(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    bool leap;
+    int leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -747,7 +872,7 @@ enum theft_trial_res ymd_add_1day_tq(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    bool leap;
+    int leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -795,7 +920,7 @@ enum theft_trial_res ymd_add_1day_ct(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    bool leap;
+    int leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -833,7 +958,7 @@ enum theft_trial_res ymd_add_1day_ps(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    bool leap;
+    int leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -873,7 +998,7 @@ enum theft_trial_res ymd_add_1day_sym454(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    bool leap;
+    int leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -913,7 +1038,7 @@ enum theft_trial_res ymd_add_1day_sym010(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    bool leap;
+    int leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -953,7 +1078,7 @@ enum theft_trial_res ymd_add_1day_fr(struct theft* t, void* a1, void* a2) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    bool leap;
+    int leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -1006,7 +1131,7 @@ enum theft_trial_res add_1month_gr(struct theft* t, void* a1, void* a2) {
             correct_res = (m1 == 3) && (d1 == 1);
         }
         else if(d0 == 30) {
-            bool leap;
+            int leap;
             mon13_mjdToIsLeapYear(*mjd0, c, &leap);
             if(leap) {
                 correct_res = (m1 == 3) && (d1 == 1);
@@ -1202,7 +1327,7 @@ enum theft_trial_res add_1month_sym454(struct theft* t, void* a1, void* a2) {
         return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    bool leap;
+    int leap;
     mon13_mjdToIsLeapYear(*mjd0, c, &leap);
 
 
@@ -1262,7 +1387,7 @@ enum theft_trial_res add_1month_sym010(struct theft* t, void* a1, void* a2) {
         return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    bool leap;
+    int leap;
     mon13_mjdToIsLeapYear(*mjd0, c, &leap);
 
     bool correct_res = false;
@@ -1320,7 +1445,7 @@ enum theft_trial_res add_1month_fr(struct theft* t, void* a1, void* a2) {
         return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    bool leap;
+    int leap;
     mon13_mjdToIsLeapYear(*mjd0, c, &leap);
 
     bool correct_res = false;
@@ -1365,7 +1490,7 @@ enum theft_trial_res add_year(struct theft* t, void* a1, void* a2, void* a3) {
         return (status2 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    bool leap;
+    int leap;
     if(mon13_mjdToIsLeapYear(*mjd0, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -1478,7 +1603,7 @@ enum theft_trial_res leap_same(struct theft* t, void* a1, void* a2, void* a3) {
     const struct mon13_Cal* c0 = a2;
     const struct mon13_Cal* c1 = a3;
 
-    bool leap0, leap1;
+    int leap0, leap1;
     int status0 = mon13_mjdToIsLeapYear(*mjd, c0, &leap0);
     if(status0) {
         return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1502,7 +1627,7 @@ enum theft_trial_res leap9(struct theft* t, void* a1, void* a2) {
         if(status0) {
             return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
         }
-        bool is_leap;
+        int is_leap;
         int status1 = mon13_mjdToIsLeapYear(sum, c, &is_leap);
         if(status1) {
             return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1539,7 +1664,7 @@ enum theft_trial_res leap7(struct theft* t, void* a1, void* a2) {
         if(status0) {
             return (status0 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
         }
-        bool is_leap;
+        int is_leap;
         int status1 = mon13_mjdToIsLeapYear(sum, c, &is_leap);
         if(status1) {
             return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1556,7 +1681,7 @@ enum theft_trial_res leap0(struct theft* t, void* a1, void* a2) {
     const int32_t* mjd = a1;
     const struct mon13_Cal* c = a2;
 
-    bool is_leap;
+    int is_leap;
     int status = mon13_mjdToIsLeapYear(*mjd, c, &is_leap);
     if(status) {
         return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
@@ -1692,7 +1817,7 @@ enum theft_trial_res day_of_year_add_one(struct theft* t, void* a1, void* a2) {
     if(status1) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    bool leap;
+    int leap;
     if(mon13_mjdToIsLeapYear(*mjd, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -1724,7 +1849,7 @@ enum theft_trial_res day_of_year_add_one_sym454(struct theft* t, void* a1, void*
     if(status1) {
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
-    bool leap;
+    int leap;
     if(mon13_mjdToIsLeapYear(*mjd, c, &leap)) {
         return THEFT_TRIAL_FAIL;
     }
@@ -1874,6 +1999,108 @@ enum theft_trial_res diff_years_small_day(struct theft* t, void* a1, void* a2, v
         return (status1 == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
     return (diff0 == 0 && diff1 == 0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res valid_name_list_builtin(struct theft* t, void* a1) {
+    const struct name_cal* nc = a1;
+    int res = mon13_validNameList(nc->c, nc->n);
+    return res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res valid_name_list_null(struct theft* t, void* a1) {
+    const struct name_cal* nc = a1;
+    int res = mon13_validNameList(nc->c, nc->n);
+    return res ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res valid_name_list_no_month(struct theft* t, void* a1) {
+    const struct name_cal* nc = a1;
+    struct mon13_NameList bad_n = {
+        .month_list = NULL,
+        .weekday_list = nc->n->weekday_list,
+        .era_list = nc->n->era_list,
+        .intercalary_list = nc->n->intercalary_list,
+        .alt_intercalary_list = nc->n->alt_intercalary_list,
+        .calendar_name = nc->n->calendar_name
+    };
+    int res = mon13_validNameList(nc->c, &bad_n);
+    return (!res) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res valid_name_list_no_weekdays(struct theft* t, void* a1) {
+    const struct name_cal* nc = a1;
+    struct mon13_NameList bad_n = {
+        .month_list = nc->n->month_list,
+        .weekday_list = NULL,
+        .era_list = nc->n->era_list,
+        .intercalary_list = nc->n->intercalary_list,
+        .alt_intercalary_list = nc->n->alt_intercalary_list,
+        .calendar_name = nc->n->calendar_name
+    };
+    int res = mon13_validNameList(nc->c, &bad_n);
+    return (!res) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res valid_name_list_no_eras(struct theft* t, void* a1) {
+    const struct name_cal* nc = a1;
+    struct mon13_NameList bad_n = {
+        .month_list = nc->n->month_list,
+        .weekday_list = nc->n->weekday_list,
+        .era_list = NULL,
+        .intercalary_list = nc->n->intercalary_list,
+        .alt_intercalary_list = nc->n->alt_intercalary_list,
+        .calendar_name = nc->n->calendar_name
+    };
+    int res = mon13_validNameList(nc->c, &bad_n);
+    return (!res) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res valid_name_list_no_name(struct theft* t, void* a1) {
+    const struct name_cal* nc = a1;
+    struct mon13_NameList bad_n = {
+        .month_list = nc->n->month_list,
+        .weekday_list = nc->n->weekday_list,
+        .era_list = nc->n->era_list,
+        .intercalary_list = nc->n->intercalary_list,
+        .alt_intercalary_list = nc->n->alt_intercalary_list,
+        .calendar_name = NULL
+    };
+    int res = mon13_validNameList(nc->c, &bad_n);
+    return (!res) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res valid_name_list_gregorian(struct theft* t, void* a1, void* a2) {
+    bool good = valid_names_check(a1, a2, 7, 12, 2, 0, 0);
+    return good ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res valid_name_list_tranquility(struct theft* t, void* a1, void* a2) {
+    bool good = valid_names_check(a1, a2, 7, 13, 2, 2, 2);
+    return good ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res valid_name_list_cotsworth(struct theft* t, void* a1, void* a2) {
+    bool good = valid_names_check(a1, a2, 7, 13, 2, 2, 0);
+    return good ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res valid_name_list_french_revolutionary(struct theft* t, void* a1, void* a2) {
+    bool good = valid_names_check(a1, a2, 10, 12, 2, 6, 0);
+    return good ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res valid_name_list_ancient_egyptian(struct theft* t, void* a1, void* a2) {
+    bool good = valid_names_check(a1, a2, 10, 12, 2, 5, 0);
+    return good ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res valid_name_list_same(struct theft* t, void* a1, void* a2, void* a3) {
+    const struct mon13_Cal* c0 = a1;
+    const struct mon13_Cal* c1 = a2;
+    const struct mon13_NameList* n = a3;
+
+    bool same = (mon13_validNameList(c0, n) == mon13_validNameList(c1, n));
+    return same ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res format_percent(struct theft* t, void* a1, void* a2, void* a3) {
@@ -2459,6 +2686,31 @@ enum theft_trial_res format_truncate(struct theft* t, void* a1, void* a2, void* 
     return THEFT_TRIAL_FAIL;
 }
 
+enum theft_trial_res format_invalid_names(struct theft* t, void* a1, void* a2, void* a3, void* a4, void* a5) {
+    const int32_t* mjd = a1;
+    const struct mon13_Cal* c = a2;
+    const struct mon13_NameList* n = a3;
+    const char* placeholder = a4;
+    const char* fmt = a5;
+
+    if(mon13_validNameList(c, n)) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    char buf[ASCII_COPY_BUF];
+    memset(buf, *placeholder, ASCII_COPY_BUF);
+    int res = mon13_format(*mjd, c, n, fmt, buf, ASCII_COPY_BUF);
+    if(res >= 0) {
+        return THEFT_TRIAL_FAIL;
+    }
+    for(size_t i = 0; i < ASCII_COPY_BUF; i++) {
+        if(buf[i] != *placeholder) {
+            return THEFT_TRIAL_FAIL;
+        }
+    }
+    return THEFT_TRIAL_PASS;
+}
+
 enum theft_trial_res error_code_message(struct theft* t, void* a1) {
     const int8_t* error_code_p = a1;
     int error_code = *error_code_p;
@@ -2481,7 +2733,7 @@ enum theft_trial_res error_code_message(struct theft* t, void* a1) {
         int cmp = memcmp(res, expected, expected_len);
         return (cmp == 0) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
     }
-    else if(error_code >= MON13_ERROR_INVALID_DATE) {
+    else if(error_code >= MON13_ERROR_INVALID_NAME_LIST) {
         const char* expected = "Unknown error";
         int expected_len = strlen(expected);
         int cmp = memcmp(res, expected, expected_len);
@@ -2655,6 +2907,12 @@ struct theft_type_info emoji_copy_fmt_info = {
     .alloc= alloc_emoji_copy_fmt,
     .free = theft_generic_free_cb,
     .print = print_s
+};
+
+struct theft_type_info ascii_namelist_info = {
+    .alloc = alloc_ascii_name_list,
+    .free = free_name_list,
+    .print = print_custom_namelist
 };
 
 //Set fields at runtime
@@ -3482,6 +3740,185 @@ int main(int argc, char** argv) {
             .trials = SIZEOF_ARR(cal_list) * 100
         },
         {
+            .name = "mon13_validNameList: Builtin",
+            .prop1 = valid_name_list_builtin,
+            .type_info = {
+                &random_name_cal_info
+            },
+            .seed = seed,
+            .trials = SIZEOF_ARR(name_cal_list)
+        },
+        {
+            .name = "mon13_validNameList: NULL",
+            .prop1 = valid_name_list_null,
+            .type_info = {
+                &random_name_cal_info
+            },
+            .seed = seed,
+            .trials = SIZEOF_ARR(name_cal_list)
+        },
+        {
+            .name = "mon13_validNameList: Missing months",
+            .prop1 = valid_name_list_no_month,
+            .type_info = {
+                &random_name_cal_info
+            },
+            .seed = seed,
+            .trials = SIZEOF_ARR(name_cal_list)
+        },
+        {
+            .name = "mon13_validNameList: Missing weekdays",
+            .prop1 = valid_name_list_no_weekdays,
+            .type_info = {
+                &random_name_cal_info
+            },
+            .seed = seed,
+            .trials = SIZEOF_ARR(name_cal_list)
+        },
+        {
+            .name = "mon13_validNameList: Missing eras",
+            .prop1 = valid_name_list_no_eras,
+            .type_info = {
+                &random_name_cal_info
+            },
+            .seed = seed,
+            .trials = SIZEOF_ARR(name_cal_list)
+        },
+        {
+            .name = "mon13_validNameList: Missing name",
+            .prop1 = valid_name_list_no_name,
+            .type_info = {
+                &random_name_cal_info
+            },
+            .seed = seed,
+            .trials = SIZEOF_ARR(name_cal_list)
+        },
+        {
+            .name = "mon13_validNameList: Gregorian Year 0",
+            .prop2 = valid_name_list_gregorian,
+            .type_info = {
+                &gr_year0_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_validNameList: Tranquility Year 0",
+            .prop2 = valid_name_list_tranquility,
+            .type_info = {
+                &tq_year0_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_validNameList: Cotsworth",
+            .prop2 = valid_name_list_cotsworth,
+            .type_info = {
+                &ct_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_validNameList: French Revolutionary Romme",
+            .prop2 = valid_name_list_french_revolutionary,
+            .type_info = {
+                &fr0_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_validNameList: Ancient Egyptian",
+            .prop2 = valid_name_list_ancient_egyptian,
+            .type_info = {
+                &eg_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_validNameList: Gregorian = Gregorian Year 0",
+            .prop3 = valid_name_list_same,
+            .type_info = {
+                &gr_cal_info,
+                &gr_year0_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_validNameList: Holocene = Gregorian Year 0",
+            .prop3 = valid_name_list_same,
+            .type_info = {
+                &hl_cal_info,
+                &gr_year0_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_validNameList: Julian = Gregorian Year 0",
+            .prop3 = valid_name_list_same,
+            .type_info = {
+                &jl_cal_info,
+                &gr_year0_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_validNameList: Symmetry454 = Gregorian Year 0",
+            .prop3 = valid_name_list_same,
+            .type_info = {
+                &sym454_cal_info,
+                &gr_year0_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_validNameList: Symmetry010 = Gregorian Year 0",
+            .prop3 = valid_name_list_same,
+            .type_info = {
+                &sym010_cal_info,
+                &gr_year0_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_validNameList: Tranquility = Tranquility Year 0",
+            .prop3 = valid_name_list_same,
+            .type_info = {
+                &tq_cal_info,
+                &tq_year0_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_validNameList: Positivist = Cotsworth",
+            .prop3 = valid_name_list_same,
+            .type_info = {
+                &ps_cal_info,
+                &ct_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_validNameList: French Revolutionary Romme = Romme - 1",
+            .prop3 = valid_name_list_same,
+            .type_info = {
+                &fr0_cal_info,
+                &fr1_cal_info,
+                &ascii_namelist_info
+            },
+            .seed = seed
+        },
+        {
             .name = "mon13_format: %%",
             .prop3 = format_percent,
             .type_info = {
@@ -3706,6 +4143,17 @@ int main(int argc, char** argv) {
             },
             .seed = seed,
             .trials = SIZEOF_ARR(name_cal_list) * 100
+        },
+        {
+            .name = "mon13_format: invalid name list",
+            .prop5 = format_invalid_names,
+            .type_info = {
+                &mjd_info,
+                &random_cal_info,
+                &ascii_namelist_info,
+                &placeholder_info,
+                &strftime_fmt_info
+            }
         },
         {
             .name = "mon13_errorMessage",

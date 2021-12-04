@@ -47,6 +47,7 @@ enum mon13_Error {
     MON13_ERROR_INVALID_SEQUENCE = -71,
     MON13_ERROR_FAILED_TO_INSERT_NULLCHAR = -72,
     MON13_ERROR_INVALID_DATE = -73,
+    MON13_ERROR_INVALID_NAME_LIST = -74,
 };
 
 //Structures
@@ -150,6 +151,11 @@ int mon13_diffYears(
     int32_t mjd1,
     const struct mon13_Cal* cal,
     int32_t* res_months
+);
+
+int mon13_validNameList(
+    const struct mon13_Cal* cal,
+    const struct mon13_NameList* nlist
 );
 
 int mon13_format(
