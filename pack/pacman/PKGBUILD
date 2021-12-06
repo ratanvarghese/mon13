@@ -1,11 +1,11 @@
 # Maintainer: Ratan Varghese <ratanv@protonmail.com>
 pkgname=mon13-git
-pkgver=0.6.1.r0.0f5c0f7
+pkgver=0.6.1.r2.938036f
 pkgrel=1
 pkgdesc="Calendar calculation and conversion library"
 arch=('x86_64')
 url="mon13.org"
-license=('unknown')
+license=('MIT')
 groups=()
 depends=()
 makedepends=('git' 'zig>=0.8.1')
@@ -45,4 +45,6 @@ package() {
 	zig build -Drelease-safe -p "$pkgdir/usr"
 	mkdir -p "$pkgdir/usr/include"
 	cp binding/c/mon13.h "$pkgdir/usr/include/mon13.h"
+	mkdir -p "$pkgdir/usr/share/licenses/$pkgname"
+	cp LICENSE.md "$pkgdir/usr/share/licenses/$pkgname/"
 }
