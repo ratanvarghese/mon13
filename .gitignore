@@ -3,3 +3,5 @@ plan
 zig-cache
 zig-out
 *__pycache__*
+*.tar.xz
+pack/pacman/*/

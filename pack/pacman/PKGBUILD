@@ -1,0 +1,48 @@
+# Maintainer: Ratan Varghese <ratanv@protonmail.com>
+pkgname=mon13-git
+pkgver=0.6.1.r0.0f5c0f7
+pkgrel=1
+pkgdesc="Calendar calculation and conversion library"
+arch=('x86_64')
+url="mon13.org"
+license=('unknown')
+groups=()
+depends=()
+makedepends=('git' 'zig>=0.8.1')
+checkdepends=('theft>=0.4.5')
+provides=("${pkgname%-git}")
+conflicts=("${pkgname%-git}")
+replaces=()
+backup=()
+options=()
+install=
+source=('mon13::git+https://ratan.blog/git/mon13.git')
+noextract=()
+md5sums=('SKIP')
+
+pkgver() {
+	cd "$srcdir/${pkgname%-git}"
+# Git, tags available
+	printf "%s" "$(git describe --long --tags | sed 's/\([^-]*-\)g/r\1/;s/-/./g')"
+}
+
+build() {
+	cd "$srcdir/${pkgname%-git}"
+	zig build -Drelease-safe
+}
+
+check() {
+	cd "$srcdir/${pkgname%-git}"
+	zig build utest
+	zig build ptest
+}
+
+package() {
+	echo "$srcdir"
+	echo "$pkgdir"
+	cd "$srcdir/${pkgname%-git}"
+	mkdir -p "$pkgdir/usr"
+	zig build -Drelease-safe -p "$pkgdir/usr"
+	mkdir -p "$pkgdir/usr/include"
+	cp binding/c/mon13.h "$pkgdir/usr/include/mon13.h"
+}
