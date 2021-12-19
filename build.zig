@@ -95,14 +95,18 @@ pub fn build(b: *std.build.Builder) void {
 
     //JavaScript WASM test
     const jsWasmStep = b.step("jstest", "Run JavaScript WASM tests (if -Dtarget=wasm32-freestanding)");
+    var wasmTestPossible = false;
     if (target.os_tag) |os_tag| {
         if (target.cpu_arch) |cpu_arch| {
             if (os_tag == std.Target.Os.Tag.freestanding and cpu_arch == std.Target.Cpu.Arch.wasm32) {
-                var jsWasmCmd = b.addSystemCommand(&[_][]const u8{ jsWasmExe, test_path ++ "test.js" });
-                jsWasmCmd.addArg(ld_path);
-                jsWasmStep.dependOn(b.getInstallStep());
-                jsWasmStep.dependOn(&jsWasmCmd.step);
+                wasmTestPossible = true;
             }
         }
     }
+    var jsWasmCmd = b.addSystemCommand(&[_][]const u8{ jsWasmExe, test_path ++ "test.js" });
+    if (wasmTestPossible) {
+        jsWasmCmd.addArg(ld_path);
+    }
+    jsWasmStep.dependOn(b.getInstallStep());
+    jsWasmStep.dependOn(&jsWasmCmd.step);
 }

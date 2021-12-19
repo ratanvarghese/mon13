@@ -1,6 +1,12 @@
 const fs = require('fs');
 const mon13 = require('../binding/js_wasm/mon13');
 
+if(process.argv.length < 3) {
+	console.error("Path to mon13.wasm not supplied.");
+	console.info("Generating mon13.wasm requires -Dtarget=wasm32-freestanding");
+	process.exit(1);
+}
+
 const source = fs.readFileSync(process.argv[2] + "/mon13.wasm");
 const typedArray = new Uint8Array(source);
 
