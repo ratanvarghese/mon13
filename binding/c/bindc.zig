@@ -53,7 +53,7 @@ pub const PublicError = extern enum {
     INVALID_DATE = -73,
     INVALID_NAME_LIST = -74,
 
-    fn make(err: mon13.Err) PublicError {
+    fn make(err: anyerror) PublicError {
         return switch (err) {
             mon13.Err.Unknown => PublicError.UNKNOWN,
             mon13.Err.NullCalendar => PublicError.NULL_CALENDAR,

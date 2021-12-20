@@ -9,33 +9,25 @@ pub fn validNameList(
     raw_nlist: ?*const base.NameList,
 ) bool {
     const nlist = raw_nlist orelse return true;
-    var i: u8 = 0;
-    while (nlist.month_list[i]) |m| : (i += 1) {}
-    if (i != cal.*.common_month_max and i != cal.*.leap_month_max) {
+
+    const months = gen.listLen([*:0]u8, nlist.month_list);
+    if (months != cal.*.common_month_max and months != cal.*.leap_month_max) {
         return false;
     }
 
-    i = 0;
-    while (nlist.weekday_list[i]) |w| : (i += 1) {}
-    if (i != cal.*.week.length) {
+    if (gen.listLen([*:0]u8, nlist.weekday_list) != cal.*.week.length) {
         return false;
     }
 
-    i = 0;
-    while (nlist.era_list[i]) |e| : (i += 1) {}
-    if (i != 2) { //Reconsider for calendars with regnal era
+    if (gen.listLen([*:0]u8, nlist.era_list) != 2) { //Reconsider for calendars with regnal era
         return false;
     }
 
     if (cal.*.intercalary_list) |ic_list| {
-        i = 0;
-        while (ic_list[i]) |ic| : (i += 1) {}
-        const ic_count = i;
+        const ic_count = gen.listLen(base.Intercalary, ic_list);
 
         if (nlist.intercalary_list) |nic_list| {
-            i = 0;
-            while (nic_list[i]) |nic| : (i += 1) {}
-            if (i != ic_count) {
+            if (gen.listLen([*:0]u8, nic_list) != ic_count) {
                 return false;
             }
         } else {
@@ -43,9 +35,7 @@ pub fn validNameList(
         }
 
         if (nlist.alt_intercalary_list) |alt_nic_list| {
-            i = 0;
-            while (alt_nic_list[i]) |nic| : (i += 1) {}
-            if (i != ic_count) {
+            if (gen.listLen([*:0]u8, alt_nic_list) != ic_count) {
                 return false;
             }
         }
@@ -59,16 +49,6 @@ pub fn validNameList(
     }
 
     return true;
-}
-
-fn copyLenUtf8(c: u8) base.Err!u8 {
-    return switch (c) {
-        0b11110000...0b11110111 => 4,
-        0b11100000...0b11101111 => 3,
-        0b11000000...0b11011111 => 2,
-        0b00000000...0b01111111 => 1,
-        else => base.Err.InvalidUtf8,
-    };
 }
 
 const Flag = enum(u8) {
@@ -269,40 +249,8 @@ const State = enum(u8) {
     }
 };
 
-const DigitInfo = struct {
-    pub const radix = 10;
-    denominator: u32,
-    count: u8,
-    value: u32,
-
-    fn fromInt(m: i32) base.Err!DigitInfo {
-        const abs_m = std.math.absInt(m) catch return base.Err.Overflow;
-        var x: u32 = @intCast(u32, abs_m);
-        var res = DigitInfo{ .denominator = 1, .count = 1, .value = x };
-        while (x >= DigitInfo.radix) {
-            x = x / DigitInfo.radix;
-            res.count += 1;
-            res.denominator *= DigitInfo.radix;
-        }
-        return res;
-    }
-
-    fn getTopDigitChar(self: DigitInfo) u8 {
-        return @intCast(u8, (self.value / self.denominator)) + '0';
-    }
-
-    fn removeTopDigit(self: DigitInfo) DigitInfo {
-        const d = self.denominator; //pull out to prevent modulo by zero
-        return DigitInfo{
-            .denominator = d / DigitInfo.radix,
-            .count = self.count - 1,
-            .value = self.value % d,
-        };
-    }
-};
-
 const Specifier = struct {
-    pad_width: u8 = 0,
+    pad_width: usize = 0,
     absolute_value: bool = false,
     seq: Sequence = Sequence.percent,
     pad_flag: ?Flag = null,
@@ -315,157 +263,135 @@ const Specifier = struct {
         }
     }
 
-    fn getPadWidth(self: Specifier) u8 {
+    fn getPadWidth(self: Specifier) usize {
         if (self.pad_flag) |pf| {
-            return self.pad_width;
+            if (pf == Flag.pad_none) {
+                return 0;
+            } else {
+                return self.pad_width;
+            }
         } else {
             return self.seq.defaultPaddingWidth();
         }
     }
+
+    fn toStdFmtOptions(self: Specifier) std.fmt.FormatOptions {
+        var res = std.fmt.FormatOptions{};
+        const width = self.getPadWidth();
+        if (width > 0) {
+            res.width = width;
+            if (self.getPadChar()) |fill| {
+                res.fill = fill;
+            }
+        }
+        return res;
+    }
 };
 
-const Position = struct {
-    fmt_i: usize = 0,
-    buf_i: usize = 0,
-    end_i: usize = 0,
+fn writeCopy(fmt: [*]const u8, fmt_i: usize, writer: anytype) !usize {
+    const count = std.unicode.utf8ByteSequenceLength(fmt[fmt_i]) catch {
+        return base.Err.InvalidUtf8;
+    };
+    const res_i = fmt_i + count;
+    _ = try writer.write(fmt[fmt_i..res_i]);
+    return res_i;
+}
 
-    fn isDryRun(self: Position, raw_buf: ?[]u8) bool {
-        if (raw_buf) |buf| {
-            if (buf.len == 0 or buf.len == 1) { //Leave space for null character
-                return true;
-            } else if (self.buf_i > (buf.len - 1)) { //Leave space for null character
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return true;
+fn doPrefix(fmt_i: usize) usize {
+    return fmt_i + 1;
+}
+
+fn doSpecWidth(fmt: [*]const u8, fmt_i: usize, spec: *Specifier) usize {
+    const c = fmt[fmt_i];
+    spec.*.pad_width = (spec.*.pad_width * 10) + (c - '0');
+    return fmt_i + 1;
+}
+
+fn doFlag(fmt: [*]const u8, fmt_i: usize, spec: *Specifier) usize {
+    const c = fmt[fmt_i];
+    const f = @intToEnum(Flag, c);
+    if (f == Flag.absolute_value) {
+        spec.*.absolute_value = true;
+    } else {
+        spec.*.pad_flag = f;
+    }
+    return fmt_i + 1;
+}
+
+fn writeNumber(n: i32, spec: Specifier, writer: anytype) !void {
+    const x = if (spec.absolute_value and n < 0) -n else n;
+    if (x >= 0) {
+        const abs = @intCast(u32, x);
+        //Force the + sign to be omitted
+        try std.fmt.formatInt(abs, 10, false, spec.toStdFmtOptions(), writer);
+    } else {
+        try std.fmt.formatInt(n, 10, false, spec.toStdFmtOptions(), writer);
+    }
+}
+
+fn writeName(name: [*:0]const u8, spec: Specifier, writer: anytype) !void {
+    var name_i: u32 = 0;
+    const name_len = std.mem.len(name);
+    const pad_width = spec.getPadWidth();
+    if (spec.getPadChar()) |c| {
+        if (pad_width > name_len) {
+            try writer.writeByteNTimes(c, pad_width - name_len);
         }
     }
+    while (name[name_i] != 0) {
+        const name_c = name[name_i];
+        const count = std.unicode.utf8ByteSequenceLength(name_c) catch {
+            return base.Err.InvalidUtf8;
+        };
+        const next_name_i = name_i + count;
+        _ = try writer.write(name[name_i..next_name_i]);
+        name_i = next_name_i;
+    }
+}
 
-    fn usableBuf(self: Position, raw_buf: ?[]u8) ?[]u8 {
-        if (self.isDryRun(raw_buf)) {
-            return null;
-        } else {
-            return raw_buf;
-        }
+pub fn formatW(
+    mjd: i32,
+    cal: *const base.Cal,
+    raw_nlist: ?*const base.NameList,
+    fmt: [*]const u8,
+    writer: anytype,
+) !void {
+    if (!validNameList(cal, raw_nlist)) {
+        return base.Err.InvalidNameList;
     }
 
-    fn similar(self: Position, fmt_shift: usize, buf_shift: usize) Position {
-        return Position{
-            .fmt_i = self.fmt_i + fmt_shift,
-            .buf_i = self.buf_i + buf_shift,
-            .end_i = self.end_i,
+    var s = State.start;
+    var fmt_i: usize = 0;
+
+    var spec = Specifier{};
+    while (fmt[fmt_i] != 0) {
+        const c = fmt[fmt_i];
+        s = try s.next(c);
+
+        fmt_i = switch (s) {
+            .copy => try writeCopy(fmt, fmt_i, writer),
+            .spec_prefix => doPrefix(fmt_i),
+            .spec_width => doSpecWidth(fmt, fmt_i, &spec),
+            .spec_flag => doFlag(fmt, fmt_i, &spec),
+            .spec_seq => seq: {
+                spec.seq = @intToEnum(Sequence, c);
+                if (spec.seq.getChar()) |ch| {
+                    try writer.writeByte(ch);
+                } else if (try spec.seq.getNum(mjd, cal)) |n| {
+                    try writeNumber(n, spec, writer);
+                } else if (try spec.seq.getName(mjd, cal, raw_nlist)) |name| {
+                    try writeName(name, spec, writer);
+                } else {
+                    return base.Err.InvalidSequence;
+                }
+                spec = Specifier{};
+                break :seq fmt_i + 1;
+            },
+            else => fmt_i,
         };
     }
-
-    fn doCopy(self: Position, fmt: [*]const u8, raw_buf: ?[]u8) base.Err!Position {
-        const count = try copyLenUtf8(fmt[self.fmt_i]);
-        var res = self.similar(count, count);
-        if (res.usableBuf(raw_buf)) |buf| {
-            var dest = buf[self.buf_i..res.buf_i];
-            var src = fmt[self.fmt_i..res.fmt_i];
-            std.mem.copy(u8, dest, src);
-            res.end_i += count;
-        }
-        return res;
-    }
-
-    fn doPrefix(self: Position) Position {
-        return self.similar(1, 0);
-    }
-
-    fn doSpecWidth(self: Position, spec: *Specifier, fmt: [*]const u8) Position {
-        const c = fmt[self.fmt_i];
-        spec.*.pad_width = (spec.*.pad_width * 10) + (c - '0');
-        return self.similar(1, 0);
-    }
-
-    fn doFlag(self: Position, spec: *Specifier, fmt: [*]const u8) Position {
-        const c = fmt[self.fmt_i];
-        const f = @intToEnum(Flag, c);
-        if (f == Flag.absolute_value) {
-            spec.*.absolute_value = true;
-        } else {
-            spec.*.pad_flag = f;
-        }
-        return self.similar(1, 0);
-    }
-
-    fn doChar(self: Position, ch: u8, raw_buf: ?[]u8) Position {
-        var res = self.similar(0, 1);
-        if (res.usableBuf(raw_buf)) |buf| {
-            buf[self.buf_i] = ch;
-            res.end_i += 1;
-        }
-        return res;
-    }
-
-    fn doNumber(self: Position, n: i32, spec: Specifier, raw_buf: ?[]u8) base.Err!Position {
-        var res = self;
-        if (n < 0 and !spec.absolute_value) {
-            res = res.doChar('-', raw_buf);
-        }
-        const x_digit = try DigitInfo.fromInt(n);
-        res = res.doPad(x_digit, spec, raw_buf);
-        res = res.doDigits(x_digit, raw_buf);
-        return res;
-    }
-
-    fn doPad(self: Position, x_digit: DigitInfo, spec: Specifier, raw_buf: ?[]u8) Position {
-        var res = self;
-        if (spec.getPadChar()) |pc| {
-            var pad_needed = spec.getPadWidth();
-            while (pad_needed > x_digit.count) {
-                res = res.doChar(pc, raw_buf);
-                pad_needed -= 1;
-            }
-        }
-        return res;
-    }
-
-    fn doDigits(self: Position, y_digit: DigitInfo, raw_buf: ?[]u8) Position {
-        var res = self;
-        var x_digit = y_digit;
-        while (x_digit.count > 0) {
-            res = res.doChar(x_digit.getTopDigitChar(), raw_buf);
-            x_digit = x_digit.removeTopDigit();
-        }
-        return res;
-    }
-
-    fn doName(self: Position, name: [*:0]const u8, raw_buf: ?[]u8) base.Err!Position {
-        var name_i: u32 = 0;
-        var res = self;
-        while (name[name_i] != 0) {
-            const name_c = name[name_i];
-            const count = try copyLenUtf8(name_c);
-            const next_name_i = name_i + count;
-            var next_res = res.similar(0, count);
-            if (next_res.usableBuf(raw_buf)) |buf| {
-                var dest = buf[res.buf_i..next_res.buf_i];
-                var src = name[name_i..next_name_i];
-                std.mem.copy(u8, dest, src);
-                next_res.end_i += count;
-            }
-            name_i = next_name_i;
-            res = next_res;
-        }
-        return res;
-    }
-
-    fn doTerminator(self: Position, raw_buf: ?[]u8) base.Err!void {
-        if (raw_buf) |buf| {
-            if (buf.len > 0) {
-                if (buf.len > self.end_i) {
-                    buf[self.end_i] = 0;
-                } else {
-                    return base.Err.FailedToInsertNullCharacter;
-                }
-            }
-        }
-    }
-};
+    writer.writeByte(0) catch return base.Err.FailedToInsertNullCharacter;
+}
 
 pub fn format(
     mjd: i32,
@@ -473,45 +399,21 @@ pub fn format(
     raw_nlist: ?*const base.NameList,
     fmt: [*]const u8,
     raw_buf: ?[]u8,
-) base.Err!c_int {
-    if (!validNameList(cal, raw_nlist)) {
-        return base.Err.InvalidNameList;
-    }
-
-    var s = State.start;
-
-    var spec = Specifier{};
-    var pos = Position{};
-
-    while (fmt[pos.fmt_i] != 0) {
-        const c = fmt[pos.fmt_i];
-        s = try s.next(c);
-
-        pos = switch (s) {
-            .copy => try pos.doCopy(fmt, raw_buf),
-            .spec_prefix => pos.doPrefix(),
-            .spec_width => pos.doSpecWidth(&spec, fmt),
-            .spec_flag => pos.doFlag(&spec, fmt),
-            .spec_seq => seq: {
-                var res = Position{};
-                spec.seq = @intToEnum(Sequence, c);
-                if (spec.seq.getChar()) |ch| {
-                    res = pos.doChar(ch, raw_buf);
-                } else if (try spec.seq.getNum(mjd, cal)) |n| {
-                    res = try pos.doNumber(n, spec, raw_buf);
-                } else if (try spec.seq.getName(mjd, cal, raw_nlist)) |name| {
-                    res = try pos.doName(name, raw_buf);
-                } else {
-                    return base.Err.InvalidSequence;
+) !c_int {
+    if (raw_buf) |buf| {
+        if (buf.len > 0) {
+            var bufWriter = std.io.fixedBufferStream(buf);
+            formatW(mjd, cal, raw_nlist, fmt, bufWriter.writer()) catch |err| {
+                if (err == error.NoSpaceLeft or err == base.Err.FailedToInsertNullCharacter) {
+                    buf[buf.len - 1] = 0;
                 }
-                res.fmt_i = pos.fmt_i + 1;
-                spec = Specifier{};
-                break :seq res;
-            },
-            else => pos,
-        };
+                return format(mjd, cal, raw_nlist, fmt, null);
+            };
+            const res = try bufWriter.getPos();
+            return @intCast(c_int, res) - 1;
+        }
     }
-
-    try pos.doTerminator(raw_buf);
-    return @intCast(c_int, pos.buf_i);
+    var counter = std.io.countingWriter(std.io.null_writer);
+    try formatW(mjd, cal, raw_nlist, fmt, counter.writer());
+    return @intCast(c_int, counter.bytes_written) - 1;
 }
