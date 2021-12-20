@@ -220,3 +220,14 @@ test "Rata Die Overflow Message" {
         ));
     }
 }
+
+test "std.io capabilities" {
+    var counter = std.io.countingWriter(std.io.null_writer);
+    try counter.writer().print("{d: >5}", .{-32});
+    try expect(counter.bytes_written == 5);
+
+    var buf: [5]u8 = undefined;
+    var bufWriter = std.io.fixedBufferStream(&buf);
+    try bufWriter.writer().print("{d: >5}", .{-32});
+    try expect(mem.eql(u8, buf[0..], "  -32"));
+}

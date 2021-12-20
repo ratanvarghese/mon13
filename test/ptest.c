@@ -337,27 +337,47 @@ enum theft_alloc_res alloc_strftime_fmt(struct theft* t, void* env, void** insta
     return THEFT_ALLOC_OK;
 }
 
+enum theft_alloc_res alloc_random_fmt(struct theft* t, void* env, void** instance) {
+    char fmt_list[] = "%ABdfjmnqtuY";
+    char* res = malloc(4);
+    res[0] = '%';
+    res[1] = '-';
+
+    size_t fmt_i = theft_random_choice(t, SIZEOF_ARR(fmt_list) - 1);
+    res[2] = fmt_list[fmt_i];
+
+    res[3] = '\0';
+    *instance = res;
+    return THEFT_ALLOC_OK;
+}
+
 enum theft_alloc_res alloc_numeric_fmt(struct theft* t, void* env, void** instance) {
     char flag_list[] = "-_0";
     char width_list[] = "0123456789";
     char fmt_list[] = "djmuY";
     
-    char* res = malloc(5 * sizeof(char));
+    int force_abs = theft_random_choice(t, 2);
+    size_t fmt_len = 5 + force_abs;
+    char* res = malloc(fmt_len * sizeof(char));
     if(res == NULL) {
         return THEFT_ALLOC_ERROR;
     }
     res[0] = '%';
 
+    if(force_abs) {
+        res[1] = '|';
+    }
+
     size_t flag_i = theft_random_choice(t, SIZEOF_ARR(flag_list) - 1);
-    res[1] = flag_list[flag_i];
+    res[1 + force_abs] = flag_list[flag_i];
 
     size_t width_i = theft_random_choice(t, SIZEOF_ARR(width_list) - 1);
-    res[2] = width_list[width_i];
+    res[2 + force_abs] = width_list[width_i];
 
     size_t fmt_i = theft_random_choice(t, SIZEOF_ARR(fmt_list) - 1);
-    res[3] = fmt_list[fmt_i];
+    res[3 + force_abs] = fmt_list[fmt_i];
 
-    res[4] = '\0';
+    res[4 + force_abs] = '\0';
     *instance = res;
     return THEFT_ALLOC_OK;
 }
@@ -2482,6 +2502,48 @@ enum theft_trial_res format_strftime(struct theft* t, void* a1, void* a2, void* 
     return THEFT_TRIAL_PASS;
 }
 
+enum theft_trial_res format_big_padding(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+    const int32_t* mjd = a1;
+    const struct name_cal* nc = a2;
+    const char* placeholder = a3;
+    const char* fmt0 = a4;
+
+    char buf0[ASCII_COPY_BUF];
+    memset(buf0, *placeholder, ASCII_COPY_BUF);
+    int res0 = mon13_format(*mjd, nc->c, nc->n, fmt0, buf0, ASCII_COPY_BUF);
+
+    if(res0 < 0) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    char fmt1[7];
+    fmt1[0] = '%';
+    fmt1[1] = '_';
+    fmt1[2] = '5';
+    fmt1[3] = '1';
+    fmt1[4] = '1';
+    fmt1[5] = fmt0[2];
+    fmt1[6] = '\0';
+
+    char buf1[ASCII_COPY_BUF];
+    memset(buf1, *placeholder, ASCII_COPY_BUF);
+    int res1 = mon13_format(*mjd, nc->c, nc->n, fmt1, buf1, ASCII_COPY_BUF);
+
+    if(res1 < 0) {
+        return THEFT_TRIAL_FAIL;
+    }
+    char* name_start = strstr(buf1, buf0);
+    if(name_start == NULL) {
+        return THEFT_TRIAL_FAIL;
+    }
+    for(char* x = &buf1[0]; x != name_start; x++) {
+        if(*x != ' ') {
+            return THEFT_TRIAL_FAIL;
+        }
+    }
+    return THEFT_TRIAL_PASS;
+}
+
 enum theft_trial_res format_numeric_padding(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
     const int32_t* mjd = a1;
     const struct name_cal* nc = a2;
@@ -2495,10 +2557,13 @@ enum theft_trial_res format_numeric_padding(struct theft* t, void* a1, void* a2,
         return (status == MON13_ERROR_OVERFLOW) ? THEFT_TRIAL_SKIP : THEFT_TRIAL_FAIL;
     }
 
-    char flag = fmt[1];
-    int min_width = (flag == '-') ? 0 : fmt[2] - '0'; //Assumes ASCII or UTF8.
+    int force_abs = (fmt[1] == '|') ? 1 : 0;
+    char flag = fmt[1 + force_abs];
+    //Assumes ASCII or UTF8.
+    int min_width = (flag == '-') ? 0 : fmt[2 + force_abs] - '0';
+    char spec = fmt[3 + force_abs];
     int targ;
-    switch(fmt[3]) {
+    switch(spec) {
         case 'd': targ = d; break;
         case 'j': {
             uint16_t doy;
@@ -2518,10 +2583,13 @@ enum theft_trial_res format_numeric_padding(struct theft* t, void* a1, void* a2,
             break;
         }
         case 'Y': {
-            targ = y;
-            if(y > 99999999) {
+            if(y > 99999999 || y < -99999999) {
                 return THEFT_TRIAL_SKIP;
             }
+            if(force_abs && y < 0) {
+                y = -y;
+            }
+            targ = y;
             break;
         }
         default: {
@@ -2529,28 +2597,45 @@ enum theft_trial_res format_numeric_padding(struct theft* t, void* a1, void* a2,
         }
     }
 
-    double digits = (targ == 0) ? 1 : floor(log10(targ)) + 1;
+    double digits = 1;
+    if(targ > 0) {
+        digits = floor(log10(targ)) + 1;
+    }
+    if(targ < 0) {
+        digits = ceil(log10(targ)) + 1;
+    }
 
     char buf[20];
     memset(buf, *placeholder, 20);
     int res = mon13_format(*mjd, nc->c, nc->n, fmt, buf, 20);
 
-    if(digits >= min_width && res != digits) {
-        return THEFT_TRIAL_FAIL;
+    if(digits >= min_width) {
+        if(targ > 0 && res != digits) {
+            return THEFT_TRIAL_FAIL;
+        }
+        if(targ < 0 && res != (digits + 1)) {
+            return THEFT_TRIAL_FAIL;
+        }
     }
     else if(digits < min_width) {
         if(res != min_width) {
             return THEFT_TRIAL_FAIL;
         }
-        else if(flag == '0' && buf[0] != '0') {
+        if(flag == '0' && buf[0] != '0') {
             return THEFT_TRIAL_FAIL;
         }
-        else if(flag == '_' && buf[0] != ' ') {
+        if(flag == '_' && buf[0] != ' ') {
             return THEFT_TRIAL_FAIL;
         }
     }
 
-    return THEFT_TRIAL_PASS;
+    char* end0;
+    long parsed0 = strtol(buf, &end0, 10);
+    long parsed1 = strtol(end0, NULL, 10);
+    if(parsed0 == targ || (parsed0 == 0 && parsed1 == targ && flag == '0')) {
+        return THEFT_TRIAL_PASS;
+    }
+    return THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res format_numeric_null(struct theft* t, void* a1, void* a2, void* a3, void* a4, void* a5) {
@@ -2887,6 +2972,12 @@ struct theft_type_info random_name_cal_info = {
 
 struct theft_type_info strftime_fmt_info = {
     .alloc = alloc_strftime_fmt,
+    .free = theft_generic_free_cb,
+    .print = print_s
+};
+
+struct theft_type_info random_fmt_info = {
+    .alloc = alloc_random_fmt,
     .free = theft_generic_free_cb,
     .print = print_s
 };
@@ -4059,6 +4150,18 @@ int main(int argc, char** argv) {
                 &strftime_fmt_info
             },
             .seed = seed
+        },
+        {
+            .name = "mon13_format: big padding",
+            .prop4 = format_big_padding,
+            .type_info = {
+                &mjd_info,
+                &random_name_cal_info,
+                &placeholder_info,
+                &random_fmt_info
+            },
+            .seed = seed,
+            .trials = SIZEOF_ARR(name_cal_list) * 100
         },
         {
             .name = "mon13_format: numeric padding",
