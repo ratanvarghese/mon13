@@ -213,6 +213,16 @@ const Specifier = struct {
     }
 };
 
+fn checkInt(comptime T: type, negative: bool, n: u32) base.Err!T {
+    if (negative) {
+        return base.Err.InvalidDate;
+    }
+    if (n > std.math.maxInt(T)) {
+        return base.Err.Overflow;
+    }
+    return @intCast(T, n);
+}
+
 const DateData = struct {
     year_abs: ?u32 = null,
     month: ?u8 = null,
@@ -367,6 +377,97 @@ const DateData = struct {
             name_i = next_name_i;
         }
     }
+
+    fn readNumber(self: DateData, spec: Specifier, ps: anytype) !DateData {
+        const pad_char = spec.getPadChar() orelse ' ';
+        const pad_width = spec.getPadWidth();
+        var negative = false;
+        var c = pad_char;
+        if (pad_width > 0) {
+            while (c == pad_char) {
+                c = try ps.*.reader().readByte();
+            }
+        }
+        if (c == '-') {
+            if (spec.absolute_value) {
+                try ps.*.putBackByte(c);
+                return self;
+            }
+            negative = true;
+            c = ps.*.reader().readByte() catch |err| {
+                if (err == error.EndOfStream) {
+                    return self;
+                } else {
+                    return err;
+                }
+            };
+        }
+        var n: u32 = 0;
+        var putBack = true;
+        while (gen.validInEnum(DigitChar, c)) {
+            const digit = try std.fmt.charToDigit(c, 10);
+            n = try std.math.mul(u32, n, 10);
+            n = try std.math.add(u32, n, digit);
+            c = ps.*.reader().readByte() catch |err| err_blk: {
+                if (err == error.EndOfStream) {
+                    putBack = false;
+                    break :err_blk 0;
+                } else {
+                    return err;
+                }
+            };
+        }
+        if (putBack) {
+            try ps.*.putBackByte(c);
+        }
+
+        return switch (spec.seq) {
+            .day_of_month => d_blk: {
+                var dd = self;
+                dd.day_of_month = try checkInt(u8, negative, n);
+                break :d_blk dd;
+            },
+            .day_of_year => doy_blk: {
+                var dd = self;
+                dd.day_of_year = try checkInt(u16, negative, n);
+                break :doy_blk dd;
+            },
+            .month_number => m_blk: {
+                var dd = self;
+                dd.month = try checkInt(u8, negative, n);
+                break :m_blk dd;
+            },
+            .year => y_blk: {
+                var dd = self;
+                dd.year_abs = n;
+                if (negative or n == 0) {
+                    dd.after_epoch = false;
+                } else if (!spec.absolute_value) {
+                    dd.after_epoch = true;
+                }
+                break :y_blk dd;
+            },
+            else => unreachable,
+        };
+    }
+
+    fn toMjd(self: DateData, cal: *const base.Cal) base.Err!i32 {
+        const after_epoch = self.after_epoch orelse true;
+        const year_abs = self.year_abs orelse return base.Err.DateNotFound;
+        if (year_abs > std.math.maxInt(i32)) {
+            return base.Err.Overflow;
+        }
+        const y = if (after_epoch) @intCast(i32, year_abs) else -@intCast(i32, year_abs);
+        if (self.day_of_year) |day_of_year| {
+            const mjd0 = try logic.mjdFromYmd(cal, y, 1, 1);
+            const mjd1 = try std.math.add(i32, mjd0, day_of_year);
+            return mjd1 - 1;
+        } else {
+            const month = self.month orelse return base.Err.DateNotFound;
+            const day_of_month = self.day_of_month orelse return base.Err.DateNotFound;
+            return logic.mjdFromYmd(cal, y, month, day_of_month);
+        }
+    }
 };
 
 fn writeCopy(fmt: [*]const u8, fmt_i: usize, writer: anytype) !usize {
@@ -414,7 +515,11 @@ fn readCopy(fmt: [*]const u8, fmt_i: usize, reader: anytype) !usize {
         return base.Err.InvalidUtf8;
     };
     const res_i = fmt_i + count;
-    try reader.skipBytes(count, .{});
+
+    var ri: usize = 0;
+    while (ri < count) : (ri += 1) {
+        _ = try reader.readByte();
+    }
     return res_i;
 }
 
@@ -489,4 +594,60 @@ pub fn format(
     var counter = std.io.countingWriter(std.io.null_writer);
     try formatW(mjd, cal, raw_nlist, fmt, counter.writer());
     return @intCast(c_int, counter.bytes_written) - 1;
+}
+
+pub fn parseR(
+    cal: *const base.Cal,
+    raw_nlist: ?*const base.NameList,
+    fmt: [*]const u8,
+    raw_reader: anytype,
+) !i32 {
+    if (!validNameList(cal, raw_nlist)) {
+        return base.Err.InvalidNameList;
+    }
+
+    var s = State.start;
+    var fmt_i: usize = 0;
+
+    var spec = Specifier{};
+    var dd = DateData{};
+    var ps = std.io.peekStream(1, raw_reader);
+    while (fmt[fmt_i] != 0) {
+        const c = fmt[fmt_i];
+        s = try s.next(c);
+
+        fmt_i = switch (s) {
+            .copy => try readCopy(fmt, fmt_i, ps.reader()),
+            .spec_prefix => doPrefix(fmt_i),
+            .spec_width => doSpecWidth(fmt, fmt_i, &spec),
+            .spec_flag => doFlag(fmt, fmt_i, &spec),
+            .spec_seq => seq: {
+                spec.seq = @intToEnum(Sequence, c);
+                if (spec.seq.isChar()) {
+                    try ps.reader().skipBytes(1, .{ .buf_size = 1 });
+                } else if (spec.seq.isNumeric()) {
+                    dd = try dd.readNumber(spec, &ps);
+                } else if (spec.seq.isName()) {
+                    return base.Err.InvalidSequence; //not implemented
+                } else {
+                    return base.Err.InvalidSequence;
+                }
+                spec = Specifier{};
+                break :seq fmt_i + 1;
+            },
+            else => fmt_i,
+        };
+    }
+
+    return dd.toMjd(cal);
+}
+
+pub fn parse(
+    cal: *const base.Cal,
+    raw_nlist: ?*const base.NameList,
+    fmt: [*]const u8,
+    buf: []const u8,
+) !i32 {
+    var fbs = std.io.fixedBufferStream(buf);
+    return parseR(cal, raw_nlist, fmt, fbs.reader());
 }

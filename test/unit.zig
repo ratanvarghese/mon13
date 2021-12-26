@@ -221,13 +221,9 @@ test "Rata Die Overflow Message" {
     }
 }
 
-test "std.io capabilities" {
-    var counter = std.io.countingWriter(std.io.null_writer);
-    try counter.writer().print("{d: >5}", .{-32});
-    try expect(counter.bytes_written == 5);
-
-    var buf: [5]u8 = undefined;
-    var bufWriter = std.io.fixedBufferStream(&buf);
-    try bufWriter.writer().print("{d: >5}", .{-32});
-    try expect(mem.eql(u8, buf[0..], "  -32"));
+test "basic parse" {
+    const cal = &mon13.gregorian;
+    const result = try mon13.parse(cal, null, "%Y-%m-%d", "2021-12-26");
+    const expected = try mon13.mjdFromYmd(cal, 2021, 12, 26);
+    try std.testing.expectEqual(result, expected);
 }
