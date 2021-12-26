@@ -80,99 +80,24 @@ const Sequence = enum(u8) {
     weekday_number = 'u',
     year = 'Y',
 
-    fn getNum(self: Sequence, mjd: i32, cal: *const base.Cal) base.Err!?i32 {
+    fn isChar(self: Sequence) bool {
         return switch (self) {
-            .day_of_month => day: {
-                var res: u8 = 0;
-                try logic.mjdToYmd(mjd, cal, null, null, &res);
-                break :day @intCast(i32, res);
-            },
-            .day_of_year => doy: {
-                const res = try logic.mjdToDayOfYear(mjd, cal);
-                break :doy @intCast(i32, res);
-            },
-            .month_number => month: {
-                var res: u8 = 0;
-                try logic.mjdToYmd(mjd, cal, null, &res, null);
-                break :month @intCast(i32, res);
-            },
-            .weekday_number => weekday: {
-                const res = try logic.mjdToDayOfWeek(mjd, cal);
-                break :weekday @intCast(i32, res);
-            },
-            .year => year: {
-                var res: i32 = 0;
-                try logic.mjdToYmd(mjd, cal, &res, null, null);
-                break :year res;
-            },
-            else => null,
+            .percent, .newline, .tab => true,
+            else => false,
         };
     }
 
-    fn getEraName(mjd: i32, cal: *const base.Cal, nlist: *const base.NameList) base.Err!?[*:0]const u8 {
-        var year: i32 = 0;
-        try logic.mjdToYmd(mjd, cal, &year, null, null);
-        const era_list = nlist.*.era_list;
-        if (year < 0) {
-            return era_list[0];
-        } else {
-            return era_list[1];
-        }
-    }
-
-    fn getIcName(mjd: i32, cal: *const base.Cal, nlist: *const base.NameList) base.Err!?[*:0]const u8 {
-        var year: i32 = 0;
-        var month: u8 = 0;
-        var day: u8 = 0;
-        try logic.mjdToYmd(mjd, cal, &year, &month, &day);
-        const ic = gen.seekIc(month, day, cal) orelse return null;
-        if (ic.era_start_alt_name and year == 0 and ic.day_of_year == gen.yearLen(false, cal)) {
-            const alt_ic_list = nlist.*.alt_intercalary_list orelse return null;
-            return alt_ic_list[ic.name_i];
-        } else {
-            const ic_list = nlist.*.intercalary_list orelse return null;
-            return ic_list[ic.name_i];
-        }
-    }
-
-    fn getWeekdayName(mjd: i32, cal: *const base.Cal, nlist: *const base.NameList) base.Err!?[*:0]const u8 {
-        const weekday = try logic.mjdToDayOfWeek(mjd, cal);
-        if (weekday == @enumToInt(base.Weekday7.NoWeekday)) {
-            return getIcName(mjd, cal, nlist);
-        } else {
-            const i = @intCast(usize, weekday - 1);
-            return nlist.*.weekday_list[i];
-        }
-    }
-
-    fn getMonthName(mjd: i32, cal: *const base.Cal, nlist: *const base.NameList) base.Err!?[*:0]const u8 {
-        var month: u8 = 0;
-        try logic.mjdToYmd(mjd, cal, null, &month, null);
-        if (month == 0) {
-            return getIcName(mjd, cal, nlist);
-        } else {
-            const i = @intCast(usize, month - 1);
-            return nlist.*.month_list[i];
-        }
-    }
-
-    fn getName(self: Sequence, mjd: i32, cal: *const base.Cal, raw_nlist: ?*const base.NameList) base.Err!?[*:0]const u8 {
-        const nlist = raw_nlist orelse return null;
+    fn isNumeric(self: Sequence) bool {
         return switch (self) {
-            .weekday_name => try getWeekdayName(mjd, cal, nlist),
-            .month_name => try getMonthName(mjd, cal, nlist),
-            .calendar_name => nlist.calendar_name,
-            .era_name => try getEraName(mjd, cal, nlist),
-            else => null,
+            .day_of_month, .day_of_year, .month_number, .weekday_number, .year => true,
+            else => false,
         };
     }
 
-    fn getChar(self: Sequence) ?u8 {
+    fn isName(self: Sequence) bool {
         return switch (self) {
-            .percent => '%',
-            .newline => '\n',
-            .tab => '\t',
-            else => null,
+            .weekday_name, .month_name, .calendar_name, .era_name => true,
+            else => false,
         };
     }
 
@@ -288,6 +213,162 @@ const Specifier = struct {
     }
 };
 
+const DateData = struct {
+    year_abs: ?u32 = null,
+    month: ?u8 = null,
+    day_of_month: ?u8 = null,
+    day_of_year: ?u16 = null,
+    day_of_week: ?u8 = null,
+    after_epoch: ?bool = null,
+
+    fn setYmd(self: DateData, mjd: i32, cal: *const base.Cal) base.Err!DateData {
+        if (self.year_abs) |sy| {
+            return self;
+        } else {
+            var raw_y: i32 = 0;
+            var raw_m: u8 = 0;
+            var raw_d: u8 = 0;
+            try logic.mjdToYmd(mjd, cal, &raw_y, &raw_m, &raw_d);
+            var dd = self;
+            dd.month = raw_m;
+            dd.day_of_month = raw_d;
+            dd.after_epoch = raw_y > 0;
+            dd.year_abs = @intCast(u32, if (raw_y > 0) raw_y else -raw_y);
+            return dd;
+        }
+    }
+
+    fn setFields(self: DateData, spec: Specifier, mjd: i32, cal: *const base.Cal) base.Err!DateData {
+        return switch (spec.seq) {
+            .percent, .tab, .calendar_name, .newline => self,
+            .weekday_name, .weekday_number => weekday: {
+                if (self.day_of_week) |sw| {
+                    break :weekday self;
+                } else {
+                    var dd = self;
+                    const weekday = try logic.mjdToDayOfWeek(mjd, cal);
+                    dd.day_of_week = weekday;
+                    if (weekday == 0) {
+                        break :weekday dd.setYmd(mjd, cal);
+                    } else {
+                        break :weekday dd;
+                    }
+                }
+            },
+            .day_of_year => doy: {
+                if (self.day_of_year) |sdoy| {
+                    break :doy self;
+                } else {
+                    var dd = self;
+                    dd.day_of_year = try logic.mjdToDayOfYear(mjd, cal);
+                    break :doy dd;
+                }
+            },
+            else => try self.setYmd(mjd, cal),
+        };
+    }
+
+    fn writeNumber(self: DateData, spec: Specifier, writer: anytype) !void {
+        const n = switch (spec.seq) {
+            .day_of_month => @intCast(i32, self.day_of_month orelse unreachable),
+            .day_of_year => @intCast(i32, self.day_of_year orelse unreachable),
+            .month_number => @intCast(i32, self.month orelse unreachable),
+            .weekday_number => @intCast(i32, self.day_of_week orelse unreachable),
+            .year => year: {
+                const after_epoch = self.after_epoch orelse unreachable;
+                const y = @intCast(i32, self.year_abs orelse unreachable);
+                if (after_epoch) {
+                    break :year y;
+                } else {
+                    break :year -y;
+                }
+            },
+            else => unreachable,
+        };
+
+        const x = if (spec.absolute_value and n < 0) -n else n;
+        const opt = spec.toStdFmtOptions();
+        if (x >= 0) {
+            const abs = @intCast(u32, x);
+            //Force the + sign to be omitted
+            try std.fmt.formatInt(abs, 10, false, opt, writer);
+        } else {
+            try std.fmt.formatInt(n, 10, false, opt, writer);
+        }
+    }
+
+    fn toIcName(
+        self: DateData,
+        cal: *const base.Cal,
+        nlist: *const base.NameList,
+    ) base.Err![*:0]const u8 {
+        const y = self.year_abs orelse unreachable;
+        const m = self.month orelse unreachable;
+        const d = self.day_of_month orelse unreachable;
+        const raw_ic = gen.seekIc(m, d, cal);
+        const ic = raw_ic orelse return base.Err.BadCalendar;
+        const use_alt = ic.era_start_alt_name and y == 0 and ic.day_of_year == gen.yearLen(false, cal);
+        const raw_list = if (use_alt) nlist.*.alt_intercalary_list else nlist.*.intercalary_list;
+        const list = raw_list orelse return base.Err.InvalidNameList;
+        return list[ic.name_i] orelse base.Err.InvalidNameList;
+    }
+
+    fn writeName(
+        self: DateData,
+        spec: Specifier,
+        cal: *const base.Cal,
+        nlist: *const base.NameList,
+        writer: anytype,
+    ) !void {
+        const name = switch (spec.seq) {
+            .weekday_name => weekday: {
+                const day_of_week = self.day_of_week orelse unreachable;
+                if (day_of_week == @enumToInt(base.Weekday7.NoWeekday)) {
+                    break :weekday try self.toIcName(cal, nlist);
+                } else {
+                    const i = @intCast(usize, day_of_week - 1);
+                    break :weekday nlist.*.weekday_list[i] orelse return base.Err.InvalidNameList;
+                }
+            },
+            .month_name => month: {
+                const m = self.month orelse unreachable;
+                if (m == 0) {
+                    break :month try self.toIcName(cal, nlist);
+                } else {
+                    const i = @intCast(usize, m - 1);
+                    break :month nlist.*.month_list[i] orelse return base.Err.InvalidNameList;
+                }
+            },
+            .calendar_name => nlist.calendar_name,
+            .era_name => era: {
+                const after_epoch = self.after_epoch orelse unreachable;
+                const era_idx: usize = if (after_epoch) 1 else 0;
+                const era_list = nlist.*.era_list;
+                break :era era_list[era_idx] orelse return base.Err.InvalidNameList;
+            },
+            else => unreachable,
+        };
+
+        var name_i: u32 = 0;
+        const name_len = std.mem.len(name);
+        const pad_width = spec.getPadWidth();
+        if (spec.getPadChar()) |c| {
+            if (pad_width > name_len) {
+                try writer.writeByteNTimes(c, pad_width - name_len);
+            }
+        }
+        while (name[name_i] != 0) {
+            const name_c = name[name_i];
+            const count = std.unicode.utf8ByteSequenceLength(name_c) catch {
+                return base.Err.InvalidUtf8;
+            };
+            const next_name_i = name_i + count;
+            _ = try writer.write(name[name_i..next_name_i]);
+            name_i = next_name_i;
+        }
+    }
+};
+
 fn writeCopy(fmt: [*]const u8, fmt_i: usize, writer: anytype) !usize {
     const count = std.unicode.utf8ByteSequenceLength(fmt[fmt_i]) catch {
         return base.Err.InvalidUtf8;
@@ -318,35 +399,23 @@ fn doFlag(fmt: [*]const u8, fmt_i: usize, spec: *Specifier) usize {
     return fmt_i + 1;
 }
 
-fn writeNumber(n: i32, spec: Specifier, writer: anytype) !void {
-    const x = if (spec.absolute_value and n < 0) -n else n;
-    if (x >= 0) {
-        const abs = @intCast(u32, x);
-        //Force the + sign to be omitted
-        try std.fmt.formatInt(abs, 10, false, spec.toStdFmtOptions(), writer);
-    } else {
-        try std.fmt.formatInt(n, 10, false, spec.toStdFmtOptions(), writer);
-    }
+fn writeChar(spec: Specifier, writer: anytype) !void {
+    const ch: u8 = switch (spec.seq) {
+        .percent => '%',
+        .newline => '\n',
+        .tab => '\t',
+        else => unreachable,
+    };
+    try writer.writeByte(ch);
 }
 
-fn writeName(name: [*:0]const u8, spec: Specifier, writer: anytype) !void {
-    var name_i: u32 = 0;
-    const name_len = std.mem.len(name);
-    const pad_width = spec.getPadWidth();
-    if (spec.getPadChar()) |c| {
-        if (pad_width > name_len) {
-            try writer.writeByteNTimes(c, pad_width - name_len);
-        }
-    }
-    while (name[name_i] != 0) {
-        const name_c = name[name_i];
-        const count = std.unicode.utf8ByteSequenceLength(name_c) catch {
-            return base.Err.InvalidUtf8;
-        };
-        const next_name_i = name_i + count;
-        _ = try writer.write(name[name_i..next_name_i]);
-        name_i = next_name_i;
-    }
+fn readCopy(fmt: [*]const u8, fmt_i: usize, reader: anytype) !usize {
+    const count = std.unicode.utf8ByteSequenceLength(fmt[fmt_i]) catch {
+        return base.Err.InvalidUtf8;
+    };
+    const res_i = fmt_i + count;
+    try reader.skipBytes(count, .{});
+    return res_i;
 }
 
 pub fn formatW(
@@ -364,6 +433,7 @@ pub fn formatW(
     var fmt_i: usize = 0;
 
     var spec = Specifier{};
+    var dd = DateData{};
     while (fmt[fmt_i] != 0) {
         const c = fmt[fmt_i];
         s = try s.next(c);
@@ -375,12 +445,15 @@ pub fn formatW(
             .spec_flag => doFlag(fmt, fmt_i, &spec),
             .spec_seq => seq: {
                 spec.seq = @intToEnum(Sequence, c);
-                if (spec.seq.getChar()) |ch| {
-                    try writer.writeByte(ch);
-                } else if (try spec.seq.getNum(mjd, cal)) |n| {
-                    try writeNumber(n, spec, writer);
-                } else if (try spec.seq.getName(mjd, cal, raw_nlist)) |name| {
-                    try writeName(name, spec, writer);
+                if (spec.seq.isChar()) {
+                    try writeChar(spec, writer);
+                } else if (spec.seq.isNumeric()) {
+                    dd = try dd.setFields(spec, mjd, cal);
+                    try dd.writeNumber(spec, writer);
+                } else if (spec.seq.isName()) {
+                    const nlist = raw_nlist orelse return base.Err.NullNameList;
+                    dd = try dd.setFields(spec, mjd, cal);
+                    try dd.writeName(spec, cal, nlist, writer);
                 } else {
                     return base.Err.InvalidSequence;
                 }

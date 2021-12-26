@@ -238,7 +238,7 @@ if True:
 		s = mon13.format(mjd, mon13.tranquility, None, f"%Y-%B%d (%f)")
 		assert (False), "format, throw error"
 	except mon13.Mon13Error as e:
-		assert e.status is mon13.ErrorStatus.INVALID_SEQUENCE, "format, error"
+		assert e.status is mon13.ErrorStatus.NULL_NAME_LIST, "format, error"
 
 print("Python API tests passed.")
 

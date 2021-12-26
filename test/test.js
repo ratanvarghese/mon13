@@ -303,7 +303,7 @@ WebAssembly.instantiate(typedArray,{}).then(lib => {
 		} catch (e) {
 			msg = e.message;
 		}
-		const expected = "Invalid format sequence"
+		const expected = "Null name list"
 		my_assert(msg === expected, "format, missing namelist error message")
 	}
 

@@ -257,7 +257,7 @@ do
 		mon13.format, mjd, mon13.tranquility, "%Y-%B%d (%f)"
 	)
 	assert(not status, "format, nil namelist error status")
-	local expected = "Invalid format sequence"
+	local expected = "Null name list"
 	assert(msg:sub(-#expected) == expected, msg)--"format, nil namelist error message")
 end
 
