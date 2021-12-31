@@ -227,3 +227,11 @@ test "basic parse" {
     const expected = try mon13.mjdFromYmd(cal, 2021, 12, 26);
     try std.testing.expectEqual(result, expected);
 }
+
+test "Julian Christmas" {
+    const gr = &mon13.gregorian;
+    const jl = &mon13.julian;
+    const mjd_jl = try mon13.mjdFromYmd(jl, 2021, 12, 25);
+    const mjd_gr = try mon13.mjdFromYmd(gr, 2022, 1, 7);
+    try std.testing.expectEqual(mjd_gr, mjd_jl);
+}
