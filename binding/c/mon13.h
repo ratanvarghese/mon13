@@ -167,6 +167,15 @@ int mon13_format(
     int32_t buflen
 );
 
+int mon13_parse(
+    const struct mon13_Cal* cal,
+    const struct mon13_NameList* nlist,
+    const char* fmt,
+    char* buf,
+    int32_t buflen,
+    int32_t* res_mjd
+);
+
 const char* mon13_errorMessage(int errorCode);
 
 //Predefined name lists

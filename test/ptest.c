@@ -77,7 +77,7 @@ const char* contained(char* needle, char** haystack, size_t maxlen, char placeho
     return NULL;
 }
 
-const char* contained_ic(char* needle, struct mon13_NameList* nlist, size_t maxlen, char placeholder) {
+const char* contained_ic(char* needle, const struct mon13_NameList* nlist, size_t maxlen, char placeholder) {
     const char* expected = contained(needle, nlist->intercalary_list, maxlen, placeholder);
     if(expected == NULL && nlist->alt_intercalary_list != NULL) {
         return contained(needle, nlist->alt_intercalary_list, maxlen, placeholder);
@@ -221,7 +221,7 @@ void print_custom_namelist(FILE* f, const void* instance, void* env) {
     const struct mon13_NameList* n = instance;
     fprintf(
         f,
-        "[m: %lu, w: %lu, e: %lu, i: %lu, a: %lu, c: %u]",
+        "[m: %lu, w: %lu, e: %lu, i: %lu, a: %lu, c: %lu]",
         strlistlen(n->month_list),
         strlistlen(n->weekday_list),
         strlistlen(n->era_list),
@@ -2796,6 +2796,122 @@ enum theft_trial_res format_invalid_names(struct theft* t, void* a1, void* a2, v
     return THEFT_TRIAL_PASS;
 }
 
+enum theft_trial_res parse_ymd(struct theft* t, void* a1, void* a2, void* a3) {
+    const int32_t* mjd_f = a1;
+    const struct mon13_Cal* c = a2;
+    const char* placeholder = a3;
+    const char* fmt = "%Y-%m-%d";
+
+    char buf0[ASCII_COPY_BUF];
+    char buf1[ASCII_COPY_BUF];
+    memset(buf0, *placeholder, ASCII_COPY_BUF);
+    int res_f = mon13_format(*mjd_f, c, NULL, fmt, buf0, ASCII_COPY_BUF);
+    if(res_f < 0) {
+        return THEFT_TRIAL_SKIP;
+    }
+    memcpy(buf1, buf0, ASCII_COPY_BUF);
+
+    int32_t mjd_p;
+    int res_p = mon13_parse(c, NULL, fmt, buf0, ASCII_COPY_BUF, &mjd_p);
+    if(res_p < 0) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    if(mjd_p != *mjd_f) {
+        return THEFT_TRIAL_FAIL;
+    }
+    if(memcmp(buf1, buf0, ASCII_COPY_BUF)) {
+        return THEFT_TRIAL_FAIL;
+    }
+    return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res parse_ymde(struct theft* t, void* a1, void* a2, void* a3) {
+    const int32_t* mjd_f = a1;
+    const struct name_cal* nc = a2;
+    const char* placeholder = a3;
+    const char* fmt = "%d %B %|Y %q";
+
+    char buf0[ASCII_COPY_BUF];
+    char buf1[ASCII_COPY_BUF];
+    memset(buf0, *placeholder, ASCII_COPY_BUF);
+    int res_f = mon13_format(*mjd_f, nc->c, nc->n, fmt, buf0, ASCII_COPY_BUF);
+    if(res_f < 0) {
+        return THEFT_TRIAL_SKIP;
+    }
+    memcpy(buf1, buf0, ASCII_COPY_BUF);
+
+    int32_t mjd_p;
+    int res_p = mon13_parse(nc->c, nc->n, fmt, buf0, ASCII_COPY_BUF, &mjd_p);
+    if(res_p < 0) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    if(mjd_p != *mjd_f) {
+        return THEFT_TRIAL_FAIL;
+    }
+    if(memcmp(buf1, buf0, ASCII_COPY_BUF)) {
+        return THEFT_TRIAL_FAIL;
+    }
+    return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res parse_armstrong(struct theft* t, void* a1) {
+    const int32_t* y = a1;
+    const struct mon13_Cal* c = &mon13_tranquility_year_zero;
+    const struct mon13_NameList* n = &mon13_names_en_US_tranquility;
+    const char* fmt = "%Y %B";
+
+    char buf[ASCII_COPY_BUF];
+    int len = snprintf(buf, ASCII_COPY_BUF, "%d Armstrong Day", *y);
+    int32_t mjd_p;
+    int res_p = mon13_parse(c, n, fmt, buf, len + 1, &mjd_p);
+    if(res_p < 0) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    uint16_t doy;
+    if(mon13_mjdToDayOfYear(mjd_p, c, &doy)) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    int is_leap;
+    if(mon13_mjdToIsLeapYear(mjd_p, c, &is_leap)) {
+        return THEFT_TRIAL_FAIL;
+    }
+    uint16_t expected_doy = is_leap ? 366 : 365;
+    return (doy == expected_doy) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res parse_year_end_day(struct theft* t, void* a1) {
+    const int32_t* y = a1;
+    const struct mon13_Cal* c = &mon13_cotsworth;
+    const struct mon13_NameList* n = &mon13_names_en_US_cotsworth;
+    const char* fmt = "%Y %B";
+
+    char buf[ASCII_COPY_BUF];
+    int len = snprintf(buf, ASCII_COPY_BUF, "%d Year Day", *y);
+    int32_t mjd_p;
+    int res_p = mon13_parse(c, n, fmt, buf, len + 1, &mjd_p);
+    if(res_p < 0) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    uint16_t doy;
+    if(mon13_mjdToDayOfYear(mjd_p, c, &doy)) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    int is_leap;
+    if(mon13_mjdToIsLeapYear(mjd_p, c, &is_leap)) {
+        return THEFT_TRIAL_FAIL;
+    }
+    uint16_t expected_doy = is_leap ? 366 : 365;
+    return (doy == expected_doy) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+
+
 enum theft_trial_res error_code_message(struct theft* t, void* a1) {
     const int8_t* error_code_p = a1;
     int error_code = *error_code_p;
@@ -4256,6 +4372,38 @@ int main(int argc, char** argv) {
                 &ascii_namelist_info,
                 &placeholder_info,
                 &strftime_fmt_info
+            }
+        },
+        {
+            .name = "mon13_parse: %Y-%m-%d",
+            .prop3 = parse_ymd,
+            .type_info = {
+                &mjd_info,
+                &random_cal_info,
+                &placeholder_info
+            }
+        },
+        {
+            .name = "mon13_parse: %d %B %|Y %q",
+            .prop3 = parse_ymde,
+            .type_info = {
+                &mjd_info,
+                &random_name_cal_info,
+                &placeholder_info
+            }
+        },
+        {
+            .name = "mon13_parse: Armstrong",
+            .prop1 = parse_armstrong,
+            .type_info = {
+                &year_offset_info
+            }
+        },
+        {
+            .name = "mon13_parse: Year Day",
+            .prop1 = parse_year_end_day,
+            .type_info = {
+                &year_offset_info
             }
         },
         {

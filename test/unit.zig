@@ -259,3 +259,13 @@ test "Parse Moon Landing Day, No Year 0" {
     const expected = try mon13.mjdFromYmd(cal, -1, 0, 1);
     try std.testing.expectEqual(result, expected);
 }
+
+test "Negative year" {
+    const cal = &mon13.tranquility;
+    const fmt = "%Y-%m-%d";
+    const mjd: i32 = -45864173;
+    var buf = [_]u8{0} ** 100;
+    _ = try mon13.format(mjd, cal, null, fmt, buf[0..]);
+    const res1 = try mon13.parse(cal, null, fmt, buf[0..]);
+    try std.testing.expectEqual(mjd, res1);
+}

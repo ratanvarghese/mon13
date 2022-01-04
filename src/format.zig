@@ -233,13 +233,15 @@ const Specifier = struct {
     fn readPadding(self: Specifier, ps: anytype) !u8 {
         const pad_char = self.getPadChar() orelse ' ';
         const pad_width = self.getPadWidth();
-        var c = pad_char;
         if (pad_width > 0) {
+            var c = pad_char;
             while (c == pad_char) {
                 c = try ps.*.reader().readByte();
             }
+            return c;
+        } else {
+            return ps.*.reader().readByte();
         }
-        return c;
     }
 };
 

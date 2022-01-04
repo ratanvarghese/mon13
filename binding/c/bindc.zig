@@ -100,7 +100,7 @@ pub const PublicError = extern enum {
     }
 };
 
-fn tail(comptime T: type, res: *T, raw: mon13.Err!T) c_int {
+fn tail(comptime T: type, res: *T, raw: anyerror!T) c_int {
     if (raw) |x| {
         res.* = x;
         return @enumToInt(PublicError.NONE);
@@ -328,6 +328,27 @@ pub export fn mon13_format(
     } else |err| {
         return @enumToInt(PublicError.make(err));
     }
+}
+
+pub export fn mon13_parse(
+    raw_cal: ?*const mon13.Cal,
+    raw_nlist: ?*const mon13.NameList,
+    raw_fmt: ?[*]const u8,
+    raw_buf: ?[*]u8,
+    buflen: u32,
+    raw_mjd: ?*i32,
+) c_int {
+    const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
+    const fmt = raw_fmt orelse return @enumToInt(PublicError.NULL_FORMAT);
+    const res_mjd = raw_mjd orelse return @enumToInt(PublicError.NULL_RESULT);
+    const ptr_buf = raw_buf orelse return @enumToInt(PublicError.NULL_INPUT);
+
+    if (buflen < 1) {
+        return @enumToInt(PublicError.DATE_NOT_FOUND);
+    }
+
+    var slice_buf: []u8 = ptr_buf[0..buflen];
+    return tail(i32, res_mjd, mon13.parse(cal, raw_nlist, fmt, slice_buf));
 }
 
 pub export fn mon13_errorMessage(errorCode: c_int) [*:0]const u8 {
