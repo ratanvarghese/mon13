@@ -126,6 +126,20 @@ bool valid_names_check(void* a1, void* a2, size_t w, size_t m, size_t e, size_t 
     return res;
 }
 
+bool is_year_end(int32_t mjd, const struct mon13_Cal* c) {
+    uint16_t doy;
+    if(mon13_mjdToDayOfYear(mjd, c, &doy)) {
+        return false;
+    }
+
+    int is_leap;
+    if(mon13_mjdToIsLeapYear(mjd, c, &is_leap)) {
+        return false;
+    }
+    uint16_t expected_doy = is_leap ? 366 : 365;
+    return (doy == expected_doy);
+}
+
 //Theft printers
 void print_known(FILE* f, const void* instance, void* env) {
     const struct known_convert_date* kcd = instance;
@@ -2869,18 +2883,7 @@ enum theft_trial_res parse_armstrong(struct theft* t, void* a1) {
     if(res_p < 0) {
         return THEFT_TRIAL_FAIL;
     }
-
-    uint16_t doy;
-    if(mon13_mjdToDayOfYear(mjd_p, c, &doy)) {
-        return THEFT_TRIAL_FAIL;
-    }
-
-    int is_leap;
-    if(mon13_mjdToIsLeapYear(mjd_p, c, &is_leap)) {
-        return THEFT_TRIAL_FAIL;
-    }
-    uint16_t expected_doy = is_leap ? 366 : 365;
-    return (doy == expected_doy) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+    return is_year_end(mjd_p, c) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res parse_year_end_day(struct theft* t, void* a1) {
@@ -2896,21 +2899,8 @@ enum theft_trial_res parse_year_end_day(struct theft* t, void* a1) {
     if(res_p < 0) {
         return THEFT_TRIAL_FAIL;
     }
-
-    uint16_t doy;
-    if(mon13_mjdToDayOfYear(mjd_p, c, &doy)) {
-        return THEFT_TRIAL_FAIL;
-    }
-
-    int is_leap;
-    if(mon13_mjdToIsLeapYear(mjd_p, c, &is_leap)) {
-        return THEFT_TRIAL_FAIL;
-    }
-    uint16_t expected_doy = is_leap ? 366 : 365;
-    return (doy == expected_doy) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+    return is_year_end(mjd_p, c) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
 }
-
-
 
 enum theft_trial_res error_code_message(struct theft* t, void* a1) {
     const int8_t* error_code_p = a1;
