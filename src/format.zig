@@ -4,29 +4,43 @@ const gen = @import("gen.zig");
 const base = @import("base.zig");
 const logic = @import("logic.zig");
 
+const RADIX = 10;
+const MAX_LIST_LEN = 32;
+
 pub fn validNameList(
     cal: *const base.Cal,
     raw_nlist: ?*const base.NameList,
 ) bool {
     const nlist = raw_nlist orelse return true;
 
-    const months = gen.listLen([*:0]u8, nlist.month_list);
+    const months = gen.listLen([*:0]u8, nlist.*.month_list);
     if (months != cal.*.common_month_max and months != cal.*.leap_month_max) {
         return false;
     }
-
-    if (gen.listLen([*:0]u8, nlist.weekday_list) != cal.*.week.length) {
+    if (months >= MAX_LIST_LEN) {
         return false;
     }
 
-    if (gen.listLen([*:0]u8, nlist.era_list) != 2) { //Reconsider for calendars with regnal era
+    const weekdays = gen.listLen([*:0]u8, nlist.*.weekday_list);
+    if (weekdays != cal.*.week.length or weekdays >= MAX_LIST_LEN) {
+        return false;
+    }
+
+    const eras = gen.listLen([*:0]u8, nlist.*.era_list);
+    if (eras != 2 or eras >= MAX_LIST_LEN) { //Reconsider for calendars with regnal era
         return false;
     }
 
     if (cal.*.intercalary_list) |ic_list| {
         const ic_count = gen.listLen(base.Intercalary, ic_list);
+        if ((ic_count * 2 + weekdays) >= MAX_LIST_LEN) {
+            return false;
+        }
+        if ((ic_count * 2 + months) >= MAX_LIST_LEN) {
+            return false;
+        }
 
-        if (nlist.intercalary_list) |nic_list| {
+        if (nlist.*.intercalary_list) |nic_list| {
             if (gen.listLen([*:0]u8, nic_list) != ic_count) {
                 return false;
             }
@@ -34,16 +48,16 @@ pub fn validNameList(
             return false;
         }
 
-        if (nlist.alt_intercalary_list) |alt_nic_list| {
+        if (nlist.*.alt_intercalary_list) |alt_nic_list| {
             if (gen.listLen([*:0]u8, alt_nic_list) != ic_count) {
                 return false;
             }
         }
     } else {
-        if (nlist.intercalary_list) |nic_list| {
+        if (nlist.*.intercalary_list) |nic_list| {
             return false;
         }
-        if (nlist.alt_intercalary_list) |alt_nic_list| {
+        if (nlist.*.alt_intercalary_list) |alt_nic_list| {
             return false;
         }
     }
@@ -101,6 +115,13 @@ const Sequence = enum(u8) {
         };
     }
 
+    fn canBeIntercalary(self: Sequence) bool {
+        return switch (self) {
+            .weekday_name, .month_name => true,
+            else => false,
+        };
+    }
+
     fn defaultPaddingWidth(self: Sequence) u8 {
         return switch (self) {
             .day_of_month => 2,
@@ -109,19 +130,6 @@ const Sequence = enum(u8) {
             else => 0,
         };
     }
-};
-
-const DigitChar = enum(u8) {
-    d0 = '0',
-    d1 = '1',
-    d2 = '2',
-    d3 = '3',
-    d4 = '4',
-    d5 = '5',
-    d6 = '6',
-    d7 = '7',
-    d8 = '8',
-    d9 = '9',
 };
 
 const State = enum(u8) {
@@ -144,7 +152,7 @@ const State = enum(u8) {
     fn afterPrefixOrFlag(c: u8) base.Err!State {
         if (gen.validInEnum(Flag, c)) {
             return State.spec_flag;
-        } else if (gen.validInEnum(DigitChar, c)) {
+        } else if (std.ascii.isDigit(c)) {
             //Check digit after flag because '0' is a flag.
             return State.spec_width;
         } else if (gen.validInEnum(Sequence, c)) {
@@ -155,7 +163,7 @@ const State = enum(u8) {
     }
 
     fn afterWidth(c: u8) base.Err!State {
-        if (gen.validInEnum(DigitChar, c)) {
+        if (std.ascii.isDigit(c)) {
             return State.spec_width;
         } else if (gen.validInEnum(Sequence, c)) {
             return State.spec_seq;
@@ -211,6 +219,28 @@ const Specifier = struct {
         }
         return res;
     }
+
+    fn writePadding(self: Specifier, name: [*:0]const u8, writer: anytype) !void {
+        const name_len = std.mem.len(name);
+        const pad_width = self.getPadWidth();
+        if (self.getPadChar()) |c| {
+            if (pad_width > name_len) {
+                try writer.writeByteNTimes(c, pad_width - name_len);
+            }
+        }
+    }
+
+    fn readPadding(self: Specifier, ps: anytype) !u8 {
+        const pad_char = self.getPadChar() orelse ' ';
+        const pad_width = self.getPadWidth();
+        var c = pad_char;
+        if (pad_width > 0) {
+            while (c == pad_char) {
+                c = try ps.*.reader().readByte();
+            }
+        }
+        return c;
+    }
 };
 
 fn checkInt(comptime T: type, negative: bool, n: u32) base.Err!T {
@@ -223,6 +253,82 @@ fn checkInt(comptime T: type, negative: bool, n: u32) base.Err!T {
     return @intCast(T, n);
 }
 
+fn readUnsignedInt(comptime T: type, start_c: u8, ps: anytype) !T {
+    var n: T = 0;
+    var putBack = true;
+    var c = start_c;
+    while (std.ascii.isDigit(c)) {
+        const digit = try std.fmt.charToDigit(c, RADIX);
+        n = try std.math.mul(T, n, RADIX);
+        n = try std.math.add(T, n, digit);
+        c = ps.*.reader().readByte() catch |err| err_blk: {
+            if (err == error.EndOfStream) {
+                putBack = false;
+                break :err_blk 0;
+            } else {
+                return err;
+            }
+        };
+    }
+    if (putBack) {
+        try ps.*.putBackByte(c);
+    }
+    return n;
+}
+
+fn readNameInArr(arr: []?[*:0]u8, ps: anytype) !usize {
+    if (arr.len >= MAX_LIST_LEN) {
+        return base.Err.InvalidNameList;
+    }
+    var done = std.bit_set.IntegerBitSet(MAX_LIST_LEN).initEmpty();
+    var matches = std.bit_set.IntegerBitSet(MAX_LIST_LEN).initEmpty();
+    var match_i: usize = 0;
+    while (match_i < arr.len) : (match_i += 1) {
+        if (arr[match_i]) |name| {
+            matches.set(match_i);
+        }
+    }
+
+    var name_i: usize = 0;
+    var res_i: usize = 0;
+    var last_c: ?u8 = null;
+    while (matches.count() > done.count()) : (name_i += 1) {
+        const c = ps.*.reader().readByte() catch |err| {
+            if (err == error.EndOfStream) {
+                last_c = null;
+                break;
+            } else {
+                return err;
+            }
+        };
+        match_i = 0;
+        while (match_i < arr.len) : (match_i += 1) {
+            if (matches.isSet(match_i) and !done.isSet(match_i)) {
+                if (arr[match_i]) |name| {
+                    const nc = name[name_i];
+                    if (nc == 0) {
+                        done.set(match_i);
+                    } else {
+                        if (nc == c) {
+                            res_i = match_i;
+                        } else {
+                            matches.unset(match_i);
+                        }
+                    }
+                }
+            }
+        }
+        last_c = c;
+    }
+    if (last_c) |c| {
+        try ps.*.putBackByte(c);
+    }
+    if (matches.count() < 1) {
+        return base.Err.InvalidDate;
+    }
+    return res_i;
+}
+
 const DateData = struct {
     year_abs: ?u32 = null,
     month: ?u8 = null,
@@ -231,7 +337,7 @@ const DateData = struct {
     day_of_week: ?u8 = null,
     after_epoch: ?bool = null,
 
-    fn setYmd(self: DateData, mjd: i32, cal: *const base.Cal) base.Err!DateData {
+    fn setYmdi(self: DateData, mjd: i32, cal: *const base.Cal) base.Err!DateData {
         if (self.year_abs) |sy| {
             return self;
         } else {
@@ -259,7 +365,7 @@ const DateData = struct {
                     const weekday = try logic.mjdToDayOfWeek(mjd, cal);
                     dd.day_of_week = weekday;
                     if (weekday == 0) {
-                        break :weekday dd.setYmd(mjd, cal);
+                        break :weekday dd.setYmdi(mjd, cal);
                     } else {
                         break :weekday dd;
                     }
@@ -274,7 +380,7 @@ const DateData = struct {
                     break :doy dd;
                 }
             },
-            else => try self.setYmd(mjd, cal),
+            else => try self.setYmdi(mjd, cal),
         };
     }
 
@@ -301,9 +407,9 @@ const DateData = struct {
         if (x >= 0) {
             const abs = @intCast(u32, x);
             //Force the + sign to be omitted
-            try std.fmt.formatInt(abs, 10, false, opt, writer);
+            try std.fmt.formatInt(abs, RADIX, false, opt, writer);
         } else {
-            try std.fmt.formatInt(n, 10, false, opt, writer);
+            try std.fmt.formatInt(n, RADIX, false, opt, writer);
         }
     }
 
@@ -312,7 +418,7 @@ const DateData = struct {
         cal: *const base.Cal,
         nlist: *const base.NameList,
     ) base.Err![*:0]const u8 {
-        const y = self.year_abs orelse unreachable;
+        const y = self.year_abs orelse return base.Err.DateNotFound;
         const m = self.month orelse unreachable;
         const d = self.day_of_month orelse unreachable;
         const raw_ic = gen.seekIc(m, d, cal);
@@ -349,7 +455,7 @@ const DateData = struct {
                     break :month nlist.*.month_list[i] orelse return base.Err.InvalidNameList;
                 }
             },
-            .calendar_name => nlist.calendar_name,
+            .calendar_name => nlist.*.calendar_name,
             .era_name => era: {
                 const after_epoch = self.after_epoch orelse unreachable;
                 const era_idx: usize = if (after_epoch) 1 else 0;
@@ -359,14 +465,8 @@ const DateData = struct {
             else => unreachable,
         };
 
+        try spec.writePadding(name, writer);
         var name_i: u32 = 0;
-        const name_len = std.mem.len(name);
-        const pad_width = spec.getPadWidth();
-        if (spec.getPadChar()) |c| {
-            if (pad_width > name_len) {
-                try writer.writeByteNTimes(c, pad_width - name_len);
-            }
-        }
         while (name[name_i] != 0) {
             const name_c = name[name_i];
             const count = std.unicode.utf8ByteSequenceLength(name_c) catch {
@@ -379,21 +479,13 @@ const DateData = struct {
     }
 
     fn readNumber(self: DateData, spec: Specifier, ps: anytype) !DateData {
-        const pad_char = spec.getPadChar() orelse ' ';
-        const pad_width = spec.getPadWidth();
-        var negative = false;
-        var c = pad_char;
-        if (pad_width > 0) {
-            while (c == pad_char) {
-                c = try ps.*.reader().readByte();
-            }
-        }
-        if (c == '-') {
+        var c = try spec.readPadding(ps);
+        const negative = (c == '-');
+        if (negative) {
             if (spec.absolute_value) {
                 try ps.*.putBackByte(c);
                 return self;
             }
-            negative = true;
             c = ps.*.reader().readByte() catch |err| {
                 if (err == error.EndOfStream) {
                     return self;
@@ -402,53 +494,142 @@ const DateData = struct {
                 }
             };
         }
-        var n: u32 = 0;
-        var putBack = true;
-        while (gen.validInEnum(DigitChar, c)) {
-            const digit = try std.fmt.charToDigit(c, 10);
-            n = try std.math.mul(u32, n, 10);
-            n = try std.math.add(u32, n, digit);
-            c = ps.*.reader().readByte() catch |err| err_blk: {
-                if (err == error.EndOfStream) {
-                    putBack = false;
-                    break :err_blk 0;
-                } else {
-                    return err;
-                }
-            };
-        }
-        if (putBack) {
-            try ps.*.putBackByte(c);
-        }
+        const n = try readUnsignedInt(u32, c, ps);
 
-        return switch (spec.seq) {
-            .day_of_month => d_blk: {
-                var dd = self;
+        var dd = self;
+        switch (spec.seq) {
+            .day_of_month => {
                 dd.day_of_month = try checkInt(u8, negative, n);
-                break :d_blk dd;
             },
-            .day_of_year => doy_blk: {
-                var dd = self;
+            .day_of_year => {
                 dd.day_of_year = try checkInt(u16, negative, n);
-                break :doy_blk dd;
             },
-            .month_number => m_blk: {
-                var dd = self;
+            .month_number => {
                 dd.month = try checkInt(u8, negative, n);
-                break :m_blk dd;
             },
-            .year => y_blk: {
-                var dd = self;
+            .year => {
                 dd.year_abs = n;
                 if (negative or n == 0) {
                     dd.after_epoch = false;
                 } else if (!spec.absolute_value) {
                     dd.after_epoch = true;
                 }
-                break :y_blk dd;
             },
             else => unreachable,
-        };
+        }
+        return dd;
+    }
+
+    fn setIntercalary(
+        self: DateData,
+        cal: *const base.Cal,
+        raw_name_i: usize,
+        ic_count: usize,
+    ) !DateData {
+        const ic_name_i = raw_name_i % ic_count;
+        const alt_name = raw_name_i >= ic_count;
+        if (cal.*.intercalary_list) |ic_list| {
+            var i: usize = 0;
+            while (ic_list[i]) |ic| : (i += 1) {
+                if (ic.name_i == ic_name_i) {
+                    var res = self;
+                    res.day_of_week = 0;
+                    res.month = ic.month;
+                    res.day_of_month = ic.day;
+                    if (alt_name) {
+                        if (ic.era_start_alt_name) {
+                            res.year_abs = if (cal.*.year0) 0 else 1;
+                            res.after_epoch = false;
+                        }
+                    }
+                    return res;
+                }
+            }
+        }
+        return base.Err.DateNotFound;
+    }
+
+    fn readName(
+        self: DateData,
+        spec: Specifier,
+        cal: *const base.Cal,
+        nlist: *const base.NameList,
+        ps: anytype,
+    ) !DateData {
+        var name_arr: [MAX_LIST_LEN]?[*:0]u8 = undefined;
+        var i: usize = 0;
+        switch (spec.seq) {
+            .calendar_name => {
+                name_arr[0] = nlist.*.calendar_name;
+                i = 1;
+            },
+            .era_name => {
+                while (i < 2) : (i += 1) {
+                    name_arr[i] = nlist.*.era_list[i];
+                }
+            },
+            .weekday_name => {
+                while (i < cal.*.week.length) : (i += 1) {
+                    name_arr[i] = nlist.*.weekday_list[i];
+                }
+            },
+            .month_name => {
+                if (cal.*.common_month_max != cal.*.leap_month_max) {
+                    return base.Err.BadCalendar;
+                }
+                while (i < cal.*.common_month_max) : (i += 1) {
+                    name_arr[i] = nlist.*.month_list[i];
+                }
+            },
+            else => unreachable,
+        }
+
+        var ic_count: usize = 0;
+        if (cal.*.intercalary_list) |ic_list| {
+            if (spec.seq.canBeIntercalary()) {
+                ic_count = gen.listLen(base.Intercalary, ic_list);
+
+                if (nlist.*.intercalary_list) |nic_list| {
+                    const boundary_i = i;
+                    while ((i - boundary_i) < ic_count) : (i += 1) {
+                        name_arr[i] = nic_list[i - boundary_i];
+                    }
+                }
+                if (nlist.*.alt_intercalary_list) |alt_nic_list| {
+                    const boundary_i = i;
+                    while ((i - boundary_i) < ic_count) : (i += 1) {
+                        name_arr[i] = alt_nic_list[i - boundary_i];
+                    }
+                }
+            }
+        }
+
+        const match_i = try readNameInArr(name_arr[0..i], ps);
+        var res = self;
+        switch (spec.seq) {
+            .calendar_name => {},
+            .era_name => {
+                res.after_epoch = (match_i > 0);
+            },
+            .weekday_name => {
+                if (match_i < cal.*.week.length) {
+                    res.day_of_week = (@intCast(u8, match_i) + 1);
+                } else if (ic_count > 0) {
+                    const ic_i = (match_i - cal.*.week.length);
+                    res = try self.setIntercalary(cal, ic_i, ic_count);
+                }
+            },
+            .month_name => {
+                if (match_i < cal.*.common_month_max) {
+                    res.month = (@intCast(u8, match_i) + 1);
+                } else if (ic_count > 0) {
+                    const ic_i = (match_i - cal.*.common_month_max);
+                    res = try self.setIntercalary(cal, ic_i, ic_count);
+                }
+            },
+            else => unreachable,
+        }
+        return res;
     }
 
     fn toMjd(self: DateData, cal: *const base.Cal) base.Err!i32 {
@@ -459,9 +640,7 @@ const DateData = struct {
         }
         const y = if (after_epoch) @intCast(i32, year_abs) else -@intCast(i32, year_abs);
         if (self.day_of_year) |day_of_year| {
-            const mjd0 = try logic.mjdFromYmd(cal, y, 1, 1);
-            const mjd1 = try std.math.add(i32, mjd0, day_of_year);
-            return mjd1 - 1;
+            return logic.mjdFromDayOfYear(cal, y, day_of_year);
         } else {
             const month = self.month orelse return base.Err.DateNotFound;
             const day_of_month = self.day_of_month orelse return base.Err.DateNotFound;
@@ -485,7 +664,7 @@ fn doPrefix(fmt_i: usize) usize {
 
 fn doSpecWidth(fmt: [*]const u8, fmt_i: usize, spec: *Specifier) usize {
     const c = fmt[fmt_i];
-    spec.*.pad_width = (spec.*.pad_width * 10) + (c - '0');
+    spec.*.pad_width = (spec.*.pad_width * RADIX) + (c - '0');
     return fmt_i + 1;
 }
 
@@ -628,7 +807,8 @@ pub fn parseR(
                 } else if (spec.seq.isNumeric()) {
                     dd = try dd.readNumber(spec, &ps);
                 } else if (spec.seq.isName()) {
-                    return base.Err.InvalidSequence; //not implemented
+                    const nlist = raw_nlist orelse return base.Err.NullNameList;
+                    dd = try dd.readName(spec, cal, nlist, &ps);
                 } else {
                     return base.Err.InvalidSequence;
                 }

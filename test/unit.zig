@@ -221,7 +221,7 @@ test "Rata Die Overflow Message" {
     }
 }
 
-test "basic parse" {
+test "basic parse numeric" {
     const cal = &mon13.gregorian;
     const result = try mon13.parse(cal, null, "%Y-%m-%d", "2021-12-26");
     const expected = try mon13.mjdFromYmd(cal, 2021, 12, 26);
@@ -234,4 +234,28 @@ test "Julian Christmas" {
     const mjd_jl = try mon13.mjdFromYmd(jl, 2021, 12, 25);
     const mjd_gr = try mon13.mjdFromYmd(gr, 2022, 1, 7);
     try std.testing.expectEqual(mjd_gr, mjd_jl);
+}
+
+test "basic parse name" {
+    const cal = &mon13.gregorian;
+    const n = &mon13.names_en_US_gregorian;
+    const result = try mon13.parse(cal, n, "%d %B %|Y %q", "26 December 2021 Before Common Era");
+    const expected = try mon13.mjdFromYmd(cal, -2021, 12, 26);
+    try std.testing.expectEqual(result, expected);
+}
+
+test "Parse Moon Landing Day, Year 0" {
+    const cal = &mon13.tranquility_year_zero;
+    const n = &mon13.names_en_US_tranquility;
+    const result = try mon13.parse(cal, n, "%B", "Moon Landing Day");
+    const expected = try mon13.mjdFromYmd(cal, 0, 0, 1);
+    try std.testing.expectEqual(result, expected);
+}
+
+test "Parse Moon Landing Day, No Year 0" {
+    const cal = &mon13.tranquility;
+    const n = &mon13.names_en_US_tranquility;
+    const result = try mon13.parse(cal, n, "%B", "Moon Landing Day");
+    const expected = try mon13.mjdFromYmd(cal, -1, 0, 1);
+    try std.testing.expectEqual(result, expected);
 }

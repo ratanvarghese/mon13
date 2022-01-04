@@ -457,6 +457,13 @@ pub fn mjdFromYmd(cal: *const base.Cal, year: i32, month: u8, day: u8) base.Err!
     return try d_doy.toMjd(cal);
 }
 
+pub fn mjdFromDayOfYear(cal: *const base.Cal, year: i32, doy: u16) base.Err!i32 {
+    const d = Date{ .year = year, .month = 0, .day = 0 };
+    const d_norm = try d.noYzToValidYz(cal);
+    const d_doy = DoyDate{ .year = d_norm.year, .doy = doy };
+    return try d_doy.toMjd(cal);
+}
+
 pub fn mjdFromC99Tm(cal: *const base.Cal, raw_tm: *const c_void) base.Err!i32 {
     const tm = @ptrCast(*const C99Tm, @alignCast(@alignOf(C99Tm), raw_tm));
 
