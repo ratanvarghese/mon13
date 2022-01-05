@@ -257,23 +257,28 @@ fn checkInt(comptime T: type, negative: bool, n: u32) base.Err!T {
 
 fn readUnsignedInt(comptime T: type, start_c: u8, ps: anytype) !T {
     var n: T = 0;
-    var putBack = true;
+    var put_back = true;
+    var read_digit = false;
     var c = start_c;
     while (std.ascii.isDigit(c)) {
         const digit = try std.fmt.charToDigit(c, RADIX);
         n = try std.math.mul(T, n, RADIX);
         n = try std.math.add(T, n, digit);
+        read_digit = true;
         c = ps.*.reader().readByte() catch |err| err_blk: {
             if (err == error.EndOfStream) {
-                putBack = false;
+                put_back = false;
                 break :err_blk 0;
             } else {
                 return err;
             }
         };
     }
-    if (putBack) {
+    if (put_back) {
         try ps.*.putBackByte(c);
+    }
+    if (!read_digit) {
+        return base.Err.DateNotFound;
     }
     return n;
 }
@@ -500,6 +505,9 @@ const DateData = struct {
 
         var dd = self;
         switch (spec.seq) {
+            .weekday_number => {
+                dd.day_of_week = try checkInt(u8, negative, n);
+            },
             .day_of_month => {
                 dd.day_of_month = try checkInt(u8, negative, n);
             },
@@ -699,7 +707,10 @@ fn readCopy(fmt: [*]const u8, fmt_i: usize, reader: anytype) !usize {
 
     var ri: usize = 0;
     while (ri < count) : (ri += 1) {
-        _ = try reader.readByte();
+        const c = try reader.readByte();
+        if (ri == 0 and c != fmt[fmt_i]) { //Caused by digit after numeric sequence
+            return base.Err.InvalidSequence;
+        }
     }
     return res_i;
 }

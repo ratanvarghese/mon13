@@ -140,6 +140,64 @@ bool is_year_end(int32_t mjd, const struct mon13_Cal* c) {
     return (doy == expected_doy);
 }
 
+bool is_literal_percent(const char* fmt, const char* p) {
+    if(fmt == NULL || p == NULL || *p != '%') {
+        return false;
+    }
+
+    bool found_percent = false;
+    for(size_t i = 0; fmt[i] != '\0'; i++) {
+        char fmt_c = fmt[i];
+        if(found_percent) {
+            if(&(fmt[i]) == p) {
+                return true;
+            }
+            found_percent = false;
+        }
+        else {
+            if(fmt_c == '%') {
+                found_percent = true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool sequence_usable(const char* fmt, const char* seq) {
+    const char* p = strstr(fmt, seq);
+    return p != NULL && !is_literal_percent(fmt, p);
+}
+
+bool strftime_fmt_complete(const char* fmt) {
+    bool month_str = sequence_usable(fmt, "%B");
+    bool day_num   = sequence_usable(fmt, "%d");
+    bool doy_num   = sequence_usable(fmt, "%j");
+    bool month_num = sequence_usable(fmt, "%m");
+    bool year_num  = sequence_usable(fmt, "%Y");
+
+    if(year_num) {
+        if(doy_num) {
+            return true;
+        }
+        if(day_num && (month_num || month_str)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool strftime_consecutive_seq(const char* fmt) {
+    for(size_t i = 0; fmt[i] != '\0'; i++) {
+        if(i > 2) {
+            if(fmt[i - 2] == '%' && fmt[i] == '%') {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 //Theft printers
 void print_known(FILE* f, const void* instance, void* env) {
     const struct known_convert_date* kcd = instance;
@@ -2827,14 +2885,14 @@ enum theft_trial_res parse_ymd(struct theft* t, void* a1, void* a2, void* a3) {
 
     int32_t mjd_p;
     int res_p = mon13_parse(c, NULL, fmt, buf0, ASCII_COPY_BUF, &mjd_p);
+    if(memcmp(buf1, buf0, ASCII_COPY_BUF)) {
+        return THEFT_TRIAL_FAIL;
+    }
     if(res_p < 0) {
         return THEFT_TRIAL_FAIL;
     }
 
     if(mjd_p != *mjd_f) {
-        return THEFT_TRIAL_FAIL;
-    }
-    if(memcmp(buf1, buf0, ASCII_COPY_BUF)) {
         return THEFT_TRIAL_FAIL;
     }
     return THEFT_TRIAL_PASS;
@@ -2857,14 +2915,14 @@ enum theft_trial_res parse_ymde(struct theft* t, void* a1, void* a2, void* a3) {
 
     int32_t mjd_p;
     int res_p = mon13_parse(nc->c, nc->n, fmt, buf0, ASCII_COPY_BUF, &mjd_p);
+    if(memcmp(buf1, buf0, ASCII_COPY_BUF)) {
+        return THEFT_TRIAL_FAIL;
+    }
     if(res_p < 0) {
         return THEFT_TRIAL_FAIL;
     }
 
     if(mjd_p != *mjd_f) {
-        return THEFT_TRIAL_FAIL;
-    }
-    if(memcmp(buf1, buf0, ASCII_COPY_BUF)) {
         return THEFT_TRIAL_FAIL;
     }
     return THEFT_TRIAL_PASS;
@@ -2900,6 +2958,76 @@ enum theft_trial_res parse_year_end_day(struct theft* t, void* a1) {
         return THEFT_TRIAL_FAIL;
     }
     return is_year_end(mjd_p, c) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res parse_strftime(struct theft* t, void* a1, void* a2, void* a3) {
+    const int32_t* mjd_f = a1;
+    const char* placeholder = a2;
+    const char* fmt = a3;
+
+    const struct mon13_Cal* c = &mon13_gregorian_year_zero;
+    const struct mon13_NameList* n = &mon13_names_en_US_gregorian;
+
+    char buf0[ASCII_COPY_BUF];
+    char buf1[ASCII_COPY_BUF];
+    memset(buf0, *placeholder, ASCII_COPY_BUF);
+    int res_f = mon13_format(*mjd_f, c, n, fmt, buf0, ASCII_COPY_BUF);
+    if(res_f < 0) {
+        return THEFT_TRIAL_SKIP;
+    }
+    if(res_f > (ASCII_COPY_BUF - 1)) {
+        return THEFT_TRIAL_SKIP;
+    }
+    memcpy(buf1, buf0, ASCII_COPY_BUF);
+
+    int32_t mjd_p;
+    int res_p = mon13_parse(c, n, fmt, buf0, ASCII_COPY_BUF, &mjd_p);
+    if(memcmp(buf1, buf0, ASCII_COPY_BUF)) {
+        return THEFT_TRIAL_FAIL;
+    }
+
+    if(res_p < 0) {
+        if(!strftime_fmt_complete(fmt)) {
+            return THEFT_TRIAL_PASS;
+        }
+        if(strftime_consecutive_seq(fmt)) {
+            return THEFT_TRIAL_PASS;
+        }
+        return THEFT_TRIAL_SKIP;
+    }
+
+    if(mjd_p != *mjd_f) {
+        return THEFT_TRIAL_FAIL;
+    }
+    return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res parse_random(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+    const int32_t* mjd_f = a1;
+    const struct name_cal* nc = a2;
+    const char* placeholder = a3;
+    const char* fmt = a4;
+
+    char buf[ASCII_COPY_BUF];
+    memset(buf, *placeholder, ASCII_COPY_BUF);
+    int res_f = mon13_format(*mjd_f, nc->c, nc->n, fmt, buf, ASCII_COPY_BUF);
+    if(res_f < 0) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    int32_t mjd_p;
+    int res_p = mon13_parse(nc->c, nc->n, fmt, buf, ASCII_COPY_BUF, &mjd_p);
+    if(res_p < 0) {
+        if(res_p == MON13_ERROR_DATE_NOT_FOUND) {
+            return THEFT_TRIAL_PASS;
+        }
+    }
+    else {
+        if((fmt[2] == 'B' || fmt[2] == 'A') && nc->c == &mon13_tranquility) {
+            return (mjd_p == *mjd_f) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+        }
+    }
+    return THEFT_TRIAL_FAIL;
 }
 
 enum theft_trial_res error_code_message(struct theft* t, void* a1) {
@@ -4395,6 +4523,27 @@ int main(int argc, char** argv) {
             .type_info = {
                 &year_offset_info
             }
+        },
+        {
+            .name = "mon13_parse: strftime",
+            .prop3 = parse_strftime,
+            .type_info = {
+                &mjd_info,
+                &placeholder_info,
+                &strftime_fmt_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_parse: random",
+            .prop4 = parse_random,
+            .type_info = {
+                &mjd_info,
+                &random_name_cal_info,
+                &placeholder_info,
+                &random_fmt_info
+            },
+            .seed = seed
         },
         {
             .name = "mon13_errorMessage",

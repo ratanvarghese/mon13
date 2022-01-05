@@ -269,3 +269,33 @@ test "Negative year" {
     const res1 = try mon13.parse(cal, null, fmt, buf[0..]);
     try std.testing.expectEqual(mjd, res1);
 }
+
+test "Unreachable?" {
+    const mjd_f: i32 = 1286369277;
+    const placeholder = 13;
+    const fmt = "%tcW $U+%u' )\\^4ZU @+\"?UA%As %tXc ZLl %m%%U\"  p` ";
+    const c = &mon13.gregorian_year_zero;
+    const n = &mon13.names_en_US_gregorian;
+    const ASCII_COPY_BUF = 512;
+
+    var buf0 = [_]u8{placeholder} ** ASCII_COPY_BUF;
+    _ = try mon13.format(mjd_f, c, n, fmt, buf0[0..]);
+
+    var buf1 = [_]u8{placeholder} ** ASCII_COPY_BUF;
+    std.mem.copy(u8, buf1[0..], buf0[0..]);
+
+    try std.testing.expectError(error.DateNotFound, mon13.parse(c, n, fmt, buf0[0..]));
+}
+
+test "Parse weird" {
+    const cal = &mon13.gregorian_year_zero;
+    const n = &mon13.names_en_US_gregorian;
+    const mjd: i32 = 128180363;
+    const res0 = try mon13.mjdFromYmd(cal, 352804, 10, 16);
+    try std.testing.expectEqual(mjd, res0);
+
+    const fmt = "$z%BCD 76X%u7|vZ8+%d la < G: F;%YK%B6pnaJW%%dN";
+    var buf = [_]u8{0} ** 512;
+    _ = try mon13.format(mjd, cal, n, fmt, buf[0..]);
+    try std.testing.expectError(error.InvalidSequence, mon13.parse(cal, n, fmt, buf[0..]));
+}
