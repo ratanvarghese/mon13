@@ -2875,19 +2875,14 @@ enum theft_trial_res parse_ymd(struct theft* t, void* a1, void* a2, void* a3) {
     const char* fmt = "%Y-%m-%d";
 
     char buf0[ASCII_COPY_BUF];
-    char buf1[ASCII_COPY_BUF];
     memset(buf0, *placeholder, ASCII_COPY_BUF);
     int res_f = mon13_format(*mjd_f, c, NULL, fmt, buf0, ASCII_COPY_BUF);
     if(res_f < 0) {
         return THEFT_TRIAL_SKIP;
     }
-    memcpy(buf1, buf0, ASCII_COPY_BUF);
 
     int32_t mjd_p;
     int res_p = mon13_parse(c, NULL, fmt, buf0, ASCII_COPY_BUF, &mjd_p);
-    if(memcmp(buf1, buf0, ASCII_COPY_BUF)) {
-        return THEFT_TRIAL_FAIL;
-    }
     if(res_p < 0) {
         return THEFT_TRIAL_FAIL;
     }
@@ -2905,19 +2900,14 @@ enum theft_trial_res parse_ymde(struct theft* t, void* a1, void* a2, void* a3) {
     const char* fmt = "%d %B %|Y %q";
 
     char buf0[ASCII_COPY_BUF];
-    char buf1[ASCII_COPY_BUF];
     memset(buf0, *placeholder, ASCII_COPY_BUF);
     int res_f = mon13_format(*mjd_f, nc->c, nc->n, fmt, buf0, ASCII_COPY_BUF);
     if(res_f < 0) {
         return THEFT_TRIAL_SKIP;
     }
-    memcpy(buf1, buf0, ASCII_COPY_BUF);
 
     int32_t mjd_p;
     int res_p = mon13_parse(nc->c, nc->n, fmt, buf0, ASCII_COPY_BUF, &mjd_p);
-    if(memcmp(buf1, buf0, ASCII_COPY_BUF)) {
-        return THEFT_TRIAL_FAIL;
-    }
     if(res_p < 0) {
         return THEFT_TRIAL_FAIL;
     }
@@ -2969,7 +2959,6 @@ enum theft_trial_res parse_strftime(struct theft* t, void* a1, void* a2, void* a
     const struct mon13_NameList* n = &mon13_names_en_US_gregorian;
 
     char buf0[ASCII_COPY_BUF];
-    char buf1[ASCII_COPY_BUF];
     memset(buf0, *placeholder, ASCII_COPY_BUF);
     int res_f = mon13_format(*mjd_f, c, n, fmt, buf0, ASCII_COPY_BUF);
     if(res_f < 0) {
@@ -2978,14 +2967,9 @@ enum theft_trial_res parse_strftime(struct theft* t, void* a1, void* a2, void* a
     if(res_f > (ASCII_COPY_BUF - 1)) {
         return THEFT_TRIAL_SKIP;
     }
-    memcpy(buf1, buf0, ASCII_COPY_BUF);
 
     int32_t mjd_p;
     int res_p = mon13_parse(c, n, fmt, buf0, ASCII_COPY_BUF, &mjd_p);
-    if(memcmp(buf1, buf0, ASCII_COPY_BUF)) {
-        return THEFT_TRIAL_FAIL;
-    }
-
     if(res_p < 0) {
         if(!strftime_fmt_complete(fmt)) {
             return THEFT_TRIAL_PASS;
@@ -2997,6 +2981,25 @@ enum theft_trial_res parse_strftime(struct theft* t, void* a1, void* a2, void* a
     }
 
     if(mjd_p != *mjd_f) {
+        return THEFT_TRIAL_FAIL;
+    }
+    return THEFT_TRIAL_PASS;
+}
+
+enum theft_trial_res parse_unchanged_buf(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+    const int32_t* mjd_f = a1;
+    const struct name_cal* nc = a2;
+    const char* placeholder = a3;
+    const char* fmt = a4;
+
+    char buf0[ASCII_COPY_BUF];
+    char buf1[ASCII_COPY_BUF];
+    memset(buf0, *placeholder, ASCII_COPY_BUF);
+    mon13_format(*mjd_f, nc->c, nc->n, fmt, buf0, ASCII_COPY_BUF);
+    memcpy(buf1, buf0, ASCII_COPY_BUF);
+    int32_t mjd_p;
+    mon13_parse(nc->c, nc->n, fmt, buf0, ASCII_COPY_BUF, &mjd_p);
+    if(memcmp(buf1, buf0, ASCII_COPY_BUF)) {
         return THEFT_TRIAL_FAIL;
     }
     return THEFT_TRIAL_PASS;
@@ -3028,6 +3031,42 @@ enum theft_trial_res parse_random(struct theft* t, void* a1, void* a2, void* a3,
         }
     }
     return THEFT_TRIAL_FAIL;
+}
+
+enum theft_trial_res parse_ambiguous(struct theft* t, void* a1, void* a2, void* a3) {
+    const int32_t* mjd_f = a1;
+    const struct name_cal* nc = a2;
+    const char* placeholder = a3;
+    const char* fmt = "%Y99-%m-%d";
+
+    char buf[ASCII_COPY_BUF];
+    memset(buf, *placeholder, ASCII_COPY_BUF);
+    int res_f = mon13_format(*mjd_f, nc->c, nc->n, fmt, buf, ASCII_COPY_BUF);
+    if(res_f < 0) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    int32_t mjd_p;
+    int res_p = mon13_parse(nc->c, nc->n, fmt, buf, ASCII_COPY_BUF, &mjd_p);
+    return (res_p >= 0) ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS; 
+}
+
+enum theft_trial_res parse_consecutive(struct theft* t, void* a1, void* a2, void* a3) {
+    const int32_t* mjd_f = a1;
+    const struct name_cal* nc = a2;
+    const char* placeholder = a3;
+    const char* fmt = "%Y%m%d";
+
+    char buf[ASCII_COPY_BUF];
+    memset(buf, *placeholder, ASCII_COPY_BUF);
+    int res_f = mon13_format(*mjd_f, nc->c, nc->n, fmt, buf, ASCII_COPY_BUF);
+    if(res_f < 0) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    int32_t mjd_p;
+    int res_p = mon13_parse(nc->c, nc->n, fmt, buf, ASCII_COPY_BUF, &mjd_p);
+    return (res_p >= 0) ? THEFT_TRIAL_FAIL : THEFT_TRIAL_PASS; 
 }
 
 enum theft_trial_res error_code_message(struct theft* t, void* a1) {
@@ -4542,6 +4581,37 @@ int main(int argc, char** argv) {
                 &random_name_cal_info,
                 &placeholder_info,
                 &random_fmt_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_parse: unchanged buf",
+            .prop4 = parse_unchanged_buf,
+            .type_info = {
+                &mjd_info,
+                &random_name_cal_info,
+                &placeholder_info,
+                &random_fmt_info
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_parse: ambiguous (digit after %Y)",
+            .prop3 = parse_ambiguous,
+            .type_info = {
+                &mjd_info,
+                &random_name_cal_info,
+                &placeholder_info,
+            },
+            .seed = seed
+        },
+        {
+            .name = "mon13_parse: ambiguous (consecutive %Y%m%d)",
+            .prop3 = parse_consecutive,
+            .type_info = {
+                &mjd_info,
+                &random_name_cal_info,
+                &placeholder_info,
             },
             .seed = seed
         },
