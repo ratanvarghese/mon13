@@ -348,7 +348,11 @@ pub export fn mon13_parse(
     }
 
     var slice_buf: []u8 = ptr_buf[0..buflen];
-    return tail(i32, res_mjd, mon13.parse(cal, raw_nlist, fmt, slice_buf));
+    if (mon13.parse(cal, raw_nlist, fmt, slice_buf, res_mjd)) |bytes_used| {
+        return bytes_used;
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
 }
 
 pub export fn mon13_errorMessage(errorCode: c_int) [*:0]const u8 {

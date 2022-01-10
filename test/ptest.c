@@ -3005,6 +3005,28 @@ enum theft_trial_res parse_unchanged_buf(struct theft* t, void* a1, void* a2, vo
     return THEFT_TRIAL_PASS;
 }
 
+enum theft_trial_res parse_bytes_read(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
+    const int32_t* mjd_f = a1;
+    const struct name_cal* nc = a2;
+    const char* placeholder = a3;
+    const char* fmt = a4;
+
+    char buf0[ASCII_COPY_BUF];
+    memset(buf0, *placeholder, ASCII_COPY_BUF);
+    const int len_f = mon13_format(*mjd_f, nc->c, nc->n, fmt, buf0, ASCII_COPY_BUF);
+    if(len_f < 0) {
+        return THEFT_TRIAL_SKIP;
+    }
+    int32_t mjd_p;
+    const int len_p = mon13_parse(nc->c, nc->n, fmt, buf0, ASCII_COPY_BUF, &mjd_p);
+    if(len_p < 0) {
+        return THEFT_TRIAL_SKIP;
+    }
+
+    return (len_f == len_p) ? THEFT_TRIAL_PASS : THEFT_TRIAL_FAIL;
+}
+
+
 enum theft_trial_res parse_random(struct theft* t, void* a1, void* a2, void* a3, void* a4) {
     const int32_t* mjd_f = a1;
     const struct name_cal* nc = a2;
@@ -4594,6 +4616,18 @@ int main(int argc, char** argv) {
                 &random_fmt_info
             },
             .seed = seed
+        },
+        {
+            .name = "mon13_parse: bytes read",
+            .prop4 = parse_bytes_read,
+            .type_info = {
+                &mjd_info,
+                &random_name_cal_info,
+                &placeholder_info,
+                &strftime_fmt_info
+            },
+            .seed = seed,
+            .trials = 2000 //Often skipped
         },
         {
             .name = "mon13_parse: ambiguous (digit after %Y)",

@@ -223,7 +223,8 @@ test "Rata Die Overflow Message" {
 
 test "basic parse numeric" {
     const cal = &mon13.gregorian;
-    const result = try mon13.parse(cal, null, "%Y-%m-%d", "2021-12-26");
+    var result: i32 = 0;
+    _ = try mon13.parse(cal, null, "%Y-%m-%d", "2021-12-26", &result);
     const expected = try mon13.mjdFromYmd(cal, 2021, 12, 26);
     try std.testing.expectEqual(result, expected);
 }
@@ -236,10 +237,11 @@ test "Julian Christmas" {
     try std.testing.expectEqual(mjd_gr, mjd_jl);
 }
 
-test "basic parse name" {
+test "Basic parse name" {
     const cal = &mon13.gregorian;
     const n = &mon13.names_en_US_gregorian;
-    const result = try mon13.parse(cal, n, "%d %B %|Y %q", "26 December 2021 Before Common Era");
+    var result: i32 = 0;
+    _ = try mon13.parse(cal, n, "%d %B %|Y %q", "26 December 2021 Before Common Era", &result);
     const expected = try mon13.mjdFromYmd(cal, -2021, 12, 26);
     try std.testing.expectEqual(result, expected);
 }
@@ -247,7 +249,8 @@ test "basic parse name" {
 test "Parse Moon Landing Day, Year 0" {
     const cal = &mon13.tranquility_year_zero;
     const n = &mon13.names_en_US_tranquility;
-    const result = try mon13.parse(cal, n, "%B", "Moon Landing Day");
+    var result: i32 = 0;
+    _ = try mon13.parse(cal, n, "%B", "Moon Landing Day", &result);
     const expected = try mon13.mjdFromYmd(cal, 0, 0, 1);
     try std.testing.expectEqual(result, expected);
 }
@@ -255,7 +258,8 @@ test "Parse Moon Landing Day, Year 0" {
 test "Parse Moon Landing Day, No Year 0" {
     const cal = &mon13.tranquility;
     const n = &mon13.names_en_US_tranquility;
-    const result = try mon13.parse(cal, n, "%B", "Moon Landing Day");
+    var result: i32 = 0;
+    _ = try mon13.parse(cal, n, "%B", "Moon Landing Day", &result);
     const expected = try mon13.mjdFromYmd(cal, -1, 0, 1);
     try std.testing.expectEqual(result, expected);
 }
@@ -265,12 +269,28 @@ test "Negative year" {
     const fmt = "%Y-%m-%d";
     const mjd: i32 = -45864173;
     var buf = [_]u8{0} ** 100;
-    _ = try mon13.format(mjd, cal, null, fmt, buf[0..]);
-    const res1 = try mon13.parse(cal, null, fmt, buf[0..]);
+    const len_f = try mon13.format(mjd, cal, null, fmt, buf[0..]);
+    var res1: i32 = 0;
+    const len_p = try mon13.parse(cal, null, fmt, buf[0..], &res1);
+
     try std.testing.expectEqual(mjd, res1);
+    try std.testing.expectEqual(len_f, len_p);
 }
 
-test "Unreachable?" {
+test "Negative year, and also `" {
+    const cal = &mon13.tranquility;
+    const fmt = "%Y-%m-%d`";
+    const mjd: i32 = -45864173;
+    var buf = [_]u8{0} ** 100;
+    const len_f = try mon13.format(mjd, cal, null, fmt, buf[0..]);
+    var res1: i32 = 0;
+    const len_p = try mon13.parse(cal, null, fmt, buf[0..], &res1);
+
+    try std.testing.expectEqual(mjd, res1);
+    try std.testing.expectEqual(len_f, len_p);
+}
+
+test "Format Unreachable?" {
     const mjd_f: i32 = 1286369277;
     const placeholder = 13;
     const fmt = "%tcW $U+%u' )\\^4ZU @+\"?UA%As %tXc ZLl %m%%U\"  p` ";
@@ -284,7 +304,8 @@ test "Unreachable?" {
     var buf1 = [_]u8{placeholder} ** ASCII_COPY_BUF;
     std.mem.copy(u8, buf1[0..], buf0[0..]);
 
-    try std.testing.expectError(error.DateNotFound, mon13.parse(c, n, fmt, buf0[0..]));
+    var dummy: i32 = 0;
+    try std.testing.expectError(error.DateNotFound, mon13.parse(c, n, fmt, buf0[0..], &dummy));
 }
 
 test "Parse weird" {
@@ -297,5 +318,6 @@ test "Parse weird" {
     const fmt = "$z%BCD 76X%u7|vZ8+%d la < G: F;%YK%B6pnaJW%%dN";
     var buf = [_]u8{0} ** 512;
     _ = try mon13.format(mjd, cal, n, fmt, buf[0..]);
-    try std.testing.expectError(error.InvalidSequence, mon13.parse(cal, n, fmt, buf[0..]));
+    var dummy: i32 = 0;
+    try std.testing.expectError(error.DateNotFound, mon13.parse(cal, n, fmt, buf[0..], &dummy));
 }

@@ -757,7 +757,7 @@ pub fn formatW(
                 spec = Specifier{};
                 break :seq fmt_i + 1;
             },
-            else => fmt_i,
+            .start, .end => return base.Err.InvalidSequence,
         };
     }
     writer.writeByte(0) catch return base.Err.FailedToInsertNullCharacter;
@@ -793,7 +793,8 @@ pub fn parseR(
     raw_nlist: ?*const base.NameList,
     fmt: [*]const u8,
     raw_reader: anytype,
-) !i32 {
+    mjd_res: *i32,
+) !usize {
     if (!validNameList(cal, raw_nlist)) {
         return base.Err.InvalidNameList;
     }
@@ -806,7 +807,16 @@ pub fn parseR(
     var ps = std.io.peekStream(1, raw_reader);
     while (fmt[fmt_i] != 0) {
         const c = fmt[fmt_i];
+        const prev_s = s;
         s = try s.next(c);
+        if (prev_s == State.spec_seq) {
+            if (s == State.spec_prefix) {
+                return base.Err.DateNotFound; //Ambiguous
+            }
+            if (s == State.copy and std.ascii.isDigit(c)) {
+                return base.Err.DateNotFound; //Ambiguous
+            }
+        }
 
         fmt_i = switch (s) {
             .copy => try readCopy(fmt, fmt_i, ps.reader()),
@@ -828,11 +838,12 @@ pub fn parseR(
                 spec = Specifier{};
                 break :seq fmt_i + 1;
             },
-            else => fmt_i,
+            .start, .end => return base.Err.InvalidSequence,
         };
     }
 
-    return dd.toMjd(cal);
+    mjd_res.* = try dd.toMjd(cal);
+    return ps.fifo.readableLength();
 }
 
 pub fn parse(
@@ -840,7 +851,13 @@ pub fn parse(
     raw_nlist: ?*const base.NameList,
     fmt: [*]const u8,
     buf: []const u8,
-) !i32 {
+    mjd_res: *i32,
+) !c_int {
     var fbs = std.io.fixedBufferStream(buf);
-    return parseR(cal, raw_nlist, fmt, fbs.reader());
+    const off = try parseR(cal, raw_nlist, fmt, fbs.reader(), mjd_res);
+    const pos = try fbs.getPos();
+    if (pos > std.math.maxInt(c_int)) {
+        return base.Err.Overflow;
+    }
+    return @intCast(c_int, pos) - @intCast(c_int, off);
 }
