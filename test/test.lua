@@ -261,17 +261,20 @@ do
 	assert(msg:sub(-#expected) == expected, msg)--"format, nil namelist error message")
 end
 
+do
+	local d = {year = 2022, month = 1, day = 12}
+	local mjd0 = mon13.mjdFromYmd(mon13.gregorian, d)
+	local b_len, mjd1 = mon13.parse(mon13.gregorian, "%Y-%m-%d", "2022-01-12")
+	assert(mjd0 == mjd1, "parse, %Y-%m-%d correct MJD")
+end
+
+do
+	local cal = mon13.gregorian
+	local nlist = mon13.names_en_US_gregorian
+	local d = {year = 2022, month = 1, day = 12}
+	local mjd0 = mon13.mjdFromYmd(cal, d)
+	local b_len, mjd1 = mon13.parse(cal, nlist, "%-d %B %Y", "12 January 2022")
+	assert(mjd0 == mjd1, "parse, %-d %B %Y correct MJD")
+end
+
 print("Lua API tests passed.")
-
--- local mjd = mon13.mjdFromUnix(os.time())
--- print(mon13.format(mjd, mon13.gregorian, "%Y-%m-%d"))
-
--- local fmt = "%-d %B %Y, %q (%f)"
--- print(mon13.format(mjd, mon13.gregorian, mon13.names_en_US_gregorian, fmt))
--- print(mon13.format(mjd, mon13.tranquility, mon13.names_en_US_tranquility, fmt))
--- print(mon13.format(
--- 	mjd,
--- 	mon13.french_revolutionary_romme_sub1,
--- 	mon13.names_fr_FR_french_revolutionary,
--- 	fmt
--- ))

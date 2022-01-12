@@ -112,6 +112,15 @@ int mon13_format(
 	int32_t buflen
 );
 
+int mon13_parse(
+    const struct mon13_Cal* cal,
+    const struct mon13_NameList* nlist,
+    const char* fmt,
+    const char* buf,
+    int32_t buflen,
+    int32_t* res_mjd
+);
+
 const char* mon13_errorMessage(int errorCode);
 
 //Predefined name lists
@@ -365,6 +374,17 @@ local function makeStringList(t)
 	return res
 end
 
+local function nameListFromTable(old_nlist)
+	nlist = c_namelist()
+	nlist.month_list = makeStringList(old_nlist.month_list)
+	nlist.weekday_list = makeStringList(old_nlist.weekday_list)
+	nlist.era_list = makeStringList(old_nlist.era_list)
+	nlist.intercalary_list = makeStringList(old_nlist.intercalary_list)
+	nlist.alt_intercalary_list = makeStringList(old_nlist.alt_intercalary_list)
+	nlist.calendar_name = old_nlist.calendar_name
+	return nlist
+end
+
 function mon13.format(mjd, cal, arg3, arg4)
 	local nlist = arg3
 	local fmt = arg4
@@ -374,14 +394,7 @@ function mon13.format(mjd, cal, arg3, arg4)
 	end
 
 	if type(nlist) == "table" then
-		local old_nlist = nlist
-		nlist = c_namelist()
-		nlist.month_list = makeStringList(old_nlist.month_list)
-		nlist.weekday_list = makeStringList(old_nlist.weekday_list)
-		nlist.era_list = makeStringList(old_nlist.era_list)
-		nlist.intercalary_list = makeStringList(old_nlist.intercalary_list)
-		nlist.alt_intercalary_list = makeStringList(old_nlist.alt_intercalary_list)
-		nlist.calendar_name = old_nlist.calendar_name
+		nlist = nameListFromTable(nlist)
 	end
 
 	local buflen = raw_lib.mon13_format(mjd, cal, nlist, fmt, nil, 0)
@@ -395,6 +408,29 @@ function mon13.format(mjd, cal, arg3, arg4)
 		throw(status)
 	else
 		return ffi.string(buf)
+	end
+end
+
+function mon13.parse(cal, arg2, arg3, arg4)
+	local nlist = arg2
+	local fmt = arg3
+	local buf = arg4
+	if buf == nil then
+		nlist = nil
+		fmt = arg2
+		buf = arg3
+	end
+
+	if type(nlist) == "table" then
+		nlist = nameListFromTable(nlist)
+	end
+
+	local res_mjd = c_int32()
+	local status = raw_lib.mon13_parse(cal, nlist, fmt, buf, #buf, res_mjd)
+	if status < 0 then
+		throw(status)
+	else
+		return status, tonumber(res_mjd[0])
 	end
 end
 
