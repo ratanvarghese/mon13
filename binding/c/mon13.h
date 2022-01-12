@@ -171,7 +171,7 @@ int mon13_parse(
     const struct mon13_Cal* cal,
     const struct mon13_NameList* nlist,
     const char* fmt,
-    char* buf,
+    const char* buf,
     int32_t buflen,
     int32_t* res_mjd
 );
