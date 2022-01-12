@@ -240,24 +240,18 @@ if True:
 	except mon13.Mon13Error as e:
 		assert e.status is mon13.ErrorStatus.NULL_NAME_LIST, "format, error"
 
+if True:
+	d = mon13.Ymd(year = 2022, month = 1, day = 12)
+	mjd0 = mon13.mjdFromYmd(mon13.gregorian, d)
+	b_len, mjd1 = mon13.parse(mon13.gregorian, None, "%Y-%m-%d", "2022-01-12")
+	assert (mjd0 == mjd1), "parse, %Y-%m-%d correct MJD"
+
+if True:
+	cal = mon13.gregorian
+	nlist = mon13.names_en_US_gregorian
+	d = mon13.Ymd(year = 2022, month = 1, day = 12)
+	mjd0 = mon13.mjdFromYmd(cal, d)
+	b_len, mjd1 = mon13.parse(cal, nlist, "%-d %B %Y", "12 January 2022")
+	assert (mjd0 == mjd1), "parse, %-d %B %Y correct MJD"
+
 print("Python API tests passed.")
-
-# mjd0, status0 = mon13.mjdFromYmd(mon13.symmetry454, mon13.Ymd(year=2021, month=11, day=18))
-# mjd1, status1 = mon13.mjdFromYmd(mon13.symmetry454, mon13.Ymd(year=2021, month=11, day=19))
-# print(mjd0, mjd1)
-
-
-# s2, status2 = mon13.format(mjd0, mon13.symmetry454, mon13.names_en_US_symmetry454, f"%-d %B %Y, %q (%f)")
-# print(s2, status2)
-
-# list3 = mon13.NameList(
-# 	month_list = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-# 	weekday_list = mon13.names_en_US_symmetry454.weekday_list,
-# 	era_list = ["BCE", "CE"],
-# 	intercalary_list = mon13.names_en_US_symmetry454.intercalary_list,
-# 	alt_intercalary_list = mon13.names_en_US_symmetry454.alt_intercalary_list,
-# 	calendar_name = "Sym454"
-# )
-
-# s3, status3 = mon13.format(mjd0, mon13.symmetry454, list3, f"%-d %B %Y, %q (%f)")
-# print(s3, status3)

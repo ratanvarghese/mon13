@@ -216,27 +216,30 @@ def _makeStringList(input_list):
 	else:
 		return input_list, None
 
-def format(mjd, cal, nlist=None, fmt=""):
+def _nameListFromObj(old_nlist):
 	bm = None
 	bw = None
 	be = None
 	bi = None
 	ba = None
 	bn = None
+	nlist = _NAMELIST()
+	nlist.month_list, bm = _makeStringList(old_nlist.month_list)
+	nlist.weekday_list, bw = _makeStringList(old_nlist.weekday_list)
+	nlist.era_list, be = _makeStringList(old_nlist.era_list)
+	nlist.intercalary_list, bi = _makeStringList(old_nlist.intercalary_list)
+	nlist.alt_intercalary_list, ba = _makeStringList(old_nlist.alt_intercalary_list)
+	if type(old_nlist.calendar_name) is str:
+		bname = bytes(old_nlist.calendar_name, "UTF-8")
+		bn = create_string_buffer(bname, len(bname) + 1)
+		nlist.calendar_name = c_char_p(addressof(bn))
+	else:
+		nlist.calendar_name = old_nlist.calendar_name
+	return nlist
+
+def format(mjd, cal, nlist=None, fmt=""):
 	if type(nlist) is NameList:
-		old_nlist = nlist
-		nlist = _NAMELIST()
-		nlist.month_list, bm = _makeStringList(old_nlist.month_list)
-		nlist.weekday_list, bw = _makeStringList(old_nlist.weekday_list)
-		nlist.era_list, be = _makeStringList(old_nlist.era_list)
-		nlist.intercalary_list, bi = _makeStringList(old_nlist.intercalary_list)
-		nlist.alt_intercalary_list, ba = _makeStringList(old_nlist.alt_intercalary_list)
-		if type(old_nlist.calendar_name) is str:
-			bname = bytes(old_nlist.calendar_name, "UTF-8")
-			bn = create_string_buffer(bname, len(bname) + 1)
-			nlist.calendar_name = c_char_p(addressof(bn))
-		else:
-			nlist.calendar_name = old_nlist.calendar_name
+		nlist = _nameListFromObj(nlist)
 
 	nlist_arg = None
 	if nlist is not None:
@@ -254,3 +257,24 @@ def format(mjd, cal, nlist=None, fmt=""):
 		raise Mon13Error(status)
 	else:
 		return buf.value.decode("UTF-8")
+
+def parse(cal, nlist=None,fmt="", buf=""):
+	if type(nlist) is NameList:
+		nlist = _nameListFromObj(nlist)
+
+	nlist_arg = None
+	if nlist is not None:
+		nlist_arg = byref(nlist)
+
+	b_fmt = bytes(fmt, "UTF-8")
+	c_fmt = create_string_buffer(b_fmt, len(b_fmt) + 1)
+
+	b_buf = bytes(buf, "UTF-8")
+	c_buf = create_string_buffer(b_buf, len(b_buf) + 1)
+
+	res_mjd = c_int32()
+	status = _libmon13.mon13_parse(cal, nlist_arg, c_fmt, c_buf, len(c_buf), byref(res_mjd))
+	if status < ErrorStatus.NONE.value:
+		raise Mon13Error(status)
+	else:
+		return status, res_mjd.value
