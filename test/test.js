@@ -307,5 +307,21 @@ WebAssembly.instantiate(typedArray,{}).then(lib => {
 		my_assert(msg === expected, "format, missing namelist error message")
 	}
 
+	{
+		const d = {year: 2022, month: 1, day: 12};
+		const mjd0 = m.mjdFromYmd(m.gregorian, d);
+		const p_res = m.parse(m.gregorian, "%Y-%m-%d", "2022-01-12");
+		my_assert(p_res.mjd == mjd0, "parse, %Y-%m-%d correct MJD");
+	}
+
+	{
+		const cal = m.gregorian;
+		const nlist = m.names_en_US_gregorian;
+		const d = {year: 2022, month: 1, day: 12};
+		const mjd0 = m.mjdFromYmd(cal, d);
+		const p_res = m.parse(cal, nlist, "%-d %B %Y", "12 January 2022");
+		my_assert(p_res.mjd == mjd0, "parse, %-d %B %Y correct MJD");
+	}
+
 	console.log("JavaScript API tests passed.")
 })

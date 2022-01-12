@@ -292,7 +292,6 @@ class Service {
 			fmt = arg3;
 		}
 
-		const encoder = new TextEncoder();
 		let offset = this.mem_offset;
 		if(nlist && nlist.constructor !== WebAssembly.Global) {
 			const old_nlist = nlist;
@@ -305,7 +304,7 @@ class Service {
 
 		const buflen = this.instance.exports.mon13_format(
 			mjd, cal, nlist, fmt_arr.byteOffset, null, 0
-		)
+		);
 		if(buflen < 0) {
 			throw new Error(this._statusToString(buflen));
 		}
@@ -313,7 +312,7 @@ class Service {
 		const res_offset = fmt_arr.byteOffset + fmt_arr.byteLength;
 		const status = this.instance.exports.mon13_format(
 			mjd, cal, nlist, fmt_arr.byteOffset, res_offset, buflen + 1
-		)
+		);
 		if(status < 0) {
 			throw new Error(this._statusToString(status));
 		}
@@ -321,6 +320,45 @@ class Service {
 			this.instance.exports.memory.buffer, res_offset, buflen //exclude \0
 		);
 		return this.decoder.decode(res);
+	}
+
+	parse(cal, arg2, arg3, arg4) {
+		let nlist = arg2;
+		let fmt = arg3;
+		let buf = arg4;
+		if(!buf) {
+			nlist = null;
+			fmt = arg2;
+			buf = arg3;
+		}
+
+		let offset = this.mem_offset;
+		if(nlist && nlist.constructor !== WebAssembly.Global) {
+			const old_nlist = nlist;
+			nlist = offset;
+			offset = this._nameListFromObj(old_nlist, offset);
+		}
+
+		const fmt_view = this.encoder.encode(fmt);
+		const fmt_offset = offset;
+		const fmt_arr = this._copyToWasm(fmt_view, offset);
+
+		const buf_view = this.encoder.encode(buf);
+		const buf_offset = fmt_offset + fmt_arr.byteLength;
+		const buf_arr = this._copyToWasm(buf_view, buf_offset);
+
+		const buf_end = buf_arr.byteOffset + buf_arr.byteLength;
+		const res_offset = buf_end + 4 - (buf_end % 4)
+		const status = this.instance.exports.mon13_parse(
+			cal, nlist, fmt_offset, buf_offset, buf_arr.byteLength, res_offset
+		);
+
+		if(status < 0) {
+			throw new Error(this._statusToString(status));
+		}
+		const res_buf = new Int32Array(this.instance.exports.memory.buffer, res_offset, 1);
+		const res_mjd = res_buf[0];
+		return {bytes_read: status, mjd: res_mjd};
 	}
 }
 
