@@ -72,9 +72,9 @@ class Service {
 
 	_statusToString(status) {
 		const start_i = this.instance.exports.mon13_errorMessage(status);
-		var end_i = 256;
+		let end_i = 256;
 		const long_buf = new Uint8Array(this.instance.exports.memory.buffer, start_i, end_i);
-		for(var i = 0; i < end_i; i++) {
+		for(let i = 0; i < end_i; i++) {
 			if(long_buf[i] == 0) {
 				end_i = i;
 				break;
@@ -225,7 +225,7 @@ class Service {
 		const res = new Uint8Array(
 			this.instance.exports.memory.buffer, offset, view.byteLength + 1
 		);
-		for(var i = 0; i < view.byteLength; i++) {
+		for(let i = 0; i < view.byteLength; i++) {
 			res[i] = view[i];
 		}
 		res[view.byteLength] = 0;
@@ -244,7 +244,7 @@ class Service {
 			this.instance.exports.memory.buffer, offset, list.length + 1
 		);
 		offset = s_list.byteOffset + s_list.byteLength;
-		for(var i = 0; i < list.length; i++) {
+		for(let i = 0; i < list.length; i++) {
 			const enc = this.encoder.encode(list[i]);
 			s_list[i] = this._copyToWasm(enc, offset).byteOffset;
 			offset += enc.byteLength + 1;
@@ -256,43 +256,48 @@ class Service {
 		return offset;
 	}
 
+	_nameListFromObj(old_nlist, offset) {
+		const nlist_buf = new Int32Array(
+			this.instance.exports.memory.buffer, offset, 6
+		);
+		offset += nlist_buf.byteLength;
+		offset = this._setStringList(
+			nlist_buf, 0, old_nlist.month_list, offset
+		);
+		offset = this._setStringList(
+			nlist_buf, 1, old_nlist.weekday_list, offset
+		);
+		offset = this._setStringList(
+			nlist_buf, 2, old_nlist.era_list, offset
+		);
+		offset = this._setStringList(
+			nlist_buf, 3, old_nlist.intercalary_list, offset
+		);
+		offset = this._setStringList(
+			nlist_buf, 4, old_nlist.alt_intercalary_list, offset
+		);
+
+		nlist_buf[5] = offset;
+		const name_view = this.encoder.encode(old_nlist.calendar_name);
+		const name_arr = this._copyToWasm(name_view, offset);
+		offset += name_arr.byteLength + 1;
+		return offset;
+	}
+
 	format(mjd, cal, arg3, arg4) {
-		var nlist = arg3;
-		var fmt = arg4;
+		let nlist = arg3;
+		let fmt = arg4;
 		if(!fmt) {
 			nlist = null;
 			fmt = arg3;
 		}
 
 		const encoder = new TextEncoder();
-		var offset = this.mem_offset;
+		let offset = this.mem_offset;
 		if(nlist && nlist.constructor !== WebAssembly.Global) {
 			const old_nlist = nlist;
 			nlist = offset;
-			const nlist_buf = new Int32Array(
-				this.instance.exports.memory.buffer, offset, 6
-			);
-			offset += nlist_buf.byteLength;
-			offset = this._setStringList(
-				nlist_buf, 0, old_nlist.month_list, offset
-			);
-			offset = this._setStringList(
-				nlist_buf, 1, old_nlist.weekday_list, offset
-			);
-			offset = this._setStringList(
-				nlist_buf, 2, old_nlist.era_list, offset
-			);
-			offset = this._setStringList(
-				nlist_buf, 3, old_nlist.intercalary_list, offset
-			);
-			offset = this._setStringList(
-				nlist_buf, 4, old_nlist.alt_intercalary_list, offset
-			);
-
-			nlist_buf[5] = offset;
-			const name_view = this.encoder.encode(old_nlist.calendar_name);
-			const name_arr = this._copyToWasm(name_view, offset);
-			offset += name_arr.byteLength + 1;
+			offset = this._nameListFromObj(old_nlist, offset);
 		}
 
 		const fmt_view = this.encoder.encode(fmt);
