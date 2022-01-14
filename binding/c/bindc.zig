@@ -109,6 +109,22 @@ fn tail(comptime T: type, res: *T, raw: anyerror!T) c_int {
     }
 }
 
+fn extract_fmt(raw_fmt: ?[*]const u8) ![]const u8 {
+    const fmt_p = raw_fmt orelse return mon13.Err.NullFormat;
+
+    var fmt_len: usize = 0;
+    while (fmt_p[fmt_len] != 0) : (fmt_len += 1) {}
+    return fmt_p[0..fmt_len];
+}
+
+fn bytes_used_tail(raw: anyerror!c_int) c_int {
+    if (raw) |res| {
+        return res;
+    } else |err| {
+        return @enumToInt(PublicError.make(err));
+    }
+}
+
 pub export fn mon13_validYmd(
     raw_cal: ?*const mon13.Cal,
     year: i32,
@@ -314,7 +330,7 @@ pub export fn mon13_format(
     buflen: u32,
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const fmt = raw_fmt orelse return @enumToInt(PublicError.NULL_FORMAT);
+    const fmt = extract_fmt(raw_fmt) catch |err| return @enumToInt(PublicError.make(err));
 
     var slice_buf: ?[]u8 = null;
     if (buflen > 0) {
@@ -322,12 +338,7 @@ pub export fn mon13_format(
             slice_buf = ptr_buf[0..buflen];
         }
     }
-
-    if (mon13.format(mjd, cal, raw_nlist, fmt, slice_buf)) |bytes_used| {
-        return bytes_used;
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return bytes_used_tail(mon13.format(mjd, cal, raw_nlist, fmt, slice_buf));
 }
 
 pub export fn mon13_parse(
@@ -339,20 +350,15 @@ pub export fn mon13_parse(
     raw_mjd: ?*i32,
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
-    const fmt = raw_fmt orelse return @enumToInt(PublicError.NULL_FORMAT);
+    const fmt = extract_fmt(raw_fmt) catch |err| return @enumToInt(PublicError.make(err));
     const res_mjd = raw_mjd orelse return @enumToInt(PublicError.NULL_RESULT);
     const ptr_buf = raw_buf orelse return @enumToInt(PublicError.NULL_INPUT);
 
     if (buflen < 1) {
         return @enumToInt(PublicError.DATE_NOT_FOUND);
     }
-
     var slice_buf: []u8 = ptr_buf[0..buflen];
-    if (mon13.parse(cal, raw_nlist, fmt, slice_buf, res_mjd)) |bytes_used| {
-        return bytes_used;
-    } else |err| {
-        return @enumToInt(PublicError.make(err));
-    }
+    return bytes_used_tail(mon13.parse(cal, raw_nlist, fmt, slice_buf, res_mjd));
 }
 
 pub export fn mon13_errorMessage(errorCode: c_int) [*:0]const u8 {

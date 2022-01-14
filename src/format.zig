@@ -659,34 +659,35 @@ const DateData = struct {
     }
 };
 
-fn writeCopy(fmt: [*]const u8, fmt_i: usize, writer: anytype) !usize {
-    const count = std.unicode.utf8ByteSequenceLength(fmt[fmt_i]) catch {
+fn writeCopy(c: u8, fmt_reader: anytype, writer: anytype) !void {
+    const count = std.unicode.utf8ByteSequenceLength(c) catch {
         return base.Err.InvalidUtf8;
     };
-    const res_i = fmt_i + count;
-    _ = try writer.write(fmt[fmt_i..res_i]);
-    return res_i;
+    if (count > 4) {
+        unreachable;
+    }
+    var buf: [4]u8 = undefined;
+    buf[0] = c;
+    const read_bytes = try fmt_reader.read(buf[1..count]);
+    if (read_bytes != (count - 1)) {
+        return base.Err.InvalidSequence;
+    }
+    _ = try writer.write(buf[0..count]);
 }
 
-fn doPrefix(fmt_i: usize) usize {
-    return fmt_i + 1;
-}
+fn doPrefix() void {}
 
-fn doSpecWidth(fmt: [*]const u8, fmt_i: usize, spec: *Specifier) usize {
-    const c = fmt[fmt_i];
+fn doSpecWidth(c: u8, spec: *Specifier) void {
     spec.*.pad_width = (spec.*.pad_width * RADIX) + (c - '0');
-    return fmt_i + 1;
 }
 
-fn doFlag(fmt: [*]const u8, fmt_i: usize, spec: *Specifier) usize {
-    const c = fmt[fmt_i];
+fn doFlag(c: u8, spec: *Specifier) void {
     const f = @intToEnum(Flag, c);
     if (f == Flag.absolute_value) {
         spec.*.absolute_value = true;
     } else {
         spec.*.pad_flag = f;
     }
-    return fmt_i + 1;
 }
 
 fn writeChar(spec: Specifier, writer: anytype) !void {
@@ -699,27 +700,29 @@ fn writeChar(spec: Specifier, writer: anytype) !void {
     try writer.writeByte(ch);
 }
 
-fn readCopy(fmt: [*]const u8, fmt_i: usize, reader: anytype) !usize {
-    const count = std.unicode.utf8ByteSequenceLength(fmt[fmt_i]) catch {
+fn readCopy(c: u8, reader: anytype) !void {
+    const count = std.unicode.utf8ByteSequenceLength(c) catch {
         return base.Err.InvalidUtf8;
     };
-    const res_i = fmt_i + count;
-
-    var ri: usize = 0;
-    while (ri < count) : (ri += 1) {
-        const c = try reader.readByte();
-        if (ri == 0 and c != fmt[fmt_i]) { //Caused by digit after numeric sequence
-            return base.Err.InvalidSequence;
-        }
+    if (count > 4) {
+        unreachable;
     }
-    return res_i;
+
+    var buf: [4]u8 = undefined;
+    const read_bytes = try reader.read(buf[0..count]);
+    if (read_bytes != count) {
+        return base.Err.InvalidSequence;
+    }
+    if (buf[0] != c) { //Caused by digit after numeric sequence
+        return base.Err.InvalidSequence;
+    }
 }
 
 pub fn formatW(
     mjd: i32,
     cal: *const base.Cal,
     raw_nlist: ?*const base.NameList,
-    fmt: [*]const u8,
+    fmt: []const u8,
     writer: anytype,
 ) !void {
     if (!validNameList(cal, raw_nlist)) {
@@ -727,20 +730,26 @@ pub fn formatW(
     }
 
     var s = State.start;
-    var fmt_i: usize = 0;
+    var fmt_reader = std.io.fixedBufferStream(fmt).reader();
 
     var spec = Specifier{};
     var dd = DateData{};
-    while (fmt[fmt_i] != 0) {
-        const c = fmt[fmt_i];
+    while (true) {
+        const c = fmt_reader.readByte() catch |err| {
+            if (err == error.EndOfStream) {
+                break;
+            } else {
+                return err;
+            }
+        };
         s = try s.next(c);
 
-        fmt_i = switch (s) {
-            .copy => try writeCopy(fmt, fmt_i, writer),
-            .spec_prefix => doPrefix(fmt_i),
-            .spec_width => doSpecWidth(fmt, fmt_i, &spec),
-            .spec_flag => doFlag(fmt, fmt_i, &spec),
-            .spec_seq => seq: {
+        switch (s) {
+            .copy => try writeCopy(c, fmt_reader, writer),
+            .spec_prefix => doPrefix(),
+            .spec_width => doSpecWidth(c, &spec),
+            .spec_flag => doFlag(c, &spec),
+            .spec_seq => {
                 spec.seq = @intToEnum(Sequence, c);
                 if (spec.seq.isChar()) {
                     try writeChar(spec, writer);
@@ -755,10 +764,10 @@ pub fn formatW(
                     return base.Err.InvalidSequence;
                 }
                 spec = Specifier{};
-                break :seq fmt_i + 1;
             },
-            .start, .end => return base.Err.InvalidSequence,
-        };
+            .end => break,
+            .start => return base.Err.InvalidSequence,
+        }
     }
     writer.writeByte(0) catch return base.Err.FailedToInsertNullCharacter;
 }
@@ -767,7 +776,7 @@ pub fn format(
     mjd: i32,
     cal: *const base.Cal,
     raw_nlist: ?*const base.NameList,
-    fmt: [*]const u8,
+    fmt: []const u8,
     raw_buf: ?[]u8,
 ) !c_int {
     if (raw_buf) |buf| {
@@ -791,7 +800,7 @@ pub fn format(
 pub fn parseR(
     cal: *const base.Cal,
     raw_nlist: ?*const base.NameList,
-    fmt: [*]const u8,
+    fmt: []const u8,
     raw_reader: anytype,
     mjd_res: *i32,
 ) !usize {
@@ -800,13 +809,19 @@ pub fn parseR(
     }
 
     var s = State.start;
-    var fmt_i: usize = 0;
+    var fmt_reader = std.io.fixedBufferStream(fmt).reader();
 
     var spec = Specifier{};
     var dd = DateData{};
     var ps = std.io.peekStream(1, raw_reader);
-    while (fmt[fmt_i] != 0) {
-        const c = fmt[fmt_i];
+    while (true) {
+        const c = fmt_reader.readByte() catch |err| {
+            if (err == error.EndOfStream) {
+                break;
+            } else {
+                return err;
+            }
+        };
         const prev_s = s;
         s = try s.next(c);
         if (prev_s == State.spec_seq) {
@@ -818,12 +833,12 @@ pub fn parseR(
             }
         }
 
-        fmt_i = switch (s) {
-            .copy => try readCopy(fmt, fmt_i, ps.reader()),
-            .spec_prefix => doPrefix(fmt_i),
-            .spec_width => doSpecWidth(fmt, fmt_i, &spec),
-            .spec_flag => doFlag(fmt, fmt_i, &spec),
-            .spec_seq => seq: {
+        switch (s) {
+            .copy => try readCopy(c, ps.reader()),
+            .spec_prefix => doPrefix(),
+            .spec_width => doSpecWidth(c, &spec),
+            .spec_flag => doFlag(c, &spec),
+            .spec_seq => {
                 spec.seq = @intToEnum(Sequence, c);
                 if (spec.seq.isChar()) {
                     try ps.reader().skipBytes(1, .{ .buf_size = 1 });
@@ -836,10 +851,10 @@ pub fn parseR(
                     return base.Err.InvalidSequence;
                 }
                 spec = Specifier{};
-                break :seq fmt_i + 1;
             },
-            .start, .end => return base.Err.InvalidSequence,
-        };
+            .end => break,
+            .start => return base.Err.InvalidSequence,
+        }
     }
 
     mjd_res.* = try dd.toMjd(cal);
@@ -849,7 +864,7 @@ pub fn parseR(
 pub fn parse(
     cal: *const base.Cal,
     raw_nlist: ?*const base.NameList,
-    fmt: [*]const u8,
+    fmt: []const u8,
     buf: []const u8,
     mjd_res: *i32,
 ) !c_int {
