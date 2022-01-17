@@ -31,7 +31,7 @@ test "strange add gregorian" {
     const offset: i32 = @truncate(i32, a2);
     const res_mjd = mon13.addYears(mjd, c, offset) catch return;
     var res_year: i32 = 0;
-    try mon13.mjdToYmd(mjd, c, &res_year, null, null);
+    try mon13.mjdToYmd(res_mjd, c, &res_year, null, null);
     try expect(res_year == (d_year +% offset));
 }
 
@@ -51,13 +51,12 @@ fn skip_import(x: i64) bool {
 }
 
 test "strange convert" {
-    const c = &mon13.tranquility_year_zero;
     const rd0: i64 = 5385873414131997696 % std.math.maxInt(i32);
     const offset: i32 = 6356633119034338304 % std.math.maxInt(i32);
 
     const mjd0 = try mon13.mjdFromRd(rd0);
     const mjd1 = mjd0 + offset;
-    const rd1 = mon13.mjdToRd(mjd1) catch return;
+    _ = mon13.mjdToRd(mjd1) catch return;
 }
 
 test "Tranquility strange add" {
@@ -65,7 +64,7 @@ test "Tranquility strange add" {
     const offset: i32 = 544641169;
 
     const mjd = try mon13.mjdFromYmd(c_yz, -2796441, 0, 1);
-    const res = mon13.addMonths(mjd, c_yz, offset) catch return;
+    _ = mon13.addMonths(mjd, c_yz, offset) catch return;
 }
 
 test "holocene" {
@@ -87,7 +86,7 @@ test "Cotsworth format" {
 
     const buf_size = 100;
     var buf = [_]u8{0} ** buf_size;
-    const res = try mon13.format(mjd, c, n, "%A", buf[0..buf_size]);
+    _ = try mon13.format(mjd, c, n, "%A", buf[0..buf_size]);
 
     const expected = "Leap Day";
     for (expected) |ch, i| {
@@ -97,7 +96,7 @@ test "Cotsworth format" {
 
 test "Cotsworth add many months" {
     const mjd = try mon13.mjdFromYmd(&mon13.cotsworth, 992456, 6, 29);
-    const res0 = mon13.addMonths(mjd, &mon13.cotsworth, 209601470) catch return;
+    _ = mon13.addMonths(mjd, &mon13.cotsworth, 209601470) catch return;
 }
 
 test "Valid" {
@@ -110,7 +109,7 @@ test "Invalid" {
 
 test "Tempting overflow" {
     const c = &mon13.tranquility_year_zero;
-    const mjd = mon13.mjdFromYmd(c, -2147483641, 0, 2) catch return;
+    _ = mon13.mjdFromYmd(c, -2147483641, 0, 2) catch return;
 }
 
 test "Day of Year" {
@@ -207,18 +206,15 @@ test "Add Years on La Fête de la Révolution" {
 test "Rata Die Overflow Message" {
     const offset = 1389779633;
     const mjd = 757702997 + offset;
-    if (mon13.mjdToRd(mjd)) |rd| {
-        try expect(false);
-    } else |err| {
-        try expect(err == mon13.Err.Overflow);
-        const msg = mon13.errorMessage(err);
-        const expected = "Overflow occurred (internal)";
-        try expect(mem.eql(
-            u8,
-            expected[0..expected.len],
-            msg[0..expected.len],
-        ));
-    }
+    try std.testing.expectError(mon13.Err.Overflow, mon13.mjdToRd(mjd));
+
+    const msg = mon13.errorMessage(mon13.Err.Overflow);
+    const expected = "Overflow occurred (internal)";
+    try expect(mem.eql(
+        u8,
+        expected[0..expected.len],
+        msg[0..expected.len],
+    ));
 }
 
 test "basic parse numeric" {

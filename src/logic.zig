@@ -464,7 +464,7 @@ pub fn mjdFromDayOfYear(cal: *const base.Cal, year: i32, doy: u16) base.Err!i32 
     return try d_doy.toMjd(cal);
 }
 
-pub fn mjdFromC99Tm(cal: *const base.Cal, raw_tm: *const c_void) base.Err!i32 {
+pub fn mjdFromC99Tm(cal: *const base.Cal, raw_tm: *const anyopaque) base.Err!i32 {
     const tm = @ptrCast(*const C99Tm, @alignCast(@alignOf(C99Tm), raw_tm));
 
     if (tm.*.tm_mday < 1 or tm.*.tm_mday > maxInt(u8)) {
@@ -517,7 +517,7 @@ pub fn mjdToYmd(
     }
 }
 
-pub fn mjdToC99Tm(mjd: i32, cal: *const base.Cal, tm: *c_void) base.Err!void {
+pub fn mjdToC99Tm(mjd: i32, cal: *const base.Cal, tm: *anyopaque) base.Err!void {
     const doy = try DoyDate.fromMjd(mjd, cal);
     const d_yz = try doy.toMonthDay(cal);
     const d = d_yz.yzToNoYz(cal);
@@ -561,7 +561,7 @@ pub fn mjdToDayOfWeek(mjd: i32, cal: *const base.Cal) base.Err!u8 {
         const doy = try DoyDate.fromMjd(mjd, cal);
         const d = try doy.toMonthDay(cal);
 
-        if (gen.seekIc(d.month, d.day, cal)) |ic| {
+        if (gen.seekIc(d.month, d.day, cal)) |_| {
             return @enumToInt(base.Weekday7.NoWeekday);
         }
 

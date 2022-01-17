@@ -7,7 +7,7 @@ pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{});
     const mon13Pkg = std.build.Pkg{
         .name = "mon13",
-        .path = "src/mon13.zig",
+        .path = .{ .path = "src/mon13.zig" },
     };
     const rawSeed = b.option(u64, "seed", "Seed for ptest");
     const rawSubmoduleTheft = b.option(bool, "submodule-theft", "Use submodule libtheft instead of system libtheft");

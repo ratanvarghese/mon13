@@ -117,6 +117,6 @@ pub fn yearLen(leap: bool, cal: *const base.Cal) u16 {
 pub fn listLen(comptime T: type, list: [*:null]const ?T) usize {
     //std.mem.len and std.mem.indexOfSentinel fail for base.Intercalary
     var i: usize = 0;
-    while (list[i]) |item| : (i += 1) {}
+    while (list[i]) |_| : (i += 1) {}
     return i;
 }

@@ -54,10 +54,10 @@ pub fn validNameList(
             }
         }
     } else {
-        if (nlist.*.intercalary_list) |nic_list| {
+        if (nlist.*.intercalary_list) |_| {
             return false;
         }
-        if (nlist.*.alt_intercalary_list) |alt_nic_list| {
+        if (nlist.*.alt_intercalary_list) |_| {
             return false;
         }
     }
@@ -291,7 +291,7 @@ fn readNameInArr(arr: []?[*:0]u8, ps: anytype) !usize {
     var matches = std.bit_set.IntegerBitSet(MAX_LIST_LEN).initEmpty();
     var match_i: usize = 0;
     while (match_i < arr.len) : (match_i += 1) {
-        if (arr[match_i]) |name| {
+        if (arr[match_i] != null) {
             matches.set(match_i);
         }
     }
@@ -345,7 +345,7 @@ const DateData = struct {
     after_epoch: ?bool = null,
 
     fn setYmdi(self: DateData, mjd: i32, cal: *const base.Cal) base.Err!DateData {
-        if (self.year_abs) |sy| {
+        if (self.year_abs) |_| {
             return self;
         } else {
             var raw_y: i32 = 0;
@@ -365,7 +365,7 @@ const DateData = struct {
         return switch (spec.seq) {
             .percent, .tab, .calendar_name, .newline => self,
             .weekday_name, .weekday_number => weekday: {
-                if (self.day_of_week) |sw| {
+                if (self.day_of_week) |_| {
                     break :weekday self;
                 } else {
                     var dd = self;
@@ -379,7 +379,7 @@ const DateData = struct {
                 }
             },
             .day_of_year => doy: {
-                if (self.day_of_year) |sdoy| {
+                if (self.day_of_year) |_| {
                     break :doy self;
                 } else {
                     var dd = self;
@@ -411,12 +411,13 @@ const DateData = struct {
 
         const x = if (spec.absolute_value and n < 0) -n else n;
         const opt = spec.toStdFmtOptions();
+        const case = std.fmt.Case.lower;
         if (x >= 0) {
             const abs = @intCast(u32, x);
             //Force the + sign to be omitted
-            try std.fmt.formatInt(abs, RADIX, false, opt, writer);
+            try std.fmt.formatInt(abs, RADIX, case, opt, writer);
         } else {
-            try std.fmt.formatInt(n, RADIX, false, opt, writer);
+            try std.fmt.formatInt(n, RADIX, case, opt, writer);
         }
     }
 

@@ -33,7 +33,7 @@ pub export const mon13_names_fr_FR_julian = mon13.names_fr_FR_julian;
 pub export const mon13_names_fr_FR_positivist = mon13.names_fr_FR_positivist;
 pub export const mon13_names_fr_FR_french_revolutionary = mon13.names_fr_FR_french_revolutionary;
 
-pub const PublicError = extern enum {
+pub const PublicError = enum(c_int) {
     NONE = 0,
     UNKNOWN = -1,
     NULL_CALENDAR = -2,
@@ -149,7 +149,7 @@ pub export fn mon13_mjdFromYmd(
 
 pub export fn mon13_mjdFromC99Tm(
     raw_cal: ?*const mon13.Cal,
-    raw_tm: ?*const c_void,
+    raw_tm: ?*const anyopaque,
     raw_mjd: ?*i32,
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
@@ -192,7 +192,7 @@ pub export fn mon13_mjdToYmd(
 pub export fn mon13_mjdToC99Tm(
     mjd: i32,
     raw_cal: ?*const mon13.Cal,
-    raw_tm: ?*c_void,
+    raw_tm: ?*anyopaque,
 ) c_int {
     const cal = raw_cal orelse return @enumToInt(PublicError.NULL_CALENDAR);
     var tm = raw_tm orelse return @enumToInt(PublicError.NULL_INPUT);
@@ -305,16 +305,16 @@ pub export fn mon13_validNameList(
 ) c_int {
     const cal = raw_cal orelse return @boolToInt(false);
     if (raw_nlist) |nlist| {
-        if (@ptrCast(?*c_void, nlist.month_list)) |months| {} else {
+        if (@ptrCast(?*anyopaque, nlist.month_list) == null) {
             return @boolToInt(false);
         }
-        if (@ptrCast(?*c_void, nlist.weekday_list)) |weekdays| {} else {
+        if (@ptrCast(?*anyopaque, nlist.weekday_list) == null) {
             return @boolToInt(false);
         }
-        if (@ptrCast(?*c_void, nlist.era_list)) |eras| {} else {
+        if (@ptrCast(?*anyopaque, nlist.era_list) == null) {
             return @boolToInt(false);
         }
-        if (@ptrCast(?*c_void, nlist.calendar_name)) |name| {} else {
+        if (@ptrCast(?*anyopaque, nlist.calendar_name) == null) {
             return @boolToInt(false);
         }
     }
