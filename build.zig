@@ -20,7 +20,7 @@ pub fn build(b: *std.build.Builder) void {
     const bind_path = "binding" ++ sep;
 
     //Library files
-    const sharedLib = b.addSharedLibrary("mon13", "binding/c/bindc.zig", b.version(0, 6, 1));
+    const sharedLib = b.addSharedLibrary("mon13", "binding/c/bindc.zig", b.version(0, 7, 1));
     sharedLib.addPackage(mon13Pkg);
     sharedLib.setBuildMode(mode);
     sharedLib.setTarget(target);
