@@ -1,14 +1,14 @@
 # Maintainer: Ratan Varghese <ratanv@protonmail.com>
 pkgname=mon13-git
-pkgver=0.6.1.r2.938036f
+pkgver=0.7.1.r0.3d61d6d
 pkgrel=1
 pkgdesc="Calendar calculation and conversion library"
 arch=('x86_64')
 url="mon13.org"
-license=('MIT')
+license=('custom:BlueOakModel')
 groups=()
 depends=()
-makedepends=('git' 'zig>=0.8.1')
+makedepends=('git' 'zig>=0.9.0')
 checkdepends=('theft>=0.4.5')
 provides=("${pkgname%-git}")
 conflicts=("${pkgname%-git}")
