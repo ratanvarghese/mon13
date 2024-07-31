@@ -1,8 +1,6 @@
-This is a library with many calendrical calculations. **It is abandoned.** I still use it on my blog, as it still works for the blog's narrow use cases, but I no longer plan to develop the library further. The best-case scenario is that I rewrite large portions of the library, including the test suite and APIs in multiple programming languages.
+This is a library with many calendrical calculations. **It is abandoned.** I no longer plan to develop the library further.
 
-You are free to use this code under the terms of the LICENSE.md but you will probably have to maintain it yourself.
-
-If I write a replacement for this library, it may have the same name and be hosted at the same locations. In such circumstances, this README will be updated.
+You are free to use this code under the terms of the LICENSE.md but you will have to maintain it yourself.
 
 ## Post-mortem
 
